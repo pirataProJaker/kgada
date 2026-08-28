@@ -1,0 +1,43 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://net/network_ui.gd" id="1_scr"]
+
+[node name="NetworkUI" type="CanvasLayer"]
+script = ExtResource("1_scr")
+
+[node name="Panel" type="Panel" parent="."]
+offset_left = 16.0
+offset_top = 16.0
+offset_right = 300.0
+offset_bottom = 160.0
+
+[node name="VBox" type="VBoxContainer" parent="Panel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 8.0
+offset_top = 8.0
+offset_right = -8.0
+offset_bottom = -8.0
+
+[node name="HostButton" type="Button" parent="Panel/VBox"]
+layout_mode = 2
+text = "Alojar partida (Host)"
+
+[node name="JoinRow" type="HBoxContainer" parent="Panel/VBox"]
+layout_mode = 2
+
+[node name="AddressInput" type="LineEdit" parent="Panel/VBox/JoinRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "127.0.0.1"
+
+[node name="JoinButton" type="Button" parent="Panel/VBox/JoinRow"]
+layout_mode = 2
+text = "Unirse"
+
+[node name="StatusLabel" type="Label" parent="Panel/VBox"]
+layout_mode = 2
+text = "Sin conexion (modo solo)"
+autowrap_mode = 2

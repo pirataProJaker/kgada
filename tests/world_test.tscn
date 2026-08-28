@@ -1,0 +1,64 @@
+[gd_scene load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://tests/world_test.gd" id="1_scr"]
+[ext_resource type="Shader" path="res://shaders/psx_dither.gdshader" id="2_dshdr"]
+[ext_resource type="Script" path="res://world/chunk_manager.gd" id="3_chunkmgr"]
+[ext_resource type="PackedScene" path="res://net/network_ui.tscn" id="4_netui"]
+[ext_resource type="Script" path="res://world/dog_spawner.gd" id="5_dogspawner"]
+[ext_resource type="Script" path="res://world/city/city_world_spawner.gd" id="6_cityspawner"]
+[ext_resource type="Script" path="res://world/zombie_population_manager.gd" id="7_zombiemanager"]
+[ext_resource type="Script" path="res://map_editor/modular_construction_manager.gd" id="8_construction"]
+
+[sub_resource type="ShaderMaterial" id="SM_1"]
+shader = ExtResource("2_dshdr")
+
+[sub_resource type="Environment" id="Environment_world"]
+background_mode = 1
+background_color = Color(0.22, 0.28, 0.3, 1)
+ambient_light_source = 2
+ambient_light_color = Color(0.58, 0.64, 0.68, 1)
+ambient_light_energy = 0.75
+fog_enabled = true
+fog_light_color = Color(0.32, 0.4, 0.43, 1)
+fog_light_energy = 0.85
+fog_density = 0.01
+
+[node name="WorldTest" type="Node3D"]
+script = ExtResource("1_scr")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.707, -0.5, 0.5, 0, 0.707, 0.707, -0.707, -0.5, 0.5, 0, 3, 0)
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_world")
+
+[node name="ChunkManager" type="Node3D" parent="."]
+script = ExtResource("3_chunkmgr")
+
+[node name="DogSpawner" type="Node3D" parent="."]
+script = ExtResource("5_dogspawner")
+chunk_manager_path = NodePath("../ChunkManager")
+
+[node name="CityWorldSpawner" type="Node3D" parent="."]
+script = ExtResource("6_cityspawner")
+chunk_manager_path = NodePath("../ChunkManager")
+
+[node name="ZombiePopulationManager" type="Node3D" parent="."]
+script = ExtResource("7_zombiemanager")
+chunk_manager_path = NodePath("../ChunkManager")
+
+[node name="ConstructionManager" type="Node3D" parent="."]
+script = ExtResource("8_construction")
+
+[node name="DitherLayer" type="CanvasLayer" parent="."]
+
+[node name="DitherOverlay" type="ColorRect" parent="DitherLayer"]
+material = SubResource("SM_1")
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="NetworkUI" parent="." instance=ExtResource("4_netui")]

@@ -1,0 +1,48 @@
+[gd_scene load_steps=9 format=3]
+
+[ext_resource type="Script" path="res://player/player.gd" id="1_scr"]
+[ext_resource type="Script" path="res://player/placement_controller.gd" id="2_placement"]
+[ext_resource type="Script" path="res://player/inventory.gd" id="3_inventory"]
+[ext_resource type="Script" path="res://player/held_item_view.gd" id="4_held_item"]
+[ext_resource type="Script" path="res://player/first_person_arms.gd" id="5_arms"]
+[ext_resource type="Script" path="res://player/melee_controller.gd" id="6_melee"]
+[ext_resource type="Script" path="res://player/interact_controller.gd" id="7_interact"]
+[ext_resource type="Script" path="res://player/player_stats.gd" id="8_stats"]
+
+[sub_resource type="CapsuleShape3D" id="Capsule_1"]
+radius = 0.4
+height = 1.8
+
+[node name="Player" type="CharacterBody3D"]
+script = ExtResource("1_scr")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("Capsule_1")
+
+[node name="Inventory" type="Node" parent="."]
+script = ExtResource("3_inventory")
+
+[node name="PlayerStats" type="Node" parent="."]
+script = ExtResource("8_stats")
+
+[node name="Head" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.6, 0)
+
+[node name="Camera3D" type="Camera3D" parent="Head"]
+current = true
+
+[node name="HeldItemView" type="Node3D" parent="Head/Camera3D"]
+script = ExtResource("4_held_item")
+
+[node name="FirstPersonArms" type="Node3D" parent="Head/Camera3D"]
+script = ExtResource("5_arms")
+
+[node name="PlacementController" type="Node" parent="."]
+script = ExtResource("2_placement")
+
+[node name="MeleeController" type="Node" parent="."]
+script = ExtResource("6_melee")
+
+[node name="InteractController" type="Node" parent="."]
+script = ExtResource("7_interact")

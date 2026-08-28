@@ -1,0 +1,22 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://tests/zombie_population_manager_verify.gd" id="1_test"]
+[ext_resource type="Script" path="res://world/zombie_population_manager.gd" id="2_manager"]
+
+[sub_resource type="BoxShape3D" id="BoxShape_floor"]
+size = Vector3(1000, 1, 1000)
+
+[node name="ZombiePopulationManagerVerify" type="Node3D"]
+script = ExtResource("1_test")
+
+[node name="Floor" type="StaticBody3D" parent="."]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Floor"]
+position = Vector3(0, -0.5, 0)
+shape = SubResource("BoxShape_floor")
+
+[node name="Player" type="Node3D" parent="."]
+position = Vector3(0, 1, 0)
+
+[node name="ZombiePopulationManager" type="Node3D" parent="."]
+script = ExtResource("2_manager")

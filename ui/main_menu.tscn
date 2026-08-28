@@ -1,0 +1,94 @@
+[gd_scene load_steps=9 format=3]
+
+[ext_resource type="Script" path="res://ui/main_menu.gd" id="1_scr"]
+[ext_resource type="Shader" path="res://shaders/synthwave_background.gdshader" id="2_synth"]
+[ext_resource type="Texture2D" path="res://assets/textures/menu/logo.png" id="3_logo"]
+[ext_resource type="Shader" path="res://shaders/chroma_key.gdshader" id="4_chroma"]
+[ext_resource type="Texture2D" path="res://assets/textures/menu/jugar boton.png" id="5_play"]
+[ext_resource type="Texture2D" path="res://assets/textures/menu/multijugador boton.png" id="6_mp"]
+[ext_resource type="Texture2D" path="res://assets/textures/menu/editor boton.png" id="7_editor"]
+[ext_resource type="Texture2D" path="res://assets/textures/menu/configuracion boton.png" id="8_options"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_bg"]
+shader = ExtResource("2_synth")
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_logo"]
+shader = ExtResource("4_chroma")
+shader_parameter/key_color = Color(0, 0, 0, 1)
+shader_parameter/threshold = 0.15
+shader_parameter/smoothness = 0.05
+
+[node name="MainMenu" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_scr")
+
+[node name="Background" type="ColorRect" parent="."]
+material = SubResource("ShaderMaterial_bg")
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(1, 1, 1, 1)
+
+[node name="Logo" type="TextureRect" parent="."]
+material = SubResource("ShaderMaterial_logo")
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -250.0
+offset_top = 40.0
+offset_right = 250.0
+offset_bottom = 240.0
+grow_horizontal = 2
+texture = ExtResource("3_logo")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Buttons" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -260.0
+offset_top = -400.0
+offset_right = 260.0
+offset_bottom = -60.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_constants/separation = 16
+
+[node name="PlayButton" type="TextureButton" parent="Buttons"]
+layout_mode = 2
+custom_minimum_size = Vector2(520, 76)
+texture_normal = ExtResource("5_play")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="MultiplayerButton" type="TextureButton" parent="Buttons"]
+layout_mode = 2
+custom_minimum_size = Vector2(520, 76)
+texture_normal = ExtResource("6_mp")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="EditorButton" type="TextureButton" parent="Buttons"]
+layout_mode = 2
+custom_minimum_size = Vector2(520, 76)
+texture_normal = ExtResource("7_editor")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="OptionsButton" type="TextureButton" parent="Buttons"]
+layout_mode = 2
+custom_minimum_size = Vector2(520, 76)
+texture_normal = ExtResource("8_options")
+ignore_texture_size = true
+stretch_mode = 5

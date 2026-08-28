@@ -1,0 +1,290 @@
+[gd_scene load_steps=9 format=3]
+
+[ext_resource type="Script" path="res://map_editor/map_editor.gd" id="1_editor"]
+[ext_resource type="Script" path="res://world/chunk_manager.gd" id="2_chunk"]
+[ext_resource type="Shader" path="res://shaders/psx_dither.gdshader" id="3_dither"]
+[ext_resource type="Script" path="res://map_editor/modular_construction_manager.gd" id="4_construction"]
+
+[sub_resource type="Environment" id="Environment_editor"]
+background_mode = 1
+background_color = Color(0.025, 0.04, 0.055, 1)
+ambient_light_source = 3
+ambient_light_color = Color(0.38, 0.46, 0.58, 1)
+ambient_light_energy = 0.8
+
+[sub_resource type="StandardMaterial3D" id="Material_grid"]
+shading_mode = 0
+albedo_color = Color(0.04, 0.07, 0.06, 0.7)
+transparency = 1
+
+[sub_resource type="StandardMaterial3D" id="Material_cursor"]
+shading_mode = 0
+albedo_color = Color(0.95, 0.72, 0.18, 0.65)
+transparency = 1
+
+[sub_resource type="PlaneMesh" id="Plane_cursor"]
+size = Vector2(2.2, 2.2)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_dither"]
+shader = ExtResource("3_dither")
+
+[node name="MapEditor" type="Node3D"]
+script = ExtResource("1_editor")
+
+[node name="Camera3D" type="Camera3D" parent="."]
+current = true
+projection = 0
+fov = 52.0
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+rotation_degrees = Vector3(-58, -28, 0)
+light_color = Color(0.86, 0.91, 1, 1)
+light_energy = 1.2
+shadow_enabled = true
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_editor")
+
+[node name="Terrain" type="Node3D" parent="."]
+
+[node name="ChunkManager" type="Node3D" parent="Terrain"]
+script = ExtResource("2_chunk")
+
+[node name="EditorAnchor" type="Node3D" parent="Terrain"]
+
+[node name="ConstructionManager" type="Node3D" parent="."]
+script = ExtResource("4_construction")
+
+[node name="EditorOverlay" type="Node3D" parent="."]
+
+[node name="EditGrid" type="Node3D" parent="EditorOverlay"]
+
+[node name="Cursor" type="MeshInstance3D" parent="EditorOverlay"]
+visible = false
+material_override = SubResource("Material_cursor")
+mesh = SubResource("Plane_cursor")
+
+[node name="DitherLayer" type="CanvasLayer" parent="."]
+
+[node name="DitherOverlay" type="ColorRect" parent="DitherLayer"]
+material = SubResource("ShaderMaterial_dither")
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Interface" type="CanvasLayer" parent="."]
+
+[node name="TopBar" type="PanelContainer" parent="Interface"]
+offset_right = 1152.0
+offset_bottom = 58.0
+
+[node name="Actions" type="HBoxContainer" parent="Interface/TopBar"]
+theme_override_constants/separation = 8
+
+[node name="Title" type="Label" parent="Interface/TopBar/Actions"]
+custom_minimum_size = Vector2(190, 0)
+text = "MAPA 3D REAL / EDITOR"
+vertical_alignment = 1
+
+[node name="NewButton" type="Button" parent="Interface/TopBar/Actions"]
+text = "Nuevo"
+
+[node name="SaveButton" type="Button" parent="Interface/TopBar/Actions"]
+text = "Guardar"
+
+[node name="TestButton" type="Button" parent="Interface/TopBar/Actions"]
+text = "Probar mapa"
+
+[node name="BackButton" type="Button" parent="Interface/TopBar/Actions"]
+text = "Salir"
+
+[node name="LeftPanel" type="PanelContainer" parent="Interface"]
+offset_top = 70.0
+offset_right = 220.0
+offset_bottom = 648.0
+
+[node name="PanelContent" type="VBoxContainer" parent="Interface/LeftPanel"]
+theme_override_constants/separation = 6
+
+[node name="Header" type="Label" parent="Interface/LeftPanel/PanelContent"]
+text = "HERRAMIENTAS"
+
+[node name="SelectButton" type="Button" parent="Interface/LeftPanel/PanelContent"]
+text = "Seleccionar"
+
+[node name="RaiseButton" type="Button" parent="Interface/LeftPanel/PanelContent"]
+text = "Elevar terreno"
+
+[node name="LowerButton" type="Button" parent="Interface/LeftPanel/PanelContent"]
+text = "Bajar terreno"
+
+[node name="FlattenButton" type="Button" parent="Interface/LeftPanel/PanelContent"]
+text = "Aplanar entorno"
+
+[node name="ConstructionButton" type="Button" parent="Interface/LeftPanel/PanelContent"]
+text = "Construcciones"
+
+[node name="ConstructionBrowser" type="VBoxContainer" parent="Interface/LeftPanel/PanelContent"]
+visible = false
+theme_override_constants/separation = 4
+
+[node name="Title" type="Label" parent="Interface/LeftPanel/PanelContent/ConstructionBrowser"]
+text = "CONSTRUCCIONES"
+
+[node name="BackButton" type="Button" parent="Interface/LeftPanel/PanelContent/ConstructionBrowser"]
+text = "Regresar"
+
+[node name="CategoryView" type="VBoxContainer" parent="Interface/LeftPanel/PanelContent/ConstructionBrowser"]
+theme_override_constants/separation = 3
+
+[node name="TypeView" type="VBoxContainer" parent="Interface/LeftPanel/PanelContent/ConstructionBrowser"]
+visible = false
+theme_override_constants/separation = 3
+
+[node name="Spacer" type="Control" parent="Interface/LeftPanel/PanelContent"]
+custom_minimum_size = Vector2(0, 12)
+
+[node name="GridCheck" type="CheckButton" parent="Interface/LeftPanel/PanelContent"]
+button_pressed = true
+text = "Mostrar muestras"
+
+[node name="RightPanel" type="PanelContainer" parent="Interface"]
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -250.0
+offset_top = 70.0
+offset_bottom = 648.0
+grow_horizontal = 0
+
+[node name="PanelContent" type="VBoxContainer" parent="Interface/RightPanel"]
+theme_override_constants/separation = 8
+
+[node name="Header" type="Label" parent="Interface/RightPanel/PanelContent"]
+text = "PROPIEDADES"
+
+[node name="MapNameEdit" type="LineEdit" parent="Interface/RightPanel/PanelContent"]
+placeholder_text = "Nombre del mapa"
+text = "Nuevo mapa"
+
+[node name="MapSizeLabel" type="Label" parent="Interface/RightPanel/PanelContent"]
+text = "TAMAÑO DEL MAPA"
+
+[node name="MapSizeOption" type="OptionButton" parent="Interface/RightPanel/PanelContent"]
+
+[node name="ResizeButton" type="Button" parent="Interface/RightPanel/PanelContent"]
+text = "Redimensionar y conservar"
+
+[node name="GridInfo" type="Label" parent="Interface/RightPanel/PanelContent"]
+text = "Mapa: Nuevo mapa"
+
+[node name="CellInfo" type="Label" parent="Interface/RightPanel/PanelContent"]
+text = "Celda: --"
+
+[node name="Status" type="Label" parent="Interface/RightPanel/PanelContent"]
+text = "Mapa nuevo"
+autowrap_mode = 2
+
+[node name="Footer" type="Label" parent="Interface"]
+offset_left = 230.0
+offset_top = 660.0
+offset_right = 922.0
+offset_bottom = 690.0
+text = "Flechas navegan  |  RMB rota  |  MMB desplaza  |  rueda acerca/aleja  |  click aplica"
+horizontal_alignment = 1
+
+[node name="MapMenuBackdrop" type="ColorRect" parent="Interface"]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.01, 0.015, 0.02, 0.72)
+
+[node name="MapMenu" type="PanelContainer" parent="Interface"]
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -340.0
+offset_top = -240.0
+offset_right = 340.0
+offset_bottom = 240.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="PanelContent" type="VBoxContainer" parent="Interface/MapMenu"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Title" type="Label" parent="Interface/MapMenu/PanelContent"]
+layout_mode = 2
+text = "Seleccionar mapa"
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 24
+
+[node name="SavedMapList" type="ItemList" parent="Interface/MapMenu/PanelContent"]
+custom_minimum_size = Vector2(0, 250)
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="Buttons" type="HBoxContainer" parent="Interface/MapMenu/PanelContent"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="OpenMapButton" type="Button" parent="Interface/MapMenu/PanelContent/Buttons"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Abrir mapa"
+
+[node name="CreateMapButton" type="Button" parent="Interface/MapMenu/PanelContent/Buttons"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Crear nuevo mapa"
+
+[node name="CloseButton" type="Button" parent="Interface/MapMenu/PanelContent/Buttons"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Cerrar"
+
+[node name="NewMapDialog" type="ConfirmationDialog" parent="Interface"]
+visible = false
+title = "Crear nuevo mapa"
+ok_button_text = "Crear mapa"
+cancel_button_text = "Cancelar"
+size = Vector2i(480, 190)
+
+[node name="Content" type="VBoxContainer" parent="Interface/NewMapDialog"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 24.0
+offset_top = 24.0
+offset_right = -24.0
+offset_bottom = -24.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 8
+
+[node name="Prompt" type="Label" parent="Interface/NewMapDialog/Content"]
+layout_mode = 2
+text = "Nombre del mapa"
+
+[node name="MapNameInput" type="LineEdit" parent="Interface/NewMapDialog/Content"]
+custom_minimum_size = Vector2(0, 38)
+layout_mode = 2
+placeholder_text = "Ejemplo: Ciudad abandonada"
+
+[node name="ErrorLabel" type="Label" parent="Interface/NewMapDialog/Content"]
+custom_minimum_size = Vector2(0, 28)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.35, 0.25, 1)
+autowrap_mode = 2

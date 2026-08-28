@@ -1,0 +1,22 @@
+[package]
+name = "rust_core"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+# "experimental-threads": necesario para poder llamar metodos de clases
+# GDExtension (como TerrainGenerator.generate_chunk) desde un hilo que no sea
+# el principal (ej. WorkerThreadPool en GDScript). Sin esto, Godot causa un
+# panic/abort casi inmediato al intentarlo (lo que provoco el cierre del
+# juego). OJO: la propia documentacion de gdext dice textualmente que esta
+# feature tiene "high risk of unsoundness" (los detalles de seguridad entre
+# hilos todavia no estan terminados) - se activa a peticion explicita del
+# usuario para eliminar el tiron al cargar chunks, sabiendo ese riesgo.
+godot = { version = "0.4.5", features = ["experimental-threads"] }
+lin_alg = "1.4.3"
+mcubes = "0.1.7"
+noise = "0.9.0"
+rand = "0.8"

@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://dbqcv6owx1jek"]
+
+[ext_resource type="Script" path="res://tests/city_rotation_calibration.gd" id="1"]
+
+[node name="CityRotationCalibration" type="Node3D"]
+script = ExtResource("1")

@@ -1,0 +1,32 @@
+[gd_scene format=3 uid="uid://b0gmn1cnwrp4t"]
+
+[ext_resource type="Script" uid="uid://d25i7tdlwpjaa" path="res://world/city/house_generator.gd" id="1_house"]
+[ext_resource type="Script" path="res://tests/_window_fbx_ab.gd" id="2_ab"]
+
+[sub_resource type="Environment" id="Environment_houses"]
+background_mode = 1
+background_color = Color(0.38, 0.46, 0.55, 1)
+ambient_light_source = 2
+ambient_light_color = Color(1, 1, 1, 1)
+ambient_light_energy = 0.7
+
+[node name="WindowFbxAb" type="Node3D" unique_id=2047108574]
+script = ExtResource("2_ab")
+
+[node name="HouseGenerator" type="Node3D" parent="." unique_id=592592385]
+script = ExtResource("1_house")
+rng_seed = 12345
+randomize_seed_on_run = false
+show_debug_labels = false
+show_roofs = false
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=504229225]
+transform = Transform3D(0.8480481, 0.3938068, -0.35458517, 0, 0.66913056, 0.74314487, 0.52991927, -0.63022256, 0.5674549, 0, 0, 0)
+shadow_enabled = true
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=641311780]
+environment = SubResource("Environment_houses")
+
+[node name="Camera3D" type="Camera3D" parent="." unique_id=1691192140]
+current = true
+far = 500.0

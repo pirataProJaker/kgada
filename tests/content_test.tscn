@@ -1,0 +1,17 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://content/behaviors/chest_behavior.gd" id="1_chest_behavior"]
+[ext_resource type="Resource" path="res://content/objects/basic_chest.tres" id="2_chest_config"]
+
+[node name="ContentTest" type="Node3D"]
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.8, -0.5, 0.3, 0, 0.5, 0.87, -0.6, -0.7, 0.4, 0, 3, 0)
+
+[node name="Camera3D" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.9, 0.45, 0, -0.45, 0.9, 0, 2, 4)
+current = true
+
+[node name="BasicChest" type="StaticBody3D" parent="."]
+script = ExtResource("1_chest_behavior")
+config = ExtResource("2_chest_config")

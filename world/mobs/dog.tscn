@@ -1,0 +1,14 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://world/mobs/dog.gd" id="1_dogscr"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_dog"]
+radius = 0.25
+height = 0.7
+
+[node name="Dog" type="CharacterBody3D"]
+script = ExtResource("1_dogscr")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.35, 0)
+shape = SubResource("CapsuleShape3D_dog")

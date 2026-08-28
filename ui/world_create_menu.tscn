@@ -1,0 +1,102 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://ui/world_create_menu.gd" id="1_scr"]
+[ext_resource type="Shader" path="res://shaders/synthwave_background.gdshader" id="2_synth"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_bg"]
+shader = ExtResource("2_synth")
+
+[node name="WorldCreateMenu" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_scr")
+
+[node name="Background" type="ColorRect" parent="."]
+material = SubResource("ShaderMaterial_bg")
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(1, 1, 1, 1)
+
+[node name="Panel" type="Panel" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -300.0
+offset_top = -250.0
+offset_right = 300.0
+offset_bottom = 250.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBox" type="VBoxContainer" parent="Panel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 24.0
+offset_top = 24.0
+offset_right = -24.0
+offset_bottom = -24.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 12
+
+[node name="Title" type="Label" parent="Panel/VBox"]
+layout_mode = 2
+text = "Crear nuevo mundo"
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 24
+
+[node name="NameLabel" type="Label" parent="Panel/VBox"]
+layout_mode = 2
+text = "Nombre del mundo"
+
+[node name="WorldNameInput" type="LineEdit" parent="Panel/VBox"]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+placeholder_text = "Ejemplo: Mi mundo"
+
+[node name="SeedLabel" type="Label" parent="Panel/VBox"]
+layout_mode = 2
+text = "Semilla (opcional)"
+
+[node name="SeedInput" type="LineEdit" parent="Panel/VBox"]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+placeholder_text = "Deja vacio para una semilla aleatoria"
+
+[node name="Hint" type="Label" parent="Panel/VBox"]
+layout_mode = 2
+text = "La misma semilla genera el mismo mundo."
+autowrap_mode = 2
+
+[node name="ErrorLabel" type="Label" parent="Panel/VBox"]
+custom_minimum_size = Vector2(0, 36)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.35, 0.25, 1)
+autowrap_mode = 2
+
+[node name="Buttons" type="HBoxContainer" parent="Panel/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="CreateButton" type="Button" parent="Panel/VBox/Buttons"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Crear y jugar"
+
+[node name="BackButton" type="Button" parent="Panel/VBox/Buttons"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Cancelar"

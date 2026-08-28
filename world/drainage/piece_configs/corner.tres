@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="DrainagePieceConfig" format=3 uid="uid://b3kavf8efsqip"]
+
+[ext_resource type="Script" uid="uid://diii5s32tdfm6" path="res://world/drainage/drainage_piece_config.gd" id="1_cfg"]
+
+[resource]
+script = ExtResource("1_cfg")
+node_name = "Serwers01_005"
+canonical_openings = 12
+rotation_direction = -1.0

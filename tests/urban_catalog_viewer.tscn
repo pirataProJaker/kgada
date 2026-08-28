@@ -1,0 +1,27 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://tests/urban_catalog_viewer.gd" id="1_viewer"]
+[ext_resource type="Script" path="res://tests/urban_fly_camera.gd" id="2_flycam"]
+
+[sub_resource type="Environment" id="Environment_urban"]
+background_mode = 1
+background_color = Color(0.5, 0.6, 0.7, 1)
+ambient_light_source = 2
+ambient_light_color = Color(1, 1, 1, 1)
+ambient_light_energy = 0.6
+
+[node name="UrbanCatalogViewer" type="Node3D"]
+script = ExtResource("1_viewer")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.8, -0.5, 0.3, 0, 0.5, 0.87, -0.6, -0.7, 0.4, 0, 20, 0)
+shadow_enabled = true
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_urban")
+
+[node name="Camera3D" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.9, 0.45, 0, -0.45, 0.9, -4, 6, 10)
+current = true
+far = 500.0
+script = ExtResource("2_flycam")

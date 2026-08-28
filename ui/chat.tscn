@@ -1,0 +1,50 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://ui/chat.gd" id="1_scr"]
+
+[node name="Chat" type="CanvasLayer"]
+script = ExtResource("1_scr")
+
+[node name="Panel" type="Control" parent="."]
+anchors_preset = 0
+offset_left = 20.0
+offset_top = -170.0
+offset_right = 640.0
+offset_bottom = -20.0
+anchor_top = 1.0
+anchor_bottom = 1.0
+grow_vertical = 0
+mouse_filter = 2
+
+[node name="LogBackground" type="ColorRect" parent="Panel"]
+layout_mode = 0
+offset_right = 620.0
+offset_bottom = 110.0
+color = Color(0, 0, 0, 0.45)
+mouse_filter = 2
+
+[node name="Log" type="RichTextLabel" parent="Panel"]
+layout_mode = 0
+offset_right = 620.0
+offset_bottom = 110.0
+bbcode_enabled = true
+scroll_following = true
+mouse_filter = 2
+
+[node name="Suggestions" type="ItemList" parent="Panel"]
+layout_mode = 0
+offset_top = -134.0
+offset_right = 620.0
+offset_bottom = -4.0
+mouse_filter = 1
+
+[node name="Input" type="LineEdit" parent="Panel"]
+layout_mode = 0
+offset_top = 118.0
+offset_right = 620.0
+offset_bottom = 150.0
+placeholder_text = "Escribe un comando... (ej. /give core/basic_chest)"
+
+[node name="FadeTimer" type="Timer" parent="."]
+wait_time = 0.25
+autostart = true

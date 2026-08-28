@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://cmif35h3e2qmf"]
+
+[ext_resource type="Script" uid="uid://dba8ukhho0sam" path="res://tests/drainage_rotation_calibration.gd" id="1_scr"]
+
+[node name="DrainageRotationCalibration" type="Node3D" unique_id=1823207404]
+script = ExtResource("1_scr")

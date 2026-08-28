@@ -1,0 +1,108 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://ui/content_editor.gd" id="1_scr"]
+[ext_resource type="Shader" path="res://shaders/synthwave_background.gdshader" id="2_synth"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_bg"]
+shader = ExtResource("2_synth")
+
+[node name="ContentEditor" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_scr")
+
+[node name="Background" type="ColorRect" parent="."]
+material = SubResource("ShaderMaterial_bg")
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(1, 1, 1, 1)
+
+[node name="VBox" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -260.0
+offset_top = -220.0
+offset_right = 260.0
+offset_bottom = 220.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 10
+
+[node name="Title" type="Label" parent="VBox"]
+layout_mode = 2
+text = "Crear contenido"
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 24
+
+[node name="TypeOption" type="OptionButton" parent="VBox"]
+layout_mode = 2
+
+[node name="ScrollContainer" type="ScrollContainer" parent="VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="FieldsContainer" type="VBoxContainer" parent="VBox/ScrollContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 8
+
+[node name="StatusLabel" type="Label" parent="VBox"]
+layout_mode = 2
+autowrap_mode = 2
+
+[node name="Buttons" type="HBoxContainer" parent="VBox"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="SaveButton" type="Button" parent="VBox/Buttons"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Guardar"
+
+[node name="BackButton" type="Button" parent="VBox/Buttons"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Volver"
+
+[node name="ModelFileDialog" type="FileDialog" parent="."]
+title = "Elegir modelo (.glb)"
+ok_button_text = "Elegir"
+file_mode = 0
+access = 2
+filters = PackedStringArray("*.glb ; Modelos GLB", "*.gltf ; Modelos glTF")
+size = Vector2i(700, 500)
+
+[node name="PreviewContainer" type="SubViewportContainer" parent="."]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -340.0
+offset_top = 40.0
+offset_right = -20.0
+offset_bottom = 340.0
+stretch = true
+
+[node name="SubViewport" type="SubViewport" parent="PreviewContainer"]
+size = Vector2i(320, 300)
+own_world_3d = true
+transparent_bg = true
+
+[node name="Camera3D" type="Camera3D" parent="PreviewContainer/SubViewport"]
+transform = Transform3D(1, 0, 0, 0, 0.906308, 0.422618, 0, -0.422618, 0.906308, 0, 1.2, 2.4)
+current = true
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="PreviewContainer/SubViewport"]
+transform = Transform3D(0.8, -0.5, 0.3, 0, 0.6, 0.8, -0.6, -0.7, 0.4, 0, 2, 2)
+
+[node name="PreviewRoot" type="Node3D" parent="PreviewContainer/SubViewport"]
