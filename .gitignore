@@ -4,3 +4,8 @@
 
 # Rust (rust_core GDExtension crate)
 /rust_core/target/
+
+# Scratch & temporary agent files
+scratch/
+tests/_*
+

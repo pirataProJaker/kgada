@@ -20,9 +20,9 @@ const PSX_SHADER := preload("res://shaders/psx_vertex_snap.gdshader")
 const LOW_COLOR := Color(0.3, 0.5, 0.25)
 const MID_COLOR := Color(0.45, 0.43, 0.4)
 const HIGH_COLOR := Color(0.92, 0.94, 0.97)
-const GRADIENT_LOW_HEIGHT := 14.0
-const GRADIENT_MID_HEIGHT := 24.0
-const GRADIENT_HIGH_HEIGHT := 32.0
+const GRADIENT_LOW_HEIGHT := 8.0
+const GRADIENT_MID_HEIGHT := 13.0
+const GRADIENT_HIGH_HEIGHT := 18.0
 const TERRAIN_GRID_PRECISION := 260
 
 # Vegetacion (tree_pack_1.1): solo se coloca en zona verde (por debajo de
@@ -37,7 +37,7 @@ const TREE_MODEL_COUNT := 36
 const BUSH_MODEL_COUNT := 8
 const TREES_PER_CHUNK := 14
 const BUSHES_PER_CHUNK := 10
-const VEGETATION_MAX_HEIGHT := 18.0
+const VEGETATION_MAX_HEIGHT := 22.0
 const VEGETATION_MIN_SLOPE_DOT := 0.7 # normal.dot(UP), mas alto = requiere mas plano
 const VEGETATION_MARGIN := 3.0 # no colocar pegado al borde del chunk
 # Si los modelos se ven gigantes/diminutos al abrir el proyecto (comun con

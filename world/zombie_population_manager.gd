@@ -124,6 +124,7 @@ func _process(delta: float) -> void:
 				var strength: float = player.get_noise_strength()
 				if strength > 0.05:
 					report_noise(player.global_position, strength, SECTOR_SIZE * 0.5, 1.0)
+		_propagate_sector_noise()
 	_population.call("advance", delta)
 	_save_timer += delta
 	if _save_timer >= SAVE_INTERVAL:
@@ -136,7 +137,6 @@ func _process(delta: float) -> void:
 	_prune_spawn_queue()
 	_queue_spawn_entries()
 	_materialize_next()
-	_propagate_sector_noise()
 
 	_network_snapshot_timer -= delta
 	for key in _dead_network_events.keys().duplicate():

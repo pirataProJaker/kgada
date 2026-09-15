@@ -132,6 +132,11 @@ static func _merge_animations(model: Node3D) -> void:
 			library.remove_animation(final_name)
 		library.add_animation(final_name, source_anim)
 
+	# Limpiar animaciones residuales del FBX base que no se usan y cargan cientos de tracks
+	for anim_name in library.get_animation_list():
+		if not anim_name in ANIM_SOURCES.values():
+			library.remove_animation(anim_name)
+
 	anim_player.set_meta("mob_natural_speeds", natural_speeds)
 
 
@@ -254,7 +259,11 @@ static func _apply_material(node: Node) -> void:
 		_apply_material(child)
 
 
+static var _cached_zombie_material: StandardMaterial3D = null
+
 static func _build_zombie_material() -> StandardMaterial3D:
+	if _cached_zombie_material != null:
+		return _cached_zombie_material
 	var material := StandardMaterial3D.new()
 	var albedo := load(ZOMBIE_DIFFUSE_PATH) as Texture2D
 	if albedo != null:
@@ -268,7 +277,8 @@ static func _build_zombie_material() -> StandardMaterial3D:
 		material.normal_enabled = true
 		material.normal_texture = normal
 	material.cull_mode = BaseMaterial3D.CULL_DISABLED
-	return material
+	_cached_zombie_material = material
+	return _cached_zombie_material
 
 
 static func _force_visible(node: Node) -> void:

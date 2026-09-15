@@ -29,6 +29,9 @@ const STEP_HEIGHT := 0.45
 const STEP_DOWN_DISTANCE := 0.65
 
 const LOOPING_ANIMS := ["walk", "run", "idle"]
+const PHYSICS_LOD_DISTANCE := 22.0
+const ANIM_LOD_DISTANCE := 40.0
+const LOD_CHECK_INTERVAL := 0.25
 
 var _ai = null
 var _anim_player: AnimationPlayer = null
@@ -37,6 +40,10 @@ var _dead := false
 var _health := MAX_HEALTH
 var _perception_timer := 0.0
 var _separation_timer := 0.0
+var _lod_timer := 0.0
+var _is_near_player := true
+var _is_far_player := false
+var _notifier: VisibleOnScreenNotifier3D = null
 var _separation_velocity := Vector3.ZERO
 var _perceived_target: Node3D = null
 var _network_proxy := false
@@ -65,6 +72,25 @@ func _ready() -> void:
 	var update_phase := float(get_instance_id() % 1000) / 1000.0
 	_perception_timer = update_phase * PERCEPTION_INTERVAL
 	_separation_timer = update_phase * SEPARATION_INTERVAL
+	_lod_timer = update_phase * LOD_CHECK_INTERVAL
+
+	_notifier = VisibleOnScreenNotifier3D.new()
+	_notifier.aabb = AABB(Vector3(-0.4, 0.0, -0.4), Vector3(0.8, 1.9, 0.8))
+	add_child(_notifier)
+	_notifier.screen_entered.connect(_on_screen_entered)
+	_notifier.screen_exited.connect(_on_screen_exited)
+
+
+func _on_screen_entered() -> void:
+	if _anim_player != null and not _anim_player.active and not _dead:
+		_anim_player.active = true
+		if _current_anim != "":
+			_anim_player.play(_current_anim)
+
+
+func _on_screen_exited() -> void:
+	if not _is_near_player and _anim_player != null and _anim_player.active:
+		_anim_player.active = false
 
 
 func _find_anim_player() -> void:
@@ -120,26 +146,36 @@ func _physics_process(delta: float) -> void:
 		_update_animation(_network_animation)
 		return
 
+	_lod_timer -= delta
+	if _lod_timer <= 0.0:
+		_lod_timer = LOD_CHECK_INTERVAL
+		_update_lod()
+
+	# Physics LOD: zombies lejanos (> 40m) procesan su fisica en frames alternos (30Hz escalonados)
+	if _is_far_player and (Engine.get_physics_frames() + get_instance_id()) % 2 != 0:
+		return
+	var sim_delta := delta * 2.0 if _is_far_player else delta
+
 	_perception_timer -= delta
 	if _perception_timer <= 0.0:
-		_perception_timer = PERCEPTION_INTERVAL
+		_perception_timer = PERCEPTION_INTERVAL if _is_near_player else 0.5
 		_update_perception()
 
 	var was_on_floor := is_on_floor()
 	if was_on_floor:
 		velocity.y = 0.0
 	else:
-		velocity.y -= GRAVITY * delta
+		velocity.y -= GRAVITY * sim_delta
 
 	var anim := "idle"
 	var actual_speed := 0.0
 	var result: Dictionary = {}
 	if _ai != null:
-		result = _ai.call("tick", delta)
+		result = _ai.call("tick", sim_delta)
 		var wander: Vector3 = result.get("velocity", Vector3.ZERO)
 		_separation_timer -= delta
 		if _separation_timer <= 0.0:
-			_separation_timer = SEPARATION_INTERVAL
+			_separation_timer = SEPARATION_INTERVAL if _is_near_player else 0.4
 			_separation_velocity = _get_separation_velocity()
 		wander += _separation_velocity
 		anim = result.get("anim", "idle")
@@ -150,10 +186,12 @@ func _physics_process(delta: float) -> void:
 			# Ver comentario identico en dog.gd/cat.gd: el modelo mira hacia
 			# -Z, asi que theta = atan2(-dx, -dz).
 			var target_angle := atan2(-wander.x, -wander.z)
-			rotation.y = lerp_angle(rotation.y, target_angle, TURN_SPEED * delta)
+			rotation.y = lerp_angle(rotation.y, target_angle, TURN_SPEED * sim_delta)
 
-	var desired_horizontal_motion := Vector3(velocity.x, 0.0, velocity.z) * delta
-	if was_on_floor and velocity.y <= 0.0 and desired_horizontal_motion.length_squared() > 0.000001:
+	var desired_horizontal_motion := Vector3(velocity.x, 0.0, velocity.z) * sim_delta
+	# Physics LOD: solo los zombies cercanos (< 22m) ejecutan el triple test_move de _step_and_move.
+	# Los lejanos usan move_and_slide basico, ahorrando cientos de sweeps de colision continua.
+	if _is_near_player and was_on_floor and velocity.y <= 0.0 and desired_horizontal_motion.length_squared() > 0.000001:
 		_step_and_move(desired_horizontal_motion)
 	else:
 		move_and_slide()
@@ -250,13 +288,39 @@ func _has_line_of_sight(target: Node3D) -> bool:
 	return false
 
 
+func _update_lod() -> void:
+	var nearest_distance := INF
+	for candidate in get_tree().get_nodes_in_group("players"):
+		if candidate is Node3D and is_instance_valid(candidate):
+			var dist := global_position.distance_to((candidate as Node3D).global_position)
+			if dist < nearest_distance:
+				nearest_distance = dist
+	_is_near_player = nearest_distance <= PHYSICS_LOD_DISTANCE
+	_is_far_player = nearest_distance > ANIM_LOD_DISTANCE
+
+	if _anim_player != null and not _dead:
+		var should_animate := true
+		if _notifier != null and not _notifier.is_on_screen() and not _is_near_player:
+			should_animate = false
+		elif _is_far_player:
+			should_animate = false
+		if _anim_player.active != should_animate:
+			_anim_player.active = should_animate
+			if should_animate and _current_anim != "" and not _anim_player.is_playing():
+				_anim_player.play(_current_anim)
+
+
 func _get_separation_velocity() -> Vector3:
+	if not _is_near_player:
+		return Vector3.ZERO
 	var separation := Vector3.ZERO
 	for other_candidate in get_tree().get_nodes_in_group("active_zombies"):
 		if other_candidate == self or not other_candidate is Node3D:
 			continue
 		var other_zombie: Node3D = other_candidate as Node3D
 		var offset := global_position - other_zombie.global_position
+		if absf(offset.x) > 1.2 or absf(offset.z) > 1.2:
+			continue
 		var distance := Vector2(offset.x, offset.z).length()
 		if distance <= 0.001 or distance >= 1.2:
 			continue
@@ -322,16 +386,18 @@ func die() -> void:
 		return
 	_dead = true
 	velocity = Vector3.ZERO
+	if _anim_player != null:
+		_anim_player.active = true
 	_update_animation("die")
 	died.emit(self)
 
 
 func _update_animation(anim: String) -> void:
-	if _anim_player == null:
-		return
 	if anim == _current_anim:
 		return
 	_current_anim = anim
+	if _anim_player == null or not _anim_player.active:
+		return
 	if _anim_player.has_animation(anim):
 		var anim_res: Animation = _anim_player.get_animation(anim)
 		if anim_res != null:
@@ -375,10 +441,11 @@ const ANIM_SPEED_MAX := 1.4
 const ANIM_SPEED_SMOOTH := 3.0 # que tan rapido se acerca speed_scale al objetivo (por segundo)
 
 func _sync_anim_speed(anim: String, actual_speed: float, delta: float) -> void:
-	if _anim_player == null:
+	if _anim_player == null or not _anim_player.active:
 		return
 	var natural_speed: float = _natural_speeds.get(anim, 0.0)
 	var target_scale := 1.0
 	if natural_speed > 0.01 and actual_speed > 0.01:
 		target_scale = clamp(actual_speed / natural_speed, ANIM_SPEED_MIN, ANIM_SPEED_MAX)
-	_anim_player.speed_scale = move_toward(_anim_player.speed_scale, target_scale, ANIM_SPEED_SMOOTH * delta)
+	if absf(_anim_player.speed_scale - target_scale) > 0.005:
+		_anim_player.speed_scale = move_toward(_anim_player.speed_scale, target_scale, ANIM_SPEED_SMOOTH * delta)

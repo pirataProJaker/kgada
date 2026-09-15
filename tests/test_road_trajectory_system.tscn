@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://cx6y8v2m4q1op"]
+
+[ext_resource type="Script" path="res://tests/test_road_trajectory_system.gd" id="1_traj"]
+
+[node name="TestRoadTrajectorySystem" type="Node3D"]
+script = ExtResource("1_traj")

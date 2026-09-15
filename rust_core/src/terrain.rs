@@ -3,18 +3,21 @@ use lin_alg::f32::Vec3;
 use mcubes::{MarchingCubes, MeshSide};
 use noise::{Fbm, MultiFractal, NoiseFn, Perlin};
 
-// Frecuencias bajas (mapa grande = features grandes, no ruido fino).
-const BIOME_FREQ: f64 = 0.012;
-const PLAINS_FREQ: f64 = 0.015;
-const MOUNTAIN_FREQ: f64 = 0.010;
+// Frecuencia muy baja para biomas grandes (un ciclo completo ~667m, biomas extensos).
+const BIOME_FREQ: f64 = 0.0015;
 
-const PLAINS_BASE: f32 = 10.0;
-const PLAINS_AMPLITUDE: f32 = 2.0;
+// Alturas discretas fijas de cada meseta (en metros/bloques):
+// Nivel 0 (Costa / Valle Bajo): 5.0m
+// Nivel 1 (Llanura / Ciudad / Base): 10.0m
+// Nivel 2 (Meseta Alta): 15.0m
+// Nivel 3 (Altiplano Superior): 20.0m
+const HEIGHT_VALLEY: f32 = 5.0;
+const HEIGHT_PLAINS: f32 = 10.0;
+const HEIGHT_PLATEAU: f32 = 15.0;
+const HEIGHT_HIGHLANDS: f32 = 20.0;
 
-const MOUNTAIN_BASE: f32 = 20.0;
-const MOUNTAIN_AMPLITUDE: f32 = 14.0;
-const TERRACE_STEP: f32 = 5.0;
-const TERRACE_STRENGTH: f32 = 0.35;
+// Ancho de la zona de transicion suave (smoothstep) entre biomas en espacio de ruido.
+const TRANSITION_MARGIN: f32 = 0.035;
 
 /// Generador de terreno (Fase 1): produce UN chunk fijo usando el algoritmo
 /// Marching Cubes (crate `mcubes`) a partir de ruido fractal (fBm) real, con
@@ -71,22 +74,9 @@ impl TerrainGenerator {
 
         let seed_u32 = seed as u32;
 
-        // Ruido de bioma (baja frecuencia -> regiones grandes y contiguas).
-        // Se remapea de [-1, 1] a [0, 1] = "que tan montañoso" es el lugar.
-        let biome_noise = Fbm::<Perlin>::new(seed_u32.wrapping_add(100)).set_octaves(2);
-
-        // Llanuras: pocas octavas, amplitud baja -> ondulacion suave pero visible.
-        let plains_noise = Fbm::<Perlin>::new(seed_u32)
-            .set_octaves(3)
-            .set_persistence(0.4);
-
-        // Montañas: contraste real (esto es lo que las hace leerse como
-        // montañas de verdad en vez de manchas de nieve sobre terreno plano).
-        // El wobble del shader ya no es un problema aparte (se resolvio con
-        // grid_precision en el material), asi que se puede subir la amplitud
-        // sin que vuelva a verse "roto".
-        let mountain_noise = Fbm::<Perlin>::new(seed_u32.wrapping_add(200))
-            .set_octaves(4)
+        // Ruido de bioma a frecuencia muy baja (extensas mesetas continuas).
+        let biome_noise = Fbm::<Perlin>::new(seed_u32.wrapping_add(100))
+            .set_octaves(2)
             .set_persistence(0.5);
 
         // Empaquetado plano: el indice debe ser x + y*dims + z*dims*dims,
@@ -98,8 +88,7 @@ impl TerrainGenerator {
                     let wz = chunk_origin_z as f64 + z as f64 * voxel_size as f64;
                     let wy = y as f32 * voxel_size;
 
-                    let height =
-                        compute_natural_height(wx, wz, &biome_noise, &plains_noise, &mountain_noise);
+                    let height = compute_natural_height(wx, wz, &biome_noise);
 
                     let final_height = if city_inner_radius > 0.0 {
                         let dx = wx as f32 - city_center_x;
@@ -234,57 +223,49 @@ impl TerrainGenerator {
     #[func]
     fn sample_height(&self, seed: i32, world_x: f32, world_z: f32) -> f32 {
         let seed_u32 = seed as u32;
-        let biome_noise = Fbm::<Perlin>::new(seed_u32.wrapping_add(100)).set_octaves(2);
-        let plains_noise = Fbm::<Perlin>::new(seed_u32)
-            .set_octaves(3)
-            .set_persistence(0.4);
-        let mountain_noise = Fbm::<Perlin>::new(seed_u32.wrapping_add(200))
-            .set_octaves(4)
+        let biome_noise = Fbm::<Perlin>::new(seed_u32.wrapping_add(100))
+            .set_octaves(2)
             .set_persistence(0.5);
 
-        compute_natural_height(
-            world_x as f64,
-            world_z as f64,
-            &biome_noise,
-            &plains_noise,
-            &mountain_noise,
-        )
+        compute_natural_height(world_x as f64, world_z as f64, &biome_noise)
     }
 }
 
-/// Formula de altura natural compartida entre `generate_chunk` (una vez
-/// por chunk, reusando los mismos objetos Fbm para las 33x33x33 columnas)
-/// y `sample_height` (una sola muestra puntual) - un unico lugar para la
-/// formula evita que las dos terminen desincronizadas.
-fn compute_natural_height(
-    wx: f64,
-    wz: f64,
-    biome_noise: &Fbm<Perlin>,
-    plains_noise: &Fbm<Perlin>,
-    mountain_noise: &Fbm<Perlin>,
-) -> f32 {
-    let biome_raw = biome_noise.get([wx * BIOME_FREQ, wz * BIOME_FREQ]) as f32;
-    let mountain_factor = (biome_raw * 0.5 + 0.5).clamp(0.0, 1.0);
-    // Smoothstep: transicion de bioma mas suave/natural que un lerp lineal.
-    let blend = mountain_factor * mountain_factor * (3.0 - 2.0 * mountain_factor);
-
-    let plains_h =
-        PLAINS_BASE + PLAINS_AMPLITUDE * plains_noise.get([wx * PLAINS_FREQ, wz * PLAINS_FREQ]) as f32;
-
-    let mountain_raw = MOUNTAIN_BASE
-        + MOUNTAIN_AMPLITUDE * mountain_noise.get([wx * MOUNTAIN_FREQ, wz * MOUNTAIN_FREQ]) as f32;
-    let mountain_h = terrace(mountain_raw, TERRACE_STEP, TERRACE_STRENGTH);
-
-    plains_h * (1.0 - blend) + mountain_h * blend
+#[inline]
+fn smoothstep(edge0: f32, edge1: f32, x: f32) -> f32 {
+    let t = ((x - edge0) / (edge1 - edge0)).clamp(0.0, 1.0);
+    t * t * (3.0 - 2.0 * t)
 }
 
-/// Mezcla una altura con una version "escalonada" (redondeada a multiplos de
-/// `step`), creando plataformas planas cada cierta altura - asi hasta las
-/// zonas montañosas tienen espacio para construir, en vez de terminar en un
-/// pico puntiagudo sin nada alrededor. `strength` en [0, 1]: 0 = sin aterrazar
-/// (suave), 1 = totalmente escalonado.
-fn terrace(height: f32, step: f32, strength: f32) -> f32 {
-    let stepped = (height / step).round() * step;
-    height * (1.0 - strength) + stepped * strength
-}
+/// Formula de altura natural de mesetas escalonadas:
+/// Dentro de cada bioma, la superficie es 100% plana y estable (sin ruido ondulado).
+/// En las fronteras de biomas, una rampa suave (smoothstep) conecta las mesetas.
+fn compute_natural_height(wx: f64, wz: f64, biome_noise: &Fbm<Perlin>) -> f32 {
+    let raw = biome_noise.get([wx * BIOME_FREQ, wz * BIOME_FREQ]) as f32;
+    // Normalizar de [-1.0, 1.0] a [0.0, 1.0]
+    let t = (raw * 0.5 + 0.5).clamp(0.0, 1.0);
 
+    // 3 fronteras entre los 4 niveles de altura
+    let split1 = 0.28; // Entre Valle (5m) y Llanura (10m)
+    let split2 = 0.60; // Entre Llanura (10m) y Meseta (15m)
+    let split3 = 0.85; // Entre Meseta (15m) y Altiplano (20m)
+
+    if t < split1 - TRANSITION_MARGIN {
+        HEIGHT_VALLEY
+    } else if t < split1 + TRANSITION_MARGIN {
+        let blend = smoothstep(split1 - TRANSITION_MARGIN, split1 + TRANSITION_MARGIN, t);
+        HEIGHT_VALLEY * (1.0 - blend) + HEIGHT_PLAINS * blend
+    } else if t < split2 - TRANSITION_MARGIN {
+        HEIGHT_PLAINS
+    } else if t < split2 + TRANSITION_MARGIN {
+        let blend = smoothstep(split2 - TRANSITION_MARGIN, split2 + TRANSITION_MARGIN, t);
+        HEIGHT_PLAINS * (1.0 - blend) + HEIGHT_PLATEAU * blend
+    } else if t < split3 - TRANSITION_MARGIN {
+        HEIGHT_PLATEAU
+    } else if t < split3 + TRANSITION_MARGIN {
+        let blend = smoothstep(split3 - TRANSITION_MARGIN, split3 + TRANSITION_MARGIN, t);
+        HEIGHT_PLATEAU * (1.0 - blend) + HEIGHT_HIGHLANDS * blend
+    } else {
+        HEIGHT_HIGHLANDS
+    }
+}
