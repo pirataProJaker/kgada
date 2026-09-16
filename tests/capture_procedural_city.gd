@@ -155,5 +155,15 @@ func _run_captures() -> void:
 	_camera.look_at(Vector3(-121.5, 0.2, -124.5), Vector3.UP)
 	await _capture_and_save("corner_z_fighting_fixed.png")
 
+	# 13. Árboles Procedurales en el Camellón Central del Boulevard
+	_camera.position = Vector3(4.5, 4.0, 15.0)
+	_camera.look_at(Vector3(0.0, 3.5, 0.0), Vector3.UP)
+	await _capture_and_save("procedural_trees_median_closeup.png")
+
+	# 14. Árboles Procedurales en Patios Residenciales
+	_camera.position = Vector3(-28.0, 5.0, 30.0)
+	_camera.look_at(Vector3(-42.0, 3.0, 30.0), Vector3.UP)
+	await _capture_and_save("procedural_trees_yard_closeup.png")
+
 	print("[CaptureProceduralCity] Todas las capturas completadas con éxito.")
 	get_tree().quit(0)

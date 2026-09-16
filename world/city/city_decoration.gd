@@ -33,13 +33,8 @@ class_name CityDecoration
 
 const SEWERS_SCENE_PATH := "res://assets/drenaje/Models/Sewers.fbx"
 
-## Mismo pack de arboles/arbustos que ya usa ChunkManager para el bosque
-## silvestre (world/chunk_manager.gd: TREE_MODELS_DIR/TREE_TEXTURES_DIR) -
-## se reusan tal cual, sin agregar ningun asset nuevo, para poblar patios y
-## lotes baldios de la ciudad.
-const TREE_MODELS_DIR := "res://assets/tree_pack_1.1/tree_pack_1.1/models/"
-const TREE_TEXTURES_DIR := "res://assets/tree_pack_1.1/tree_pack_1.1/textures/"
-const TREE_MODEL_COUNT := 36
+## Los árboles y pinos en patios y lotes baldíos se generan exclusivamente
+## con ProceduralTree (res://world/procedural_trees/procedural_tree.gd).
 
 ## Props sueltos para lotes baldios: montones y bolsas de basura (varios
 ## colores/tamaños, pack URBAN) - deliberadamente NO se usan los dumpsters
@@ -158,8 +153,6 @@ const SEWER_PROP_NAMES: Array[String] = [
 var _rng: RandomNumberGenerator
 var _generated_root: Node3D
 var _sewer_template: Node3D
-var _tree_scenes: Array[PackedScene] = []
-var _tree_textures: Array[Texture2D] = []
 
 
 ## Punto de entrada unico - lo llama CityBlockGenerator._run_decoration_pass
@@ -197,7 +190,6 @@ func generate_decorations(house_generator: HouseGenerator) -> void:
 
 	var trees_placed := 0
 	if scatter_yard_trees:
-		_load_tree_scenes()
 		for spec in house_generator.generated_houses:
 			trees_placed += _scatter_house_yard_trees(spec)
 		for parcel in house_generator.vacant_parcels:
@@ -304,24 +296,6 @@ func _lateral_offset(extent: float) -> float:
 	return _rng.randf_range(-half, half)
 
 
-## Cachea (una sola vez por generacion) los modelos de arboles de
-## tree_pack_1.1 - mismo pack que ChunkManager usa para el bosque silvestre,
-## reusado tal cual sin agregar ningun asset nuevo. Las escalas de patio
-## (yard_tree_scale_min/max) son mas chicas que las del bosque para que no
-## se vean gigantes en un lote urbano.
-func _load_tree_scenes() -> void:
-	if not _tree_scenes.is_empty():
-		return
-	for i in range(1, TREE_MODEL_COUNT + 1):
-		var model_path := "%stree%02d.fbx" % [TREE_MODELS_DIR, i]
-		var texture_path := "%stree%02d.png" % [TREE_TEXTURES_DIR, i]
-		if ResourceLoader.exists(model_path):
-			_tree_scenes.append(load(model_path))
-			_tree_textures.append(load(texture_path) if ResourceLoader.exists(texture_path) else null)
-	if _tree_scenes.is_empty():
-		push_warning("[CityDecoration] No se encontraron modelos en tree_pack_1.1 - revisa que assets/tree_pack_1.1 exista.")
-
-
 ## Patio de una casa ya generada = su parcel_rect, menos una franja pegada
 ## al borde del lote (ahi va la reja, ver HouseGenerator._build_fence_perimeter
 ## - asi ningun arbol queda "en medio de una valla") y menos la huella de la
@@ -379,42 +353,33 @@ func _scatter_vacant_lot_trees(parcel: Dictionary) -> int:
 ## (patios chicos o con la casa ocupando casi todo el lote pueden no tener
 ## espacio libre en algun intento al azar).
 func _place_yard_tree(allowed_rect: Rect2, exclude_rect: Rect2) -> bool:
-	if _tree_scenes.is_empty():
-		return false
-
 	for attempt in range(yard_tree_placement_attempts):
 		var local_x := _rng.randf_range(allowed_rect.position.x, allowed_rect.position.x + allowed_rect.size.x)
 		var local_z := _rng.randf_range(allowed_rect.position.y, allowed_rect.position.y + allowed_rect.size.y)
 		if exclude_rect.size.x > 0.0 and exclude_rect.size.y > 0.0 and exclude_rect.has_point(Vector2(local_x, local_z)):
 			continue
 
-		var index := _rng.randi_range(0, _tree_scenes.size() - 1)
-		var instance: Node3D = _tree_scenes[index].instantiate()
-		_place_prop(instance, local_x, local_z, _rng.randf_range(0.0, TAU), _rng.randf_range(yard_tree_scale_min, yard_tree_scale_max))
-		_add_tree_collision(instance)
+		var tree := ProceduralTree.new()
+		var roll := _rng.randf()
+		if exclude_rect.size.x <= 0.0 and roll < 0.20:
+			tree.profile_id = "dead_tree"
+		elif roll < 0.60:
+			tree.profile_id = "classic_oak"
+		elif roll < 0.85:
+			tree.profile_id = "autumn_birch"
+		else:
+			tree.profile_id = "pine_boreal"
 
-		var texture: Texture2D = _tree_textures[index] if index < _tree_textures.size() else null
-		if texture != null:
-			var material := StandardMaterial3D.new()
-			material.albedo_texture = texture
-			material.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST # consistente con el look PSX del resto del juego
-			material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA_SCISSOR # las texturas de hojas usan alpha
-			material.alpha_scissor_threshold = 0.5
-			material.cull_mode = BaseMaterial3D.CULL_DISABLED # tarjetas de hojas/ramas visibles desde ambos lados
-			_apply_tree_material(instance, material)
+		tree.tree_seed = _rng.randi()
+		_generated_root.add_child(tree)
+		tree.position = Vector3(local_x, 0.0, local_z)
+		tree.rotation.y = _rng.randf_range(0.0, TAU)
+		var scale_factor := _rng.randf_range(yard_tree_scale_min, yard_tree_scale_max)
+		tree.scale = Vector3.ONE * scale_factor
+		_add_tree_collision(tree)
 		return true
 	return false
 
-
-## Aplica `material` a todas las mallas (MeshInstance3D) bajo `root` - las
-## texturas de tree_pack_1.1 no siempre quedan bien vinculadas por el
-## importador FBX (mismo motivo por el que ChunkManager hace lo mismo con
-## su bosque silvestre).
-func _apply_tree_material(root: Node, material: StandardMaterial3D) -> void:
-	if root is MeshInstance3D:
-		(root as MeshInstance3D).material_override = material
-	for child in root.get_children():
-		_apply_tree_material(child, material)
 
 
 ## Colision "talable" (ChoppableTree, ver world/choppable_tree.gd y el
@@ -442,11 +407,8 @@ func _add_tree_collision(tree_instance: Node3D) -> void:
 	cylinder.radius = TREE_TRUNK_RADIUS
 	cylinder.height = height
 	shape.shape = cylinder
-	shape.position = Vector3(
-		local_aabb.position.x + local_aabb.size.x * 0.5,
-		height * 0.5,
-		local_aabb.position.z + local_aabb.size.z * 0.5
-	)
+	shape.position = Vector3(0.0, height * 0.5, 0.0)
+
 	body.add_child(shape)
 	tree_instance.add_child(body)
 

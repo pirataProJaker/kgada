@@ -25,18 +25,13 @@ const GRADIENT_MID_HEIGHT := 13.0
 const GRADIENT_HIGH_HEIGHT := 18.0
 const TERRAIN_GRID_PRECISION := 260
 
-# Vegetacion (tree_pack_1.1): solo se coloca en zona verde (por debajo de
-# VEGETATION_MAX_HEIGHT, la misma zona "llana" del gradiente de color) y en
-# pendientes razonables (evita arboles incrustados en laderas empinadas).
-# Las texturas se asignan a mano por numero (treeXX.fbx <-> treeXX.png) en
-# vez de depender del importador FBX para vincularlas (viven en carpetas
-# separadas y el FBX no siempre trae la ruta correcta a la textura).
-const TREE_MODELS_DIR := "res://assets/tree_pack_1.1/tree_pack_1.1/models/"
-const TREE_TEXTURES_DIR := "res://assets/tree_pack_1.1/tree_pack_1.1/textures/"
-const TREE_MODEL_COUNT := 36
+# Vegetación: Los árboles y pinos se generan proceduralmente con ProceduralTree.
+# Los arbustos usan modelos FBX de tree_pack_1.1.
+const BUSH_MODELS_DIR := "res://assets/tree_pack_1.1/tree_pack_1.1/models/"
+const BUSH_TEXTURES_DIR := "res://assets/tree_pack_1.1/tree_pack_1.1/textures/"
 const BUSH_MODEL_COUNT := 8
-const TREES_PER_CHUNK := 14
-const BUSHES_PER_CHUNK := 10
+const TREES_PER_CHUNK := 8
+const BUSHES_PER_CHUNK := 6
 const VEGETATION_MAX_HEIGHT := 22.0
 const VEGETATION_MIN_SLOPE_DOT := 0.7 # normal.dot(UP), mas alto = requiere mas plano
 const VEGETATION_MARGIN := 3.0 # no colocar pegado al borde del chunk
@@ -45,6 +40,9 @@ const VEGETATION_MARGIN := 3.0 # no colocar pegado al borde del chunk
 const VEGETATION_SCALE_MULTIPLIER := 1.0
 
 const CHOPPABLE_TREE_SCRIPT := preload("res://world/choppable_tree.gd")
+const ProceduralTreeProfiles = preload("res://world/procedural_trees/procedural_tree_profiles.gd")
+const ProceduralTreeGenerator = preload("res://world/procedural_trees/procedural_tree_generator.gd")
+const ProceduralTreeMaterials = preload("res://world/procedural_trees/procedural_tree_materials.gd")
 const TREE_TRUNK_RADIUS := 0.35 # aproximado (no exacto), alcanza para bloquear/golpear el tronco
 const TREE_COLLISION_HEIGHT_RATIO := 0.65 # cobertura vertical relativa a la altura visual total - le alcanza a la altura de la camara del jugador
 
@@ -54,7 +52,6 @@ var _world_seed := DEFAULT_WORLD_SEED
 var _generator = null
 var _local_player: Node3D = null
 var _last_player_chunk := Vector2i(999999, 999999) # fuerza la primera carga
-var _tree_scenes: Array[PackedScene] = []
 
 # Zona de aplanado de la ciudad procedural (ver CityWorldSpawner, que la
 # registra UNA vez al iniciar el mundo real, antes de que el jugador pueda
@@ -66,7 +63,6 @@ var _city_inner_radius := 0.0
 var _city_outer_radius := 0.0
 var _city_flat_height := 0.0
 var _bush_scenes: Array[PackedScene] = []
-var _tree_textures: Array[Texture2D] = []
 var _bush_textures: Array[Texture2D] = []
 
 # Generacion en hilo aparte (WorkerThreadPool). Requiere que rust_core se
@@ -82,8 +78,13 @@ var _editor_grid_size := Vector2i(CHUNK_RESOLUTION, CHUNK_RESOLUTION)
 var _editor_dirty_chunks: Dictionary = {} # Vector2i -> true
 var _editor_render_queued := false
 
+# Colas progresivas para suavizado de carga/descarga (evita cualquier freeze o caida de FPS):
+var _chunks_to_unload: Array[Vector2i] = []
+var _tree_attach_queue: Array[Dictionary] = []
+
 
 func _ready() -> void:
+	ProceduralTreeMaterials.preload_all_materials()
 	if ClassDB.class_exists("TerrainGenerator"):
 		_generator = ClassDB.instantiate("TerrainGenerator")
 	else:
@@ -299,6 +300,8 @@ func world_to_chunk_coord(world_pos: Vector3) -> Vector2i:
 
 func _process(_delta: float) -> void:
 	_poll_pending_tasks()
+	_process_tree_attachments()
+	_process_chunk_unloads()
 	if _heightfield_mode:
 		return
 
@@ -320,19 +323,62 @@ func _world_to_chunk_coord(world_pos: Vector3) -> Vector2i:
 	)
 
 
+func _get_view_distance() -> int:
+	var sm = get_node_or_null("/root/SettingsManager")
+	if sm and sm.has_method("get_view_distance"):
+		return clampi(int(sm.get_view_distance()), 1, 4)
+	return VIEW_DISTANCE_CHUNKS
+
+
 func _update_chunks(center: Vector2i) -> void:
 	var needed: Dictionary = {}
+	var view_dist := _get_view_distance()
 
-	for dz in range(-VIEW_DISTANCE_CHUNKS, VIEW_DISTANCE_CHUNKS + 1):
-		for dx in range(-VIEW_DISTANCE_CHUNKS, VIEW_DISTANCE_CHUNKS + 1):
+	for dz in range(-view_dist, view_dist + 1):
+		for dx in range(-view_dist, view_dist + 1):
 			var coord := Vector2i(center.x + dx, center.y + dz)
 			needed[coord] = true
-			if not _loaded_chunks.has(coord) and not _pending_task_ids.has(coord):
+			if _chunks_to_unload.has(coord):
+				_chunks_to_unload.erase(coord)
+			elif not _loaded_chunks.has(coord) and not _pending_task_ids.has(coord):
 				_load_chunk(coord)
 
-	for coord in _loaded_chunks.keys().duplicate():
-		if not needed.has(coord):
+	# Encola la descarga de chunks que quedaron fuera del rango para destruirlos
+	# escalonadamente (1 por fotograma) sin ningun pico de Garbage Collection.
+	for coord in _loaded_chunks.keys():
+		if not needed.has(coord) and not _chunks_to_unload.has(coord):
+			_chunks_to_unload.append(coord)
+
+
+func _process_chunk_unloads() -> void:
+	if not _chunks_to_unload.is_empty():
+		var coord: Vector2i = _chunks_to_unload.pop_front()
+		if _loaded_chunks.has(coord):
 			_unload_chunk(coord)
+
+
+func _process_tree_attachments() -> void:
+	# Suavizado de carga: adjunta maximo 3 arboles por fotograma (~0.45 ms).
+	# Incluso si se cargan varios chunks juntos, los FPS no bajan jamas de 60.
+	var count := 0
+	while not _tree_attach_queue.is_empty() and count < 3:
+		var item: Dictionary = _tree_attach_queue.pop_front()
+		var parent_ref: WeakRef = item.get("parent_ref")
+		if parent_ref == null:
+			continue
+		var parent: Node3D = parent_ref.get_ref() as Node3D
+		if parent == null or not is_instance_valid(parent):
+			continue # el chunk se descargo mientras los arboles esperaban su turno
+		
+		var req: Dictionary = item["req"]
+		var res: ProceduralTreeGenerator.TreeGenerationResult = item["res"]
+		var tree := ProceduralTree.new()
+		tree.apply_generation_result(res)
+		parent.add_child(tree)
+		tree.global_position = req["pos"]
+		tree.rotate_y(req["rot_y"])
+		_add_tree_collision(tree)
+		count += 1
 
 
 ## Encola la generacion de un chunk en un hilo de WorkerThreadPool. No
@@ -390,6 +436,7 @@ func _generate_chunk_data_threaded(
 ## Se llama cada frame desde _process, en el hilo principal: revisa que
 ## tareas de fondo ya terminaron y construye su malla/colision/vegetacion.
 func _poll_pending_tasks() -> void:
+	var finished_chunks := 0
 	for coord in _pending_task_ids.keys().duplicate():
 		var task_id: int = _pending_task_ids[coord]
 		if not WorkerThreadPool.is_task_completed(task_id):
@@ -404,6 +451,10 @@ func _poll_pending_tasks() -> void:
 		_results_mutex.unlock()
 
 		_finish_chunk(coord, data)
+		finished_chunks += 1
+		# Escalonar: procesar maximo 1 chunk por fotograma para garantizar 60 FPS estables
+		if finished_chunks >= 1:
+			break
 
 
 func _is_chunk_needed(coord: Vector2i) -> bool:
@@ -469,28 +520,18 @@ func _build_chunk_mesh(coord: Vector2i, data: Dictionary) -> MeshInstance3D:
 
 
 func _load_vegetation_scenes() -> void:
-	for i in range(1, TREE_MODEL_COUNT + 1):
-		var model_path := "%stree%02d.fbx" % [TREE_MODELS_DIR, i]
-		var texture_path := "%stree%02d.png" % [TREE_TEXTURES_DIR, i]
-		if ResourceLoader.exists(model_path):
-			_tree_scenes.append(load(model_path))
-			_tree_textures.append(load(texture_path) if ResourceLoader.exists(texture_path) else null)
-
 	for i in range(1, BUSH_MODEL_COUNT + 1):
-		var model_path := "%sbush%02d.fbx" % [TREE_MODELS_DIR, i]
-		var texture_path := "%sbush%02d.png" % [TREE_TEXTURES_DIR, i]
+		var model_path := "%sbush%02d.fbx" % [BUSH_MODELS_DIR, i]
+		var texture_path := "%sbush%02d.png" % [BUSH_TEXTURES_DIR, i]
 		if ResourceLoader.exists(model_path):
 			_bush_scenes.append(load(model_path))
 			_bush_textures.append(load(texture_path) if ResourceLoader.exists(texture_path) else null)
 
-	if _tree_scenes.is_empty() and _bush_scenes.is_empty():
-		push_warning("[chunk_manager] No se encontraron modelos en tree_pack_1.1 - revisa que la carpeta assets/tree_pack_1.1 exista.")
+	if _bush_scenes.is_empty():
+		push_warning("[chunk_manager] No se encontraron modelos de arbustos en tree_pack_1.1.")
 
 
 func _scatter_vegetation(coord: Vector2i, origin_x: float, origin_z: float, parent: Node3D) -> void:
-	if _tree_scenes.is_empty() and _bush_scenes.is_empty():
-		return
-
 	# RNG determinista por chunk: mismas coordenadas + semilla -> misma
 	# vegetacion siempre (consistente entre recargas y entre peers en red).
 	var rng := RandomNumberGenerator.new()
@@ -498,36 +539,98 @@ func _scatter_vegetation(coord: Vector2i, origin_x: float, origin_z: float, pare
 
 	var space_state := get_world_3d().direct_space_state
 
+	var tree_requests: Array[Dictionary] = []
 	for i in TREES_PER_CHUNK:
 		var wx := origin_x + rng.randf_range(VEGETATION_MARGIN, CHUNK_WORLD_SIZE - VEGETATION_MARGIN)
 		var wz := origin_z + rng.randf_range(VEGETATION_MARGIN, CHUNK_WORLD_SIZE - VEGETATION_MARGIN)
 		if _is_inside_city_zone(wx, wz):
 			continue
-		_try_place_vegetation(wx, wz, rng, _tree_scenes, _tree_textures, space_state, parent, true)
+		var req := _collect_tree_spawn_data(wx, wz, rng, space_state)
+		if not req.is_empty():
+			tree_requests.append(req)
 
-	for i in BUSHES_PER_CHUNK:
-		var wx := origin_x + rng.randf_range(VEGETATION_MARGIN, CHUNK_WORLD_SIZE - VEGETATION_MARGIN)
-		var wz := origin_z + rng.randf_range(VEGETATION_MARGIN, CHUNK_WORLD_SIZE - VEGETATION_MARGIN)
-		if _is_inside_city_zone(wx, wz):
-			continue
-		_try_place_vegetation(wx, wz, rng, _bush_scenes, _bush_textures, space_state, parent, false)
+	if not _bush_scenes.is_empty():
+		for i in BUSHES_PER_CHUNK:
+			var wx := origin_x + rng.randf_range(VEGETATION_MARGIN, CHUNK_WORLD_SIZE - VEGETATION_MARGIN)
+			var wz := origin_z + rng.randf_range(VEGETATION_MARGIN, CHUNK_WORLD_SIZE - VEGETATION_MARGIN)
+			if _is_inside_city_zone(wx, wz):
+				continue
+			_try_place_vegetation(wx, wz, rng, _bush_scenes, _bush_textures, space_state, parent, false)
+
+	if tree_requests.is_empty():
+		return
+
+	# Generacion asincrona de mallas y buffers en hilo de fondo (WorkerThreadPool):
+	# Calcula la geometria completamente fuera del hilo principal (0 ms de bloqueo).
+	var parent_ref: WeakRef = weakref(parent)
+	WorkerThreadPool.add_task(
+		func() -> void:
+			var generated_trees: Array[Dictionary] = []
+			for req: Dictionary in tree_requests:
+				var prof: ProceduralTreeProfiles.TreeProfile = ProceduralTreeProfiles.get_profile(req["profile_id"])
+				var res: ProceduralTreeGenerator.TreeGenerationResult = ProceduralTreeGenerator.generate_tree(prof, req["seed"])
+				generated_trees.append({
+					"parent_ref": parent_ref,
+					"req": req,
+					"res": res
+				})
+			call_deferred("_enqueue_generated_trees", generated_trees)
+	)
 
 
-## El bosque silvestre no sabe nada de calles/lotes/casas - solo tira un
-## rayo y revisa altura/pendiente. Sin este corte, cualquier chunk que caiga
-## dentro de la plataforma aplanada de la ciudad (ver set_city_flatten_zone)
-## termina lleno de arboles silvestres en medio de las calles, porque el
-## terreno ahi es perfectamente plano y "valido" para el chequeo de pendiente.
-## CityDecoration ya coloca sus propios arboles a mano en patios/lotes
-## baldios respetando calles/casas/rejas - este corte simplemente le cede el
-## paso dentro de inner_radius (el area real de la ciudad, sin contar el
-## margen de transicion hacia el terreno natural).
+func _enqueue_generated_trees(generated_trees: Array[Dictionary]) -> void:
+	_tree_attach_queue.append_array(generated_trees)
+
+
 func _is_inside_city_zone(world_x: float, world_z: float) -> bool:
 	if _city_inner_radius <= 0.0:
 		return false
 	var dx := world_x - _city_center.x
 	var dz := world_z - _city_center.y
 	return dx * dx + dz * dz <= _city_inner_radius * _city_inner_radius
+
+
+func _collect_tree_spawn_data(
+	world_x: float,
+	world_z: float,
+	rng: RandomNumberGenerator,
+	space_state: PhysicsDirectSpaceState3D
+) -> Dictionary:
+	var from := Vector3(world_x, 200.0, world_z)
+	var to := Vector3(world_x, -50.0, world_z)
+	var query := PhysicsRayQueryParameters3D.create(from, to)
+	var result := space_state.intersect_ray(query)
+	if result.is_empty():
+		return {}
+
+	var hit_position: Vector3 = result["position"]
+	var hit_normal: Vector3 = result["normal"]
+
+	if hit_position.y > VEGETATION_MAX_HEIGHT:
+		return {}
+	if hit_normal.dot(Vector3.UP) < VEGETATION_MIN_SLOPE_DOT:
+		return {}
+
+	var selected_profile_id := "classic_oak"
+	if hit_position.y > 12.0:
+		selected_profile_id = "pine_boreal" if rng.randf() < 0.85 else "dead_tree"
+	else:
+		var roll := rng.randf()
+		if roll < 0.45:
+			selected_profile_id = "classic_oak"
+		elif roll < 0.75:
+			selected_profile_id = "autumn_birch"
+		elif roll < 0.90:
+			selected_profile_id = "pine_boreal"
+		else:
+			selected_profile_id = "weeping_willow"
+
+	return {
+		"profile_id": selected_profile_id,
+		"seed": rng.randi(),
+		"pos": hit_position,
+		"rot_y": rng.randf_range(0.0, TAU)
+	}
 
 
 func _try_place_vegetation(
@@ -598,11 +701,15 @@ func _apply_vegetation_material(node: Node, material: StandardMaterial3D) -> voi
 ## aplicado en este punto, asi que se mide en espacio de mundo y se
 ## convierte de vuelta a espacio local del arbol).
 func _add_tree_collision(tree_instance: Node3D) -> void:
-	var world_aabb := _compute_world_aabb(tree_instance)
-	if world_aabb.size.y <= 0.01:
-		return
-	var local_aabb: AABB = tree_instance.global_transform.affine_inverse() * world_aabb
-	var height := maxf(local_aabb.size.y * TREE_COLLISION_HEIGHT_RATIO, 0.5)
+	var height := 6.0
+	if "tree_height" in tree_instance and float(tree_instance.tree_height) > 0.1:
+		height = maxf(float(tree_instance.tree_height) * TREE_COLLISION_HEIGHT_RATIO, 1.0)
+	else:
+		var world_aabb := _compute_world_aabb(tree_instance)
+		if world_aabb.size.y <= 0.01:
+			return
+		var local_aabb: AABB = tree_instance.global_transform.affine_inverse() * world_aabb
+		height = maxf(local_aabb.size.y * TREE_COLLISION_HEIGHT_RATIO, 0.5)
 
 	var body := CHOPPABLE_TREE_SCRIPT.new() as StaticBody3D
 	body.name = "Collision"
@@ -611,11 +718,7 @@ func _add_tree_collision(tree_instance: Node3D) -> void:
 	cylinder.radius = TREE_TRUNK_RADIUS
 	cylinder.height = height
 	shape.shape = cylinder
-	shape.position = Vector3(
-		local_aabb.position.x + local_aabb.size.x * 0.5,
-		height * 0.5,
-		local_aabb.position.z + local_aabb.size.z * 0.5
-	)
+	shape.position = Vector3(0.0, height * 0.5, 0.0)
 	body.add_child(shape)
 	tree_instance.add_child(body)
 

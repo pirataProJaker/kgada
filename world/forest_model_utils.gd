@@ -3,8 +3,9 @@ class_name ForestModelUtils
 ## Utilidades para usar los modelos del FBX de la coleccion del bosque
 ## (assets/entorno/PSX_Forest_AssetCollection_byStarkCrafts.fbx). El FBX
 ## contiene varios modelos en un solo archivo (roca, hierba, diente de leon,
-## lavanda, junco, pina, arboles, tronco). Este helper instancia el FBX y
-## extrae un modelo por nombre como un nodo independiente.
+## lavanda, junco, pina).
+## NOTA: Todos los arboles y pinos ahora se generan exclusivamente mediante
+## el sistema procedural ProceduralTree (res://world/procedural_trees/procedural_tree.gd).
 
 const FOREST_FBX_PATH := "res://assets/entorno/PSX_Forest_AssetCollection_byStarkCrafts.fbx"
 
@@ -15,6 +16,8 @@ const MODEL_DANDELION := "PSX_Dandelion"
 const MODEL_LAVENDER := "PSX_Lavender "
 const MODEL_REED := "PSX_Reed"
 const MODEL_PINECONE := "PSX_PineConre"
+
+# Constantes legadas de arboles (redireccionadas automaticamente a ProceduralTree)
 const MODEL_TREE1 := "PSX_Tree1"
 const MODEL_TREE2 := "PSX_Tree2"
 const MODEL_TREE3 := "PSX_Tree3"
@@ -33,11 +36,31 @@ func _init() -> void:
 		_fbx_scene = load(FOREST_FBX_PATH) as PackedScene
 
 
+## Helper para instanciar un arbol procedural con el perfil indicado
+static func create_procedural_tree(profile_id: String = "classic_oak", seed_val: int = -1) -> ProceduralTree:
+	var tree := ProceduralTree.new()
+	tree.profile_id = profile_id
+	tree.tree_seed = seed_val if seed_val >= 0 else randi()
+	return tree
+
+
 ## Devuelve un nodo con un solo modelo del FBX (por nombre), o null si no
-## existe. El nodo devuelto es un Node3D con el MeshInstance3D del modelo.
-## El modelo se escala para que su altura real sea `target_height` (porque
-## el FBX viene con scale=100 y rotacion de 90 grados de Blender).
+## existe. Si se solicita un arbol (MODEL_TREE*), devuelve un ProceduralTree.
+## Para modelos del FBX, se escala para que su altura real sea `target_height`.
 func get_model(model_name: String, target_height: float = 1.0) -> Node3D:
+	# Redireccion de arboles hacia ProceduralTree
+	if model_name in [MODEL_TREE1, MODEL_TREE2, MODEL_TREE3, MODEL_TREE4, MODEL_TREETRUNK]:
+		var profile := "pine_boreal"
+		if model_name == MODEL_TREE2:
+			profile = "classic_oak"
+		elif model_name == MODEL_TREE3:
+			profile = "autumn_birch"
+		elif model_name == MODEL_TREE4:
+			profile = "weeping_willow"
+		elif model_name == MODEL_TREETRUNK:
+			profile = "dead_tree"
+		return create_procedural_tree(profile)
+
 	if _fbx_scene == null:
 		push_warning("[forest] No se pudo cargar el FBX %s" % FOREST_FBX_PATH)
 		return null

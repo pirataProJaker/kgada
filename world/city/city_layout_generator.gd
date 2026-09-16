@@ -11,9 +11,6 @@ const ProceduralRoadMaterials = preload("res://world/city/procedural_road_materi
 const HOUSE_GENERATOR_SCRIPT := preload("res://world/city/house_generator.gd")
 const DECORATION_GENERATOR_SCRIPT := preload("res://world/city/city_decoration.gd")
 
-const TREE_MODELS_DIR := "res://assets/tree_pack_1.1/tree_pack_1.1/models/"
-const TREE_TEXTURES_DIR := "res://assets/tree_pack_1.1/tree_pack_1.1/textures/"
-const TREE_MODEL_COUNT := 36
 
 @export_group("Configuración de Ciudad")
 @export var rng_seed: int = 0
@@ -53,8 +50,6 @@ var _median_root: Node3D
 var _parcel_outline_root: Node3D
 var _house_generator: HouseGenerator
 var _decoration_generator: CityDecoration
-var _tree_scenes: Array[PackedScene] = []
-var _tree_textures: Array[Texture2D] = []
 var _rng: RandomNumberGenerator
 
 
@@ -78,7 +73,6 @@ func generate_city() -> void:
 		_rng.seed = rng_seed
 
 	_cleanup_children()
-	_load_tree_resources()
 
 	_road_system = RoadTrajectorySystem.new()
 	_road_system.name = "RoadTrajectorySystem"
@@ -129,17 +123,6 @@ func _cleanup_children() -> void:
 	_parcel_outline_root = null
 	_house_generator = null
 	_decoration_generator = null
-
-
-func _load_tree_resources() -> void:
-	if not _tree_scenes.is_empty():
-		return
-	for i in range(1, TREE_MODEL_COUNT + 1):
-		var model_path := "%stree%02d.fbx" % [TREE_MODELS_DIR, i]
-		var texture_path := "%stree%02d.png" % [TREE_TEXTURES_DIR, i]
-		if ResourceLoader.exists(model_path):
-			_tree_scenes.append(load(model_path))
-			_tree_textures.append(load(texture_path) if ResourceLoader.exists(texture_path) else null)
 
 
 # ==============================================================================
@@ -447,37 +430,19 @@ func _create_boulevard_median_segment(z0: float, z1: float, m_w: float, avenue_c
 	mesh_inst.position = Vector3(0.0, 0.12, (z0 + z1) * 0.5)
 	_median_root.add_child(mesh_inst)
 
-	# Plantar árboles de tree_pack_1.1 alineados en el camellón
-	if _tree_scenes.is_empty():
-		return
-
+	# Plantar árboles procedurales alineados en el camellón
 	var tree_step: float = avenue_cfg.tree_spacing
 	var tree_count := int(floor((z1 - z0) / tree_step))
 	var start_z := z0 + ((z1 - z0) - float(tree_count - 1) * tree_step) * 0.5
 
 	for t in range(tree_count):
 		var tz := start_z + float(t) * tree_step
-		var tree_idx := _rng.randi_range(0, _tree_scenes.size() - 1)
-		var scene: PackedScene = _tree_scenes[tree_idx]
-		var tree := scene.instantiate() as Node3D
-		tree.position = Vector3(_rng.randf_range(-0.5, 0.5), 0.12, tz)
-		var scale_factor := _rng.randf_range(0.85, 1.15)
-		tree.scale = Vector3.ONE * scale_factor
-		tree.rotation.y = _rng.randf_range(0.0, TAU)
-
-		# Material y texturas de tree_pack
-		var mat := StandardMaterial3D.new()
-		if tree_idx < _tree_textures.size() and _tree_textures[tree_idx] != null:
-			mat.albedo_texture = _tree_textures[tree_idx]
-		else:
-			mat.albedo_color = Color(0.18, 0.35, 0.15)
-		mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST
-		mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA_SCISSOR
-		mat.alpha_scissor_threshold = 0.5
-		mat.cull_mode = BaseMaterial3D.CULL_DISABLED
-		_apply_material_recursive(tree, mat)
-
+		var tree := ProceduralTree.new()
+		tree.profile_id = "classic_oak" if _rng.randf() < 0.7 else "autumn_birch"
+		tree.tree_seed = _rng.randi()
 		_median_root.add_child(tree)
+		tree.position = Vector3(_rng.randf_range(-0.4, 0.4), 0.12, tz)
+		tree.rotation.y = _rng.randf_range(0.0, TAU)
 
 
 func _create_stream_segment(z0: float, z1: float, m_w: float, avenue_cfg: CityRoadPatterns.AvenueConfig) -> void:
@@ -525,39 +490,20 @@ func _create_stream_segment(z0: float, z1: float, m_w: float, avenue_cfg: CityRo
 	water_mesh.position = Vector3(0.0, 0.09, (z0 + z1) * 0.5)
 	_median_root.add_child(water_mesh)
 
-	# Vegetación de ribera a los lados del arroyo
-	if _tree_scenes.is_empty():
-		return
+	# Vegetación de ribera a los lados del arroyo con ProceduralTree
 	var tree_step := avenue_cfg.tree_spacing * 1.2
 	var tree_count := int(floor((z1 - z0) / tree_step))
 	var start_z := z0 + ((z1 - z0) - float(tree_count - 1) * tree_step) * 0.5
 	for t in range(tree_count):
 		var tz := start_z + float(t) * tree_step
 		for side in [-1.0, 1.0]:
-			var tree_idx := _rng.randi_range(0, _tree_scenes.size() - 1)
-			var tree := _tree_scenes[tree_idx].instantiate() as Node3D
+			var tree := ProceduralTree.new()
+			tree.profile_id = "weeping_willow" if _rng.randf() < 0.65 else "classic_oak"
+			tree.tree_seed = _rng.randi()
+			_median_root.add_child(tree)
 			tree.position = Vector3(side * (bed_w * 0.5 + 2.0), 0.05, tz)
-			tree.scale = Vector3.ONE * _rng.randf_range(0.7, 1.0)
 			tree.rotation.y = _rng.randf_range(0.0, TAU)
 
-			var mat := StandardMaterial3D.new()
-			if tree_idx < _tree_textures.size() and _tree_textures[tree_idx] != null:
-				mat.albedo_texture = _tree_textures[tree_idx]
-			else:
-				mat.albedo_color = Color(0.22, 0.38, 0.18)
-			mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST
-			mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA_SCISSOR
-			mat.alpha_scissor_threshold = 0.5
-			mat.cull_mode = BaseMaterial3D.CULL_DISABLED
-			_apply_material_recursive(tree, mat)
-			_median_root.add_child(tree)
-
-
-func _apply_material_recursive(node: Node, material: StandardMaterial3D) -> void:
-	if node is MeshInstance3D:
-		(node as MeshInstance3D).material_override = material
-	for child in node.get_children():
-		_apply_material_recursive(child, material)
 
 
 # ==============================================================================

@@ -8,22 +8,24 @@ const ProceduralTreeProfiles = preload("res://world/procedural_trees/procedural_
 ## Genera uniones continuas sin huecos, ramas firmemente ancladas y follaje adherido a los brotes.
 
 # Cache de mallas primitivas compartidas en VRAM
-static var _frustum_mesh: ArrayMesh = null
+static var _frustum_meshes: Dictionary = {}
 static var _leaf_mesh: ArrayMesh = null
 
 # Factor de conicidad del tronco de cono maestro
 const FRUSTUM_TOP_TAPER := 0.82
 
 
-## Retorna la malla unitaria del tronco de cono / prisma hexagonal (sin tapas, normales correctas).
-static func get_frustum_mesh() -> ArrayMesh:
-	if _frustum_mesh != null:
-		return _frustum_mesh
+## Retorna la malla unitaria del tronco de cono con la cantidad de lados dada (sin tapas, normales suaves).
+## LOD0 usa 8 lados (16 triangulos con Gouraud suave).
+## LOD1 usa 6 lados (12 triangulos).
+## LOD2 usa 4 lados (8 triangulos).
+static func get_frustum_mesh(sides: int = 8) -> ArrayMesh:
+	if _frustum_meshes.has(sides):
+		return _frustum_meshes[sides]
 	
 	var st := SurfaceTool.new()
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
 	
-	var sides := 8
 	var angle_step := TAU / float(sides)
 	
 	# Radio base = 1.0 en Y=0; radio superior = FRUSTUM_TOP_TAPER en Y=1.0
@@ -39,33 +41,41 @@ static func get_frustum_mesh() -> ArrayMesh:
 		var u0 := float(i) / float(sides)
 		var u1 := float(i + 1) / float(sides)
 		
-		# Cara lateral cuadrilateral (2 triangulos con normales hacia afuera)
+		# Normales suaves outward en cada vertice del cilindro
+		var taper_slope := (1.0 - FRUSTUM_TOP_TAPER) * 0.35
+		var n0 := Vector3(cos(a0), taper_slope, sin(a0)).normalized()
+		var n1 := Vector3(cos(a1), taper_slope, sin(a1)).normalized()
+		
+		# Cara lateral cuadrilateral (2 triangulos con normales suaves)
 		# Triangulo 1 (b0, b1, t0)
-		var n1 := (b1 - b0).cross(t0 - b0).normalized()
-		st.set_normal(n1)
+		st.set_normal(n0)
 		st.set_uv(Vector2(u0, 0.0))
 		st.add_vertex(b0)
+		
 		st.set_normal(n1)
 		st.set_uv(Vector2(u1, 0.0))
 		st.add_vertex(b1)
-		st.set_normal(n1)
+		
+		st.set_normal(n0)
 		st.set_uv(Vector2(u0, 1.0))
 		st.add_vertex(t0)
 		
 		# Triangulo 2 (b1, t1, t0)
-		var n2 := (t1 - b1).cross(t0 - b1).normalized()
-		st.set_normal(n2)
+		st.set_normal(n1)
 		st.set_uv(Vector2(u1, 0.0))
 		st.add_vertex(b1)
-		st.set_normal(n2)
+		
+		st.set_normal(n1)
 		st.set_uv(Vector2(u1, 1.0))
 		st.add_vertex(t1)
-		st.set_normal(n2)
+		
+		st.set_normal(n0)
 		st.set_uv(Vector2(u0, 1.0))
 		st.add_vertex(t0)
 	
-	_frustum_mesh = st.commit()
-	return _frustum_mesh
+	var mesh := st.commit()
+	_frustum_meshes[sides] = mesh
+	return mesh
 
 
 ## Retorna la malla unitaria de hoja de 1 solo triangulo.
@@ -106,6 +116,7 @@ static func get_leaf_mesh() -> ArrayMesh:
 class TreeGenerationResult:
 	var seed_used: int = 0
 	var profile: ProceduralTreeProfiles.TreeProfile = null
+	var tree_height: float = 0.0
 	
 	var lod0_branches_count: int = 0
 	var lod0_leaves_count: int = 0
@@ -151,6 +162,7 @@ static func generate_tree(profile: ProceduralTreeProfiles.TreeProfile, tree_seed
 	# 1. TRONCO PRINCIPAL (Conos encadenados con solapamiento sin cortes)
 	# -------------------------------------------------------------
 	var total_height := rng.randf_range(profile.trunk_height_min, profile.trunk_height_max)
+	res.tree_height = total_height
 	var seg_count := profile.trunk_segments
 	var base_seg_height := total_height / float(seg_count)
 	
@@ -162,25 +174,24 @@ static func generate_tree(profile: ProceduralTreeProfiles.TreeProfile, tree_seed
 	var current_radius := profile.trunk_radius_base
 	var trunk_v_accum := 0.0
 	var trunk_u_base := rng.randf()
+	var trunk_frame := _build_initial_frame(current_dir)
 	
 	for i in range(seg_count):
 		var height_ratio := float(i) / float(seg_count)
 		
-		# Solapamiento: el segmento penetra en el anterior para evitar cortes/huecos al inclinarse
-		var overlap := current_radius * 0.40 if i > 0 else 0.0
+		# Solapamiento suave para sellar la curvatura en los codos
+		var overlap := current_radius * 0.15 if i < seg_count - 1 else 0.0
 		var seg_height := base_seg_height + overlap
-		var seg_start_pos := current_pos - current_dir * overlap
 		
-		# Giro aleatorio del prisma para romper cualquier alineacion de caras
-		var twist := rng.randf_range(0.0, TAU)
-		var xform := _build_segment_transform(seg_start_pos, current_dir, current_radius, seg_height, twist)
+		# Mantiene la alineación continua de facetas a lo largo de todo el tronco
+		var xform := _build_scaled_transform(trunk_frame, current_pos, current_radius, seg_height)
 		branches_lod0.append(xform)
 		branches_lod1.append(xform)
 		branches_lod2.append(xform) # El tronco siempre existe en todos los LODs
 		
-		# UV continuo vertical y desfase horizontal por instancia (rompe patron repetitivo)
+		# UV continuo vertical y desfase horizontal por instancia
 		var seg_v_len := seg_height * 0.28
-		var c_data := Color(trunk_u_base + rng.randf_range(-0.15, 0.15), trunk_v_accum, seg_v_len, 1.0)
+		var c_data := Color(trunk_u_base, trunk_v_accum, seg_v_len, 1.0)
 		branch_custom_lod0.append(c_data)
 		branch_custom_lod1.append(c_data)
 		branch_custom_lod2.append(c_data)
@@ -207,10 +218,11 @@ static func generate_tree(profile: ProceduralTreeProfiles.TreeProfile, tree_seed
 		if next_dir.dot(Vector3.UP) < 0.70:
 			next_dir = (next_dir + Vector3.UP * 0.5).normalized()
 		
-		# Avanzar posicion y radio superior
+		# Avanzar posicion, radio y rotar marco de referencia paralelamente
 		current_pos += current_dir * base_seg_height
-		current_dir = next_dir
 		current_radius *= FRUSTUM_TOP_TAPER
+		trunk_frame = _advance_frame(trunk_frame, next_dir)
+		current_dir = next_dir
 	
 	# -------------------------------------------------------------
 	# 2. RAMIFICACION JERARQUICA: 3 NIVELES (RAMAS SOBRE RAMAS)
@@ -234,9 +246,10 @@ static func generate_tree(profile: ProceduralTreeProfiles.TreeProfile, tree_seed
 		var azimuth := float(b_idx) * 2.399963 + rng.randf_range(-0.25, 0.25)
 		var radial_horiz := Vector3(cos(azimuth), 0.0, sin(azimuth)).normalized()
 		
-		# Anclaje profundo dentro del tronco
-		var b_pos := trunk_n_pos + radial_horiz * (trunk_n_rad * 0.65)
-		var elev_rad := deg_to_rad(profile.branch_elevation_deg + rng.randf_range(-6.0, 6.0))
+		# Elevacion de la rama
+		var elev_deg := profile.branch_elevation_deg + rng.randf_range(-6.0, 6.0)
+		var elev_rad := deg_to_rad(clampf(elev_deg, 5.0, 85.0))
+		
 		var b_dir := (radial_horiz * cos(elev_rad) + Vector3.UP * sin(elev_rad)).normalized()
 		
 		# Longitud y proporciones
@@ -254,13 +267,14 @@ static func generate_tree(profile: ProceduralTreeProfiles.TreeProfile, tree_seed
 		# Construir segmentos de la rama primaria (Nivel 1)
 		var b_u_offset := rng.randf()
 		var b_v_accum := rng.randf_range(0.0, 5.0)
+		var b_frame := _build_initial_frame(b_dir)
+		var b_pos := trunk_n_pos - b_dir * (b_radius * 0.8) # Anclada dentro de la madera del tronco
+		
 		for s in range(b_seg_count):
-			var s_overlap := b_radius * 0.35 if s > 0 else 0.0
+			var s_overlap := b_radius * 0.15 if s < b_seg_count - 1 else 0.0
 			var s_height := b_seg_len + s_overlap
-			var s_start := b_pos - b_dir * s_overlap
 			
-			var twist := rng.randf_range(0.0, TAU)
-			var b_xform := _build_segment_transform(s_start, b_dir, b_radius, s_height, twist)
+			var b_xform := _build_scaled_transform(b_frame, b_pos, b_radius, s_height)
 			branches_lod0.append(b_xform)
 			
 			var s_v_len := s_height * 0.32
@@ -275,13 +289,16 @@ static func generate_tree(profile: ProceduralTreeProfiles.TreeProfile, tree_seed
 				branch_custom_lod2.append(b_custom)
 			
 			b_v_accum += s_v_len
-			b_pos += b_dir * b_seg_len
 			b_radius *= FRUSTUM_TOP_TAPER
 			
 			# Curvatura por droop
 			if profile.branch_droop > 0.0:
 				var droop_step := profile.branch_droop * (float(s + 1) / float(b_seg_count)) * 0.30
-				b_dir = (b_dir + Vector3.DOWN * droop_step).normalized()
+				var next_b_dir := (b_dir + Vector3.DOWN * droop_step).normalized()
+				b_frame = _advance_frame(b_frame, next_b_dir)
+				b_dir = next_b_dir
+			
+			b_pos += b_dir * b_seg_len
 			
 			# Guardar punto para rama secundaria
 			if s >= 1:
@@ -291,13 +308,8 @@ static func generate_tree(profile: ProceduralTreeProfiles.TreeProfile, tree_seed
 					"radius": b_radius,
 					"side_sign": 1.0 if (s % 2 == 0) else -1.0
 				})
-				# Relleno de follaje en el cuerpo de la rama principal (elimina el esqueleto pelado)
-				leaf_tips.append({
-					"pos": b_pos - b_dir * (b_seg_len * 0.5),
-					"dir": b_dir,
-					"radius": b_radius,
-					"height": b_pos.y
-				})
+				# Los brotes secundarios y terciarios cubren el follaje exterior;
+				# evitamos hojas enterradas dentro de las ramas maestras interiores.
 		
 		# La punta de la rama primaria recibe hojas
 		leaf_tips.append({
@@ -321,7 +333,8 @@ static func generate_tree(profile: ProceduralTreeProfiles.TreeProfile, tree_seed
 			var side_vec := sp_dir.cross(Vector3.UP).normalized() * side_sign
 			var sec_dir := (sp_dir * 0.50 + side_vec * 0.75 + Vector3.UP * 0.15).normalized()
 			var sec_len := b_seg_len * 0.85
-			var sec_pos := sp_pos - sp_dir * (sp_rad * 0.25) # Anclada dentro de la rama primaria
+			var sec_pos := sp_pos - sec_dir * (sp_rad * 0.8) # Anclada dentro de la rama primaria
+			var sec_frame := _build_initial_frame(sec_dir)
 			
 			# Puntos para brotes terciarios
 			var twig_spawn_points: Array[Dictionary] = []
@@ -329,12 +342,10 @@ static func generate_tree(profile: ProceduralTreeProfiles.TreeProfile, tree_seed
 			var sec_v_accum := rng.randf_range(0.0, 5.0)
 			
 			for s2 in range(2):
-				var s2_overlap := sp_rad * 0.30 if s2 > 0 else 0.0
+				var s2_overlap := sp_rad * 0.15 if s2 < 1 else 0.0
 				var s2_h := sec_len + s2_overlap
-				var s2_start := sec_pos - sec_dir * s2_overlap
 				
-				var twist := rng.randf_range(0.0, TAU)
-				var sec_xform := _build_segment_transform(s2_start, sec_dir, sp_rad, s2_h, twist)
+				var sec_xform := _build_scaled_transform(sec_frame, sec_pos, sp_rad, s2_h)
 				branches_lod0.append(sec_xform)
 				
 				var s2_v_len := s2_h * 0.38
@@ -386,10 +397,10 @@ static func generate_tree(profile: ProceduralTreeProfiles.TreeProfile, tree_seed
 				var tw_side_vec := tw_p_dir.cross(Vector3.UP).normalized() * tw_side
 				var tw_dir := (tw_p_dir * 0.50 + tw_side_vec * 0.70 + Vector3.UP * 0.20).normalized()
 				var tw_len := sec_len * 0.75
-				var tw_start := tw_pos - tw_p_dir * (tw_rad * 0.25)
+				var tw_start := tw_pos - tw_dir * (tw_rad * 0.6)
+				var tw_frame := _build_initial_frame(tw_dir)
 				
-				var twist := rng.randf_range(0.0, TAU)
-				var tw_xform := _build_segment_transform(tw_start, tw_dir, tw_rad, tw_len, twist)
+				var tw_xform := _build_scaled_transform(tw_frame, tw_start, tw_rad, tw_len)
 				branches_lod0.append(tw_xform)
 				branch_custom_lod0.append(Color(rng.randf(), rng.randf_range(0.0, 5.0), tw_len * 0.45, 1.0))
 				
@@ -419,7 +430,8 @@ static func generate_tree(profile: ProceduralTreeProfiles.TreeProfile, tree_seed
 	# 3. GENERACION DE HOJAS REDISTRIBUIDAS POR TODA LA COPA
 	# -------------------------------------------------------------
 	if profile.has_leaves and profile.leaves_per_tip > 0:
-		for tip in leaf_tips:
+		for tip_idx in range(leaf_tips.size()):
+			var tip: Dictionary = leaf_tips[tip_idx]
 			var tip_pos: Vector3 = tip["pos"]
 			var tip_dir: Vector3 = tip["dir"]
 			var tip_rad: float = tip["radius"]
@@ -473,17 +485,17 @@ static func generate_tree(profile: ProceduralTreeProfiles.TreeProfile, tree_seed
 				leaves_lod0.append(leaf_xform)
 				leaf_colors_lod0.append(leaf_color)
 				
-				# --- LOD 1: ~40% de hojas, escala 1.65x para tapar huecos a media distancia ---
-				if l % 3 == 0 or l == 0:
+				# --- LOD 1: 1 hoja por brote (20% del conteo), escala 1.85x para volumen denso ---
+				if l == 0:
 					var xf_lod1 := leaf_xform
-					xf_lod1.basis = xf_lod1.basis * 1.65
+					xf_lod1.basis = xf_lod1.basis * 1.85
 					leaves_lod1.append(xf_lod1)
 					leaf_colors_lod1.append(leaf_color)
 				
-				# --- LOD 2: ~15% de hojas, escala 2.40x para siluetas lejanas ---
-				if l % 7 == 0:
+				# --- LOD 2: 1 hoja cada 3 brotes (~7% del conteo), escala 3.20x para siluetas lejanas ---
+				if l == 0 and (tip_idx % 3 == 0):
 					var xf_lod2 := leaf_xform
-					xf_lod2.basis = xf_lod2.basis * 2.40
+					xf_lod2.basis = xf_lod2.basis * 3.20
 					leaves_lod2.append(xf_lod2)
 					leaf_colors_lod2.append(leaf_color)
 	
@@ -496,33 +508,52 @@ static func generate_tree(profile: ProceduralTreeProfiles.TreeProfile, tree_seed
 	res.lod2_leaves_count = leaves_lod2.size()
 	
 	# Construccion de los MultiMeshes en GPU
-	var frustum := get_frustum_mesh()
+	var frustum_lod0 := get_frustum_mesh(8) # LOD0: 8 lados (16 tri/cono con normales suaves)
+	var frustum_lod1 := get_frustum_mesh(6) # LOD1: 6 lados (12 tri/cono)
+	var frustum_lod2 := get_frustum_mesh(4) # LOD2: 4 lados (8 tri/cono)
 	var leaf_m := get_leaf_mesh()
 	
-	res.mm_branches_lod0 = _build_multimesh(frustum, branches_lod0, [], branch_custom_lod0)
+	res.mm_branches_lod0 = _build_multimesh(frustum_lod0, branches_lod0, [], branch_custom_lod0)
 	res.mm_leaves_lod0 = _build_multimesh(leaf_m, leaves_lod0, leaf_colors_lod0)
 	
-	res.mm_branches_lod1 = _build_multimesh(frustum, branches_lod1, [], branch_custom_lod1)
+	res.mm_branches_lod1 = _build_multimesh(frustum_lod1, branches_lod1, [], branch_custom_lod1)
 	res.mm_leaves_lod1 = _build_multimesh(leaf_m, leaves_lod1, leaf_colors_lod1)
 	
-	res.mm_branches_lod2 = _build_multimesh(frustum, branches_lod2, [], branch_custom_lod2)
+	res.mm_branches_lod2 = _build_multimesh(frustum_lod2, branches_lod2, [], branch_custom_lod2)
 	res.mm_leaves_lod2 = _build_multimesh(leaf_m, leaves_lod2, leaf_colors_lod2)
 	
 	return res
 
 
-## Construye un Transform3D ortonormal que alinea el eje Y local con `dir`,
-## escalando X y Z al radio y Y a la altura, con un giro aleatorio `twist` alrededor de su eje.
-static func _build_segment_transform(pos: Vector3, dir: Vector3, radius: float, height: float, twist: float = 0.0) -> Transform3D:
+## Retorna un marco de orientacion ortonormal inicial alineado con `dir`.
+static func _build_initial_frame(dir: Vector3) -> Basis:
 	var up := dir.normalized()
-	var ref := Vector3.FORWARD if absf(up.dot(Vector3.UP)) > 0.92 else Vector3.UP
+	var ref := Vector3.FORWARD if absf(up.dot(Vector3.FORWARD)) < 0.85 else Vector3.RIGHT
 	var right := up.cross(ref).normalized()
 	var forward := right.cross(up).normalized()
-	
-	var basis := Basis(right * radius, up * height, forward * radius)
-	if absf(twist) > 0.0001:
-		basis = basis.rotated(up, twist)
-	return Transform3D(basis, pos)
+	return Basis(right, up, forward)
+
+
+## Transporta paralelamente un marco de orientacion hacia una nueva direccion evitando rotaciones bruscas.
+static func _advance_frame(prev_basis: Basis, new_dir: Vector3) -> Basis:
+	var prev_up := prev_basis.y.normalized()
+	var next_up := new_dir.normalized()
+	var dot := clampf(prev_up.dot(next_up), -1.0, 1.0)
+	if dot > 0.9999:
+		return prev_basis
+	if dot < -0.9999:
+		return prev_basis.rotated(prev_basis.x.normalized(), PI)
+	var axis := prev_up.cross(next_up).normalized()
+	var angle := acos(dot)
+	return Basis(Quaternion(axis, angle)) * prev_basis
+
+
+## Construye el Transform3D a partir de una base ortonormal normalizada, radio y altura.
+static func _build_scaled_transform(frame: Basis, pos: Vector3, radius: float, height: float) -> Transform3D:
+	var right := frame.x.normalized() * radius
+	var up := frame.y.normalized() * height
+	var forward := frame.z.normalized() * radius
+	return Transform3D(Basis(right, up, forward), pos)
 
 
 ## Construye la transformacion de una hoja triangular con su base en `pos`,
