@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://cx6y8v2m9q2ap"]
+
+[ext_resource type="Script" path="res://tests/test_city_procedural_layout.gd" id="1_city_test"]
+
+[node name="TestCityProceduralLayout" type="Node3D"]
+script = ExtResource("1_city_test")

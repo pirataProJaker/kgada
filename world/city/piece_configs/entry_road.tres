@@ -1,9 +1,0 @@
-[gd_resource type="Resource" script_class="CityPieceConfig" format=3 uid="uid://bm30ta2gcv1jp"]
-
-[ext_resource type="Script" uid="uid://cjsj2ny2v3btm" path="res://world/city/city_piece_config.gd" id="1_cfg"]
-[ext_resource type="PackedScene" uid="uid://mv2js2tmxdjq" path="res://assets/URBAN/URBAN/Roads/Road type 1/road_1_sheer.fbx" id="2_model"]
-
-[resource]
-script = ExtResource("1_cfg")
-model_scene = ExtResource("2_model")
-canonical_openings = 10

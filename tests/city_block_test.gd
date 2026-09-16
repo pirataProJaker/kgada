@@ -1,6 +1,6 @@
 extends Node3D
 
-@onready var city_generator: CityBlockGenerator = $CityBlockGenerator
+@onready var city_generator: CityLayoutGenerator = $CityLayoutGenerator
 @onready var camera: Camera3D = $Camera3D
 
 

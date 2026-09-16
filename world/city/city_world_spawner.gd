@@ -54,9 +54,9 @@ func spawn(world_seed: int) -> void:
 	# Primero se genera UNA sola ciudad real con la misma semilla que usara el
 	# jugador. Asi el RNG decide el eje largo y podemos medir el AABB resultante
 	# en vez de reservar el peor caso teorico para ambos ejes.
-	var city := CITY_SCENE.instantiate() as CityBlockGenerator
+	var city := CITY_SCENE.instantiate() as CityLayoutGenerator
 	if city == null:
-		push_warning("[CityWorldSpawner] No se pudo instanciar CityBlockGenerator.")
+		push_warning("[CityWorldSpawner] No se pudo instanciar CityLayoutGenerator.")
 		return
 	city.name = "City"
 	city.randomize_seed_on_run = false

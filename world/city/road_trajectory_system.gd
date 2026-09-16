@@ -82,12 +82,25 @@ func _setup_nodes() -> void:
 		_static_body.add_child(_mesh_instance)
 
 
+var is_batch_updating: bool = false
+
+
+func begin_batch() -> void:
+	is_batch_updating = true
+
+
+func end_batch() -> void:
+	is_batch_updating = false
+	rebuild_geometry()
+
+
 func clear() -> void:
 	_endpoints.clear()
 	_segments.clear()
 	_next_endpoint_id = 1
 	_next_segment_id = 1
-	rebuild_geometry()
+	if not is_batch_updating:
+		rebuild_geometry()
 
 
 # ==============================================================================
@@ -165,6 +178,30 @@ func extend_road(endpoint_id: int, length: float, custom_dir: Vector3 = Vector3.
 	return seg
 
 
+## Conecta dos endpoints existentes con un nuevo tramo de carretera
+func connect_endpoints(start_ep_id: int, end_ep_id: int, custom_width: float = -1.0, custom_type: RoadType = RoadType.TWO_WAY_YELLOW, auto_rebuild: bool = true) -> RoadSegment:
+	var start_ep: RoadEndpoint = get_endpoint(start_ep_id)
+	var end_ep: RoadEndpoint = get_endpoint(end_ep_id)
+	if start_ep == null or end_ep == null or start_ep_id == end_ep_id:
+		return null
+
+	var w: float = custom_width if custom_width > 0.0 else start_ep.width
+	var t: RoadType = custom_type
+
+	var seg := RoadSegment.new(_next_segment_id, start_ep.id, end_ep.id, start_ep.position, end_ep.position, w, t)
+	_segments[seg.id] = seg
+	_next_segment_id += 1
+
+	if not start_ep.connected_segments.has(seg.id):
+		start_ep.connected_segments.append(seg.id)
+	if not end_ep.connected_segments.has(seg.id):
+		end_ep.connected_segments.append(seg.id)
+
+	if auto_rebuild:
+		rebuild_geometry()
+	return seg
+
+
 ## Agrega o quita banqueta en el lado izquierdo o derecho de un tramo
 func toggle_sidewalk(segment_id: int, is_left_side: bool, sidewalk_width: float = 2.5) -> bool:
 	var seg: RoadSegment = _segments.get(segment_id, null)
@@ -183,7 +220,7 @@ func toggle_sidewalk(segment_id: int, is_left_side: bool, sidewalk_width: float 
 
 
 ## Asigna explícitamente el estado de la banqueta sin conmutar a ciegas
-func set_sidewalk(segment_id: int, is_left_side: bool, enabled: bool, sidewalk_width: float = 2.5) -> void:
+func set_sidewalk(segment_id: int, is_left_side: bool, enabled: bool, sidewalk_width: float = 2.5, auto_rebuild: bool = true) -> void:
 	var seg: RoadSegment = _segments.get(segment_id, null)
 	if seg == null:
 		return
@@ -195,7 +232,8 @@ func set_sidewalk(segment_id: int, is_left_side: bool, enabled: bool, sidewalk_w
 		seg.has_right_sidewalk = enabled
 		seg.right_sidewalk_width = sidewalk_width
 
-	rebuild_geometry()
+	if auto_rebuild:
+		rebuild_geometry()
 
 
 func get_all_segments() -> Array:
@@ -207,6 +245,8 @@ func get_all_segments() -> Array:
 # ==============================================================================
 
 func rebuild_geometry() -> void:
+	if is_batch_updating:
+		return
 	_setup_nodes()
 
 	# Limpiar colisiones previas
@@ -299,13 +339,14 @@ func rebuild_geometry() -> void:
 			var res_road := _intersect_2d_lines(K_A0, uA, K_B0, uB)
 			var M_road: Vector3 = res_road["point"] if res_road["valid"] else (K_A0 + K_B0) * 0.5
 
-			# Distancia a lo largo de cada vía donde se separan las calzadas de asfalto
 			var segA_len: float = (segA.end_pos - segA.start_pos).length()
 			var segB_len: float = (segB.end_pos - segB.start_pos).length()
-			var t_road_A: float = clampf((M_road - ep.position).dot(uA), 0.0, segA_len)
-			var t_road_B: float = clampf((M_road - ep.position).dot(uB), 0.0, segB_len)
+			var max_ext := maxf(half_w_A, half_w_B) * 3.0
+			var t_road_A: float = clampf((M_road - ep.position).dot(uA), -max_ext, segA_len)
+			var t_road_B: float = clampf((M_road - ep.position).dot(uB), -max_ext, segB_len)
 
-			var is_acute_fork: bool = uA.dot(uB) >= -0.05
+			var is_acute_fork: bool = uA.dot(uB) > 0.35
+			var is_reflex: bool = t_road_A < -0.01
 			var t_sw_A := t_road_A
 			var t_sw_B := t_road_B
 			var M_curb := M_road
@@ -324,7 +365,7 @@ func rebuild_geometry() -> void:
 				var res_outer := _intersect_2d_lines(O_A0, uA, O_B0, uB)
 				M_outer = res_outer["point"] if res_outer["valid"] else (O_A0 + O_B0) * 0.5
 
-				if is_acute_fork:
+				if not is_reflex:
 					# Limitar distancia de inglete si el ángulo es sumamente agudo
 					var max_dist := (maxf(half_w_A, half_w_B) + maxf(eff_sw_A, eff_sw_B)) * 3.0
 					if M_outer.distance_to(ep.position) > max_dist:
@@ -344,20 +385,21 @@ func rebuild_geometry() -> void:
 						var t_clear: float = (res_BA["point"] - ep.position).dot(uB) if res_BA["valid"] else t_road_B
 						t_sw_B = clampf(maxf(t_clear, t_road_B), 0.0, segB_len)
 				else:
-					# Esquina obtusa (giro normal): la banqueta recta termina exactamente en t_road
+					# Esquina refleja (exterior): la banqueta recta termina exactamente en t_road
 					t_sw_A = t_road_A
 					t_sw_B = t_road_B
 
 			# Asignar recortes precisos a los tramos de banqueta para que jamás invadan calzadas
+			# En esquinas reflejas (t_sw < 0), la losa se extiende hacia afuera para sellar perfectamente con M_road
 			if bA["is_start"]:
-				sw_offsets[segA.id]["start_right"] = maxf(sw_offsets[segA.id]["start_right"], t_sw_A)
+				sw_offsets[segA.id]["start_right"] = t_sw_A if sw_offsets[segA.id]["start_right"] == 0.0 else maxf(sw_offsets[segA.id]["start_right"], t_sw_A)
 			else:
-				sw_offsets[segA.id]["end_left"] = maxf(sw_offsets[segA.id]["end_left"], t_sw_A)
+				sw_offsets[segA.id]["end_left"] = t_sw_A if sw_offsets[segA.id]["end_left"] == 0.0 else maxf(sw_offsets[segA.id]["end_left"], t_sw_A)
 
 			if bB["is_start"]:
-				sw_offsets[segB.id]["start_left"] = maxf(sw_offsets[segB.id]["start_left"], t_sw_B)
+				sw_offsets[segB.id]["start_left"] = t_sw_B if sw_offsets[segB.id]["start_left"] == 0.0 else maxf(sw_offsets[segB.id]["start_left"], t_sw_B)
 			else:
-				sw_offsets[segB.id]["end_right"] = maxf(sw_offsets[segB.id]["end_right"], t_sw_B)
+				sw_offsets[segB.id]["end_right"] = t_sw_B if sw_offsets[segB.id]["end_right"] == 0.0 else maxf(sw_offsets[segB.id]["end_right"], t_sw_B)
 
 			corner_joins.append({
 				"E": ep.position,
@@ -372,6 +414,7 @@ func rebuild_geometry() -> void:
 				"t_road_A": t_road_A, "t_road_B": t_road_B,
 				"t_sw_A": t_sw_A, "t_sw_B": t_sw_B,
 				"is_acute_fork": is_acute_fork,
+				"is_reflex": is_reflex,
 				"M_road": M_road,
 				"M_curb": M_curb,
 				"M_outer": M_outer
@@ -515,7 +558,7 @@ func rebuild_geometry() -> void:
 			var M_curb: Vector3 = cj["M_curb"]
 			var M_outer: Vector3 = cj["M_outer"]
 
-			if is_acute_fork:
+			if not cj.get("is_reflex", false):
 				var P_road_A: Vector3 = E + uA * cj["t_sw_A"] + rA * cj["half_w_A"]
 				var P_curb_A: Vector3 = E + uA * cj["t_sw_A"] + rA * (cj["half_w_A"] + CURB_WIDTH)
 				var P_outer_A: Vector3 = E + uA * cj["t_sw_A"] + rA * (cj["half_w_A"] + cj["sw_w_A"])

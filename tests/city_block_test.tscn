@@ -14,7 +14,7 @@ ambient_light_energy = 0.6
 [node name="CityBlockTest" type="Node3D"]
 script = ExtResource("3_test")
 
-[node name="CityBlockGenerator" parent="." instance=ExtResource("1_city")]
+[node name="CityLayoutGenerator" parent="." instance=ExtResource("1_city")]
 
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
 transform = Transform3D(0.8, -0.5, 0.3, 0, 0.5, 0.87, -0.6, -0.7, 0.4, 0, 30, 0)

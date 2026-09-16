@@ -1,0 +1,159 @@
+[gd_scene load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://tests/test_procedural_tree.gd" id="1_test"]
+[ext_resource type="Script" path="res://world/procedural_trees/procedural_tree.gd" id="2_ptree"]
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_tree"]
+sky_top_color = Color(0.35, 0.55, 0.78, 1)
+sky_horizon_color = Color(0.68, 0.75, 0.82, 1)
+ground_bottom_color = Color(0.20, 0.22, 0.24, 1)
+ground_horizon_color = Color(0.68, 0.75, 0.82, 1)
+
+[sub_resource type="Sky" id="Sky_tree"]
+sky_material = SubResource("ProceduralSkyMaterial_tree")
+
+[sub_resource type="Environment" id="Environment_tree"]
+background_mode = 2
+sky = SubResource("Sky_tree")
+ambient_light_source = 3
+ambient_light_color = Color(0.8, 0.85, 0.9, 1)
+ambient_light_sky_contribution = 0.5
+tonemap_mode = 2
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_ground"]
+size = Vector2(120, 120)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ground"]
+albedo_color = Color(0.28, 0.32, 0.26, 1)
+roughness = 0.95
+
+[node name="TestProceduralTree" type="Node3D"]
+script = ExtResource("1_test")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_tree")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.819152, -0.326356, 0.471958, 0, 0.822624, 0.568586, -0.573576, -0.46574, 0.673855, 0, 20, 0)
+shadow_enabled = true
+directional_shadow_max_distance = 120.0
+
+[node name="Ground" type="MeshInstance3D" parent="."]
+mesh = SubResource("PlaneMesh_ground")
+surface_material_override/0 = SubResource("StandardMaterial3D_ground")
+
+[node name="ProceduralTree" type="Node3D" parent="."]
+script = ExtResource("2_ptree")
+
+[node name="CameraPivot" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4, 0)
+
+[node name="Camera3D" type="Camera3D" parent="CameraPivot"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 14)
+current = true
+far = 400.0
+
+[node name="HUD" type="CanvasLayer" parent="."]
+
+[node name="Margin" type="MarginContainer" parent="HUD"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 20
+
+[node name="VBox" type="VBoxContainer" parent="HUD/Margin"]
+layout_mode = 2
+mouse_filter = 2
+
+[node name="Panel" type="PanelContainer" parent="HUD/Margin/VBox"]
+layout_mode = 2
+size_flags_horizontal = 0
+mouse_filter = 2
+
+[node name="Margin" type="MarginContainer" parent="HUD/Margin/VBox/Panel"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 14
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 14
+
+[node name="VBox" type="VBoxContainer" parent="HUD/Margin/VBox/Panel/Margin"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 6
+
+[node name="LabelTitle" type="Label" parent="HUD/Margin/VBox/Panel/Margin/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "ARBOL PROCEDURAL ULTRA-OPTIMIZADO"
+
+[node name="HSeparator" type="HSeparator" parent="HUD/Margin/VBox/Panel/Margin/VBox"]
+layout_mode = 2
+
+[node name="LabelProfile" type="Label" parent="HUD/Margin/VBox/Panel/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.92, 0.82, 1)
+text = "Especie: Pino Canadiense"
+
+[node name="LabelSeed" type="Label" parent="HUD/Margin/VBox/Panel/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.75, 0.85, 0.95, 1)
+text = "Semilla: 12345"
+
+[node name="LabelDistance" type="Label" parent="HUD/Margin/VBox/Panel/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.90, 0.65, 1)
+text = "Distancia: 14.0 m"
+
+[node name="LabelLOD" type="Label" parent="HUD/Margin/VBox/Panel/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.65, 0.95, 0.75, 1)
+text = "Modo LOD: AUTOMATICO (Activo: LOD 0)"
+
+[node name="LabelStats" type="Label" parent="HUD/Margin/VBox/Panel/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.85, 0.88, 1)
+text = "Instancias..."
+
+[node name="LabelDrawCalls" type="Label" parent="HUD/Margin/VBox/Panel/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 1, 0.5, 1)
+text = "Draw Calls: 2"
+
+[node name="Spacer" type="Control" parent="HUD/Margin/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+mouse_filter = 2
+
+[node name="PanelControls" type="PanelContainer" parent="HUD/Margin/VBox"]
+layout_mode = 2
+size_flags_horizontal = 0
+mouse_filter = 2
+
+[node name="Margin" type="MarginContainer" parent="HUD/Margin/VBox/PanelControls"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 14
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 14
+theme_override_constants/margin_bottom = 10
+
+[node name="LabelHelp" type="Label" parent="HUD/Margin/VBox/PanelControls/Margin"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.8, 0.85, 1)
+text = "CONTROLES:
+ • [R] / [Espacio]: Generar otro arbol aleatorio
+ • [1] Pino Boreal (Canadá)   [2] Roble Clásico Verde
+ • [3] Abedul Otoñal Dorado    [4] Sauce Llorón
+ • [5] Árbol Seco / Muerto      [6] Arbusto Sotobosque
+ • [T]: Alternar textura de hojas (Ramillete con corte alfa vs Color base)
+ • [L]: Forzar LOD (Auto / LOD0 / LOD1 / LOD2) para comparar
+ • [Arrastrar Ratón]: Rotar cámara alrededor del árbol
+ • [Rueda Ratón]: Zoom para alejarse/acercarse y ver optimización de distancia"
