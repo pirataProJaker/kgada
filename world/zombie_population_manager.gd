@@ -13,11 +13,13 @@ const SPAWN_WAIT_HEIGHT := 500.0
 const ACTIVE_ZOMBIE_BUDGET := 64
 const NOISE_POLL_INTERVAL := 0.25
 const ZOMBIE_HEARING_DISTANCE := 24.0
-const SAVE_INTERVAL := 15.0
+const SAVE_INTERVAL := 60.0
 const NETWORK_SNAPSHOT_INTERVAL := 0.2
 
 @export var chunk_manager_path: NodePath
 @export var max_active_zombies := ACTIVE_ZOMBIE_BUDGET
+## Diagnóstico de rendimiento: desactiva totalmente la población y simulación de zombies
+@export var enable_zombies: bool = false
 
 var _population = null
 var _chunk_manager: Node3D = null
@@ -50,6 +52,11 @@ func configure_world(world_seed: int) -> void:
 	_queued_keys.clear()
 	_materialized_keys.clear()
 	_world_seed = world_seed
+	_configured = false
+
+	if not enable_zombies:
+		print("[zombie_population] Zombies totalmente desactivados para diagnóstico de rendimiento.")
+		return
 
 	if _population == null:
 		if not ClassDB.class_exists("ZombiePopulation"):

@@ -25,6 +25,8 @@ ContentLoader="*res://autoload/content_loader.gd"
 ObjectRegistry="*res://autoload/object_registry.gd"
 Chat="*res://ui/chat.tscn"
 Hud="*res://ui/hud.tscn"
+FpsOverlay="*res://ui/fps_overlay.tscn"
+ChunkProfiler="*res://autoload/chunk_profiler.gd"
 
 [display]
 

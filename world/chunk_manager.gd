@@ -24,6 +24,7 @@ const GRADIENT_LOW_HEIGHT := 8.0
 const GRADIENT_MID_HEIGHT := 13.0
 const GRADIENT_HIGH_HEIGHT := 18.0
 const TERRAIN_GRID_PRECISION := 260
+const TERRAIN_PIXEL_SIZE := 0.08
 
 # Vegetación: Los árboles y pinos se generan proceduralmente con ProceduralTree.
 # Los arbustos usan modelos FBX de tree_pack_1.1.
@@ -45,6 +46,31 @@ const ProceduralTreeGenerator = preload("res://world/procedural_trees/procedural
 const ProceduralTreeMaterials = preload("res://world/procedural_trees/procedural_tree_materials.gd")
 const TREE_TRUNK_RADIUS := 0.35 # aproximado (no exacto), alcanza para bloquear/golpear el tronco
 const TREE_COLLISION_HEIGHT_RATIO := 0.65 # cobertura vertical relativa a la altura visual total - le alcanza a la altura de la camara del jugador
+const TREE_VARIANTS_PER_SPECIES := 35
+const ChunkProfiler = preload("res://autoload/chunk_profiler.gd")
+const PSXGrass = preload("res://world/vegetation/grass/psx_grass.gd")
+const WildDaisy = preload("res://world/vegetation/daisy/wild_daisy.gd")
+const WildLavender = preload("res://world/vegetation/lavender/wild_lavender.gd")
+const WildPoppy = preload("res://world/vegetation/poppy/wild_poppy.gd")
+const ProceduralFlower = preload("res://world/procedural_flora/procedural_flower.gd")
+const VEGETATION_SHADER = preload("res://world/vegetation/common/vegetation_shader.gdshader")
+
+## Diagnóstico de rendimiento: desactiva totalmente la generación y colocación de árboles
+@export var enable_trees: bool = true
+## Fuerza los árboles detallados completos (STANDARD) con copas ricas multicapa
+@export var force_detailed_trees: bool = true
+## Diagnóstico de rendimiento: desactiva colocación de arbustos
+@export var enable_bushes: bool = false
+## Diagnóstico de rendimiento: desactiva colocación de pasto FBX (PSXGrass)
+@export var enable_grass: bool = true
+## Diagnóstico de rendimiento: desactiva colocación de flores silvestres (Margaritas, Lavandas, Amapolas)
+@export var enable_wildflowers: bool = true
+## Diagnóstico de rendimiento: desactiva colocación de rosales silvestres con LODs (ProceduralFlower)
+@export var enable_roses: bool = true
+
+var _tree_archetype_pool: Dictionary = {} # profile_id -> Array[ProceduralTreeGenerator.TreeGenerationResult]
+var _rose_archetype_pool: Array[ProceduralFlower.FlowerGenerationPackage] = []
+var _bush_materials_cache: Dictionary = {} # index -> StandardMaterial3D (cache global para evitar allocs en streaming)
 
 var _loaded_chunks: Dictionary = {} # Vector2i -> MeshInstance3D
 var _ready_chunks: Dictionary = {} # Vector2i -> true, colision activa
@@ -79,12 +105,63 @@ var _editor_dirty_chunks: Dictionary = {} # Vector2i -> true
 var _editor_render_queued := false
 
 # Colas progresivas para suavizado de carga/descarga (evita cualquier freeze o caida de FPS):
+var _chunks_to_load: Array[Vector2i] = []
 var _chunks_to_unload: Array[Vector2i] = []
 var _tree_attach_queue: Array[Dictionary] = []
+var _bush_attach_queue: Array[Dictionary] = []
+var _rose_attach_queue: Array[Dictionary] = []
+var _chunk_vegetation_data: Dictionary = {} # Vector2i -> Dictionary (tree, bush, rose, grass y flower requests precalculados)
+var _chunk_has_trees: Dictionary = {} # Vector2i -> bool
+var _chunk_has_bushes: Dictionary = {} # Vector2i -> bool
+var _chunk_has_roses: Dictionary = {} # Vector2i -> bool
+var _chunk_has_grass: Dictionary = {} # Vector2i -> bool
+var _chunk_has_flowers: Dictionary = {} # Vector2i -> bool
+var _grass_mesh_cache: Mesh = null
+var _flower_mesh_cache: Dictionary = {} # String -> Mesh
+var _flower_material: ShaderMaterial = null
+var _shared_terrain_material: ShaderMaterial = null
+
+
+## Ruido determinístico de biomas (idéntico al shader psx_vertex_snap.gdshader):
+## < 0.12 = Pradera / Meadow abierta (césped denso, flores abundantes, pocos árboles)
+## 0.12 a 0.40 = Transición / Arboleda (copses de árboles agrupados, césped medio)
+## >= 0.40 = Bosque denso (masa forestal continua de 10-14 árboles, mantillo de tierra)
+static func get_biome_noise(wx: float, wz: float) -> float:
+	var b1 = sin(wx * 0.018 + sin(wz * 0.014) * 1.2)
+	var b2 = sin(wz * 0.016 + sin(wx * 0.012) * 1.2)
+	return (b1 + b2) * 0.5
+
+
+func _get_grass_mesh() -> Mesh:
+	if _grass_mesh_cache == null:
+		_grass_mesh_cache = PSXGrass.create_mesh(0.38)
+	return _grass_mesh_cache
+
+
+func _get_flower_mesh(type: String) -> Mesh:
+	if not _flower_mesh_cache.has(type):
+		match type:
+			"daisy":
+				_flower_mesh_cache["daisy"] = WildDaisy.create_mesh(12345)
+			"lavender":
+				_flower_mesh_cache["lavender"] = WildLavender.create_mesh(23456)
+			"poppy":
+				_flower_mesh_cache["poppy"] = WildPoppy.create_mesh(34567)
+	return _flower_mesh_cache.get(type)
+
+
+func _get_flower_material() -> ShaderMaterial:
+	if _flower_material == null:
+		_flower_material = ShaderMaterial.new()
+		_flower_material.shader = VEGETATION_SHADER
+	return _flower_material
 
 
 func _ready() -> void:
+	_init_shared_terrain_material()
 	ProceduralTreeMaterials.preload_all_materials()
+	_pregenerate_tree_archetypes()
+	_pregenerate_rose_archetypes()
 	if ClassDB.class_exists("TerrainGenerator"):
 		_generator = ClassDB.instantiate("TerrainGenerator")
 	else:
@@ -92,6 +169,73 @@ func _ready() -> void:
 
 	_load_vegetation_scenes()
 	_create_safety_floor()
+
+
+func _pregenerate_rose_archetypes() -> void:
+	if not enable_roses:
+		return
+	var t0 := Time.get_ticks_msec()
+	for i in range(18):
+		var seed_val := hash("rose_archetype") ^ (_world_seed * 1009) ^ (i * 7919)
+		var color_idx := i % 6
+		var growth := 1.0
+		var pkg: ProceduralFlower.FlowerGenerationPackage = ProceduralFlower.generate_package("shrub_rose", seed_val, growth, color_idx)
+		_rose_archetype_pool.append(pkg)
+	var elapsed := Time.get_ticks_msec() - t0
+	print("[chunk_manager] Catálogo de %d rosales procedurales (LOD0/1/2) precalculado en %d ms" % [_rose_archetype_pool.size(), elapsed])
+
+
+func _init_shared_terrain_material() -> void:
+	if _shared_terrain_material != null:
+		return
+	_shared_terrain_material = ShaderMaterial.new()
+	_shared_terrain_material.shader = PSX_SHADER
+	_shared_terrain_material.set_shader_parameter("grid_precision", TERRAIN_GRID_PRECISION)
+	_shared_terrain_material.set_shader_parameter("use_height_gradient", true)
+	_shared_terrain_material.set_shader_parameter("low_color", LOW_COLOR)
+	_shared_terrain_material.set_shader_parameter("mid_color", MID_COLOR)
+	_shared_terrain_material.set_shader_parameter("high_color", HIGH_COLOR)
+	_shared_terrain_material.set_shader_parameter("gradient_low_height", GRADIENT_LOW_HEIGHT)
+	_shared_terrain_material.set_shader_parameter("gradient_mid_height", GRADIENT_MID_HEIGHT)
+	_shared_terrain_material.set_shader_parameter("gradient_high_height", GRADIENT_HIGH_HEIGHT)
+
+	# Terreno retro PSX con píxeles pequeños y pasto exclusivamente verde
+	_shared_terrain_material.set_shader_parameter("use_pixel_terrain", true)
+	_shared_terrain_material.set_shader_parameter("pixel_size", TERRAIN_PIXEL_SIZE)
+	_shared_terrain_material.set_shader_parameter("use_vertex_dirt", false)
+	_shared_terrain_material.set_shader_parameter("use_procedural_biomes", true)
+
+
+## Pre-genera un catalogo fijo de variaciones procedurales por cada especie al iniciar el mundo.
+## Elimina completamente el calculo de ramas y mallas durante la exploracion de chunks (0 ms de coste CPU en streaming).
+func _pregenerate_tree_archetypes() -> void:
+	if not enable_trees:
+		print("[chunk_manager] Generación de árboles deshabilitada para pruebas de rendimiento.")
+		return
+	var sm = get_node_or_null("/root/SettingsManager")
+	var use_low_spec := false
+	if not force_detailed_trees and sm and sm.has_method("is_low_spec_foliage"):
+		use_low_spec = sm.is_low_spec_foliage()
+	
+	var mode: int = ProceduralTreeGenerator.FoliageMode.LOW_SPEC_TRIANGLE if use_low_spec else ProceduralTreeGenerator.FoliageMode.STANDARD
+	var species := ["classic_oak", "pine_boreal", "autumn_birch", "weeping_willow", "dead_tree"]
+	
+	var t0 := Time.get_ticks_msec()
+	for p_id in species:
+		var prof := ProceduralTreeProfiles.get_profile(p_id)
+		var list: Array[ProceduralTreeGenerator.TreeGenerationResult] = []
+		for v in range(TREE_VARIANTS_PER_SPECIES):
+			var seed_v := hash(p_id) ^ (_world_seed * 1009) ^ (v * 7919)
+			var res := ProceduralTreeGenerator.generate_tree(prof, seed_v, mode)
+			list.append(res)
+		_tree_archetype_pool[p_id] = list
+	
+	var elapsed := Time.get_ticks_msec() - t0
+	print("[chunk_manager] Catalogo de %d arboles precalculado en %d ms (Modo: %s)" % [
+		TREE_VARIANTS_PER_SPECIES * species.size(),
+		elapsed,
+		"LOW_SPEC_TRIANGLE" if use_low_spec else "STANDARD"
+	])
 
 
 ## Piso invisible infinito muy por debajo del terreno (que nunca baja de
@@ -299,9 +443,24 @@ func world_to_chunk_coord(world_pos: Vector3) -> Vector2i:
 
 
 func _process(_delta: float) -> void:
-	_poll_pending_tasks()
-	_process_tree_attachments()
-	_process_chunk_unloads()
+	# 1. Despachar hasta 1 tarea de cálculo en hilo de fondo WorkerThreadPool (prioridad normal)
+	_dispatch_pending_chunk_loads()
+
+	# 2. Recoger mallas terminadas del hilo de fondo (máximo 1 chunk por frame)
+	var built_chunk: bool = _poll_pending_tasks()
+
+	# 3. Intercalar trabajo en el hilo principal: si se construyó un chunk en este fotograma,
+	# no saturar con descargas ni vegetación para garantizar que cada frame esté muy por debajo de 16.6 ms:
+	if not built_chunk:
+		if not _chunks_to_unload.is_empty():
+			_process_chunk_unloads()
+		elif not _rose_attach_queue.is_empty():
+			_process_rose_attachments()
+		elif not _bush_attach_queue.is_empty():
+			_process_bush_attachments()
+		elif not _tree_attach_queue.is_empty():
+			_process_tree_attachments()
+
 	if _heightfield_mode:
 		return
 
@@ -331,8 +490,10 @@ func _get_view_distance() -> int:
 
 
 func _update_chunks(center: Vector2i) -> void:
+	var t0 := Time.get_ticks_usec()
 	var needed: Dictionary = {}
 	var view_dist := _get_view_distance()
+	var new_loads := 0
 
 	for dz in range(-view_dist, view_dist + 1):
 		for dx in range(-view_dist, view_dist + 1):
@@ -340,28 +501,119 @@ func _update_chunks(center: Vector2i) -> void:
 			needed[coord] = true
 			if _chunks_to_unload.has(coord):
 				_chunks_to_unload.erase(coord)
-			elif not _loaded_chunks.has(coord) and not _pending_task_ids.has(coord):
-				_load_chunk(coord)
+			elif not _loaded_chunks.has(coord) and not _pending_task_ids.has(coord) and not _chunks_to_load.has(coord):
+				_chunks_to_load.append(coord)
+				new_loads += 1
 
-	# Encola la descarga de chunks que quedaron fuera del rango para destruirlos
-	# escalonadamente (1 por fotograma) sin ningun pico de Garbage Collection.
+	# Ordenar cola de carga por cercanía al jugador: el chunk bajo el jugador y los más cercanos primero
+	if new_loads > 0:
+		_chunks_to_load.sort_custom(func(a: Vector2i, b: Vector2i) -> bool:
+			var da := (a.x - center.x) * (a.x - center.x) + (a.y - center.y) * (a.y - center.y)
+			var db := (b.x - center.x) * (b.x - center.x) + (b.y - center.y) * (b.y - center.y)
+			return da < db
+		)
+
+	# Cancelar de la cola de carga los chunks que ya quedaron fuera del radio
+	for i in range(_chunks_to_load.size() - 1, -1, -1):
+		if not needed.has(_chunks_to_load[i]):
+			_chunks_to_load.remove_at(i)
+
+	var new_unloads := 0
 	for coord in _loaded_chunks.keys():
 		if not needed.has(coord) and not _chunks_to_unload.has(coord):
 			_chunks_to_unload.append(coord)
+			new_unloads += 1
+
+	if new_loads > 0 or new_unloads > 0:
+		var elapsed_ms := (Time.get_ticks_usec() - t0) / 1000.0
+		ChunkProfiler.record_frame_event("UpdateChunks_%s (+%d, -%d): %.2fms" % [
+			center, new_loads, new_unloads, elapsed_ms
+		])
+		ChunkProfiler.log_event("[MOVIMIENTO] Jugador en chunk %s | +%d chunks a cargar | -%d chunks a descargar (cola: %d, duró %.2f ms)" % [
+			center, new_loads, new_unloads, _chunks_to_load.size(), elapsed_ms
+		])
+
+	# Actualiza colisiones perezosas: solo el radio 3x3 inmediato alrededor del jugador
+	_update_nearby_tree_collisions(center)
+
+	# Actualiza activacion progresiva de vegetacion segun visibilidad real (LOD):
+	# Arboles: radio <= 2 chunks (<= 80m, limite estricto de visibilidad)
+	# Arbustos: radio <= 1 chunk (<= 40m)
+	_update_nearby_vegetation(center)
+
+
+func _update_nearby_vegetation(center: Vector2i) -> void:
+	if not enable_trees and not enable_bushes and not enable_grass and not enable_wildflowers and not enable_roses:
+		return
+	for coord: Vector2i in _loaded_chunks.keys():
+		var chunk_node: Node3D = _loaded_chunks.get(coord)
+		if chunk_node == null or not is_instance_valid(chunk_node):
+			continue
+		var dist := maxi(abs(coord.x - center.x), abs(coord.y - center.y))
+		var v_data: Dictionary = _chunk_vegetation_data.get(coord, {})
+		if not v_data.is_empty():
+			if enable_trees and dist <= 2 and not _chunk_has_trees.has(coord):
+				_spawn_chunk_trees(coord, chunk_node, v_data)
+			if enable_bushes and dist <= 1 and not _chunk_has_bushes.has(coord):
+				_spawn_chunk_bushes(coord, chunk_node, v_data)
+			if enable_grass and dist <= 1 and not _chunk_has_grass.has(coord):
+				_spawn_chunk_grass(coord, chunk_node, v_data)
+			if enable_wildflowers and dist <= 1 and not _chunk_has_flowers.has(coord):
+				_spawn_chunk_flowers(coord, chunk_node, v_data)
+			if enable_roses and dist <= 1 and not _chunk_has_roses.has(coord):
+				_spawn_chunk_roses(coord, chunk_node, v_data)
+
+		# Descargar vegetación fina (pasto, flores y rosales) cuando el chunk se aleja fuera del radio inmediato (dist > 1)
+		if dist > 1:
+			if _chunk_has_grass.has(coord):
+				var grass_node := chunk_node.get_node_or_null("ChunkGrass")
+				if grass_node:
+					grass_node.queue_free()
+				_chunk_has_grass.erase(coord)
+			if _chunk_has_flowers.has(coord):
+				for child in chunk_node.get_children():
+					if child.name.begins_with("ChunkFlowers_"):
+						child.queue_free()
+				_chunk_has_flowers.erase(coord)
+			if _chunk_has_roses.has(coord):
+				for child in chunk_node.get_children():
+					if child.name.begins_with("ChunkRose"):
+						child.queue_free()
+				_chunk_has_roses.erase(coord)
+
+
+func _dispatch_pending_chunk_loads() -> void:
+	# EXACTAMENTE 1 SUBPROCESO DE FONDO A LA VEZ (cero saturación de CPU)
+	if _pending_task_ids.size() >= 1:
+		return
+	while not _chunks_to_load.is_empty():
+		var coord: Vector2i = _chunks_to_load.pop_front()
+		if _loaded_chunks.has(coord) or _pending_task_ids.has(coord):
+			continue
+		_load_chunk(coord)
+		break
 
 
 func _process_chunk_unloads() -> void:
 	if not _chunks_to_unload.is_empty():
 		var coord: Vector2i = _chunks_to_unload.pop_front()
 		if _loaded_chunks.has(coord):
+			var t0 := Time.get_ticks_usec()
 			_unload_chunk(coord)
+			var elapsed_ms := (Time.get_ticks_usec() - t0) / 1000.0
+			ChunkProfiler.record_frame_event("UnloadChunk_%s: %.2fms (pendientes: %d)" % [coord, elapsed_ms, _chunks_to_unload.size()])
+			ChunkProfiler.log_event("[DESCARGA_CHUNK] %s liberado en %.2f ms | Restan: %d" % [coord, elapsed_ms, _chunks_to_unload.size()])
 
 
 func _process_tree_attachments() -> void:
-	# Suavizado de carga: adjunta maximo 3 arboles por fotograma (~0.45 ms).
-	# Incluso si se cargan varios chunks juntos, los FPS no bajan jamas de 60.
+	if not enable_trees:
+		_tree_attach_queue.clear()
+		return
+	# Suavizado de carga adaptable: 2 a 3 árboles por fotograma (<0.15 ms de CPU, cero tirones)
 	var count := 0
-	while not _tree_attach_queue.is_empty() and count < 3:
+	var max_per_frame := 3 if _tree_attach_queue.size() > 10 else 2
+	var t0 := Time.get_ticks_usec()
+	while not _tree_attach_queue.is_empty() and count < max_per_frame:
 		var item: Dictionary = _tree_attach_queue.pop_front()
 		var parent_ref: WeakRef = item.get("parent_ref")
 		if parent_ref == null:
@@ -376,9 +628,106 @@ func _process_tree_attachments() -> void:
 		tree.apply_generation_result(res)
 		parent.add_child(tree)
 		tree.global_position = req["pos"]
+		
+		# Variacion morfologica 3D: escala asimetrica + rotacion 360 + inclinacion organica natural
+		var scale_3d: Vector3 = req.get("scale_3d", Vector3.ONE * float(req.get("scale_var", 1.0)))
+		tree.scale = scale_3d
 		tree.rotate_y(req["rot_y"])
-		_add_tree_collision(tree)
+		var tilt_x: float = float(req.get("tilt_x", 0.0))
+		var tilt_z: float = float(req.get("tilt_z", 0.0))
+		if absf(tilt_x) > 0.001:
+			tree.rotate_x(tilt_x)
+		if absf(tilt_z) > 0.001:
+			tree.rotate_z(tilt_z)
+		
+		# Colision perezosa: solo instanciar cuerpo fisico si esta en el radio 3x3 del jugador
+		var tree_chunk_x := floori(tree.global_position.x / CHUNK_WORLD_SIZE)
+		var tree_chunk_z := floori(tree.global_position.z / CHUNK_WORLD_SIZE)
+		var is_near: bool = _local_player == null or (abs(tree_chunk_x - _last_player_chunk.x) <= 1 and abs(tree_chunk_z - _last_player_chunk.y) <= 1)
+		if is_near:
+			_add_tree_collision(tree)
 		count += 1
+	
+	if count > 0:
+		var elapsed_ms := (Time.get_ticks_usec() - t0) / 1000.0
+		ChunkProfiler.record_frame_event("AttachTrees (%d): %.2fms (cola: %d)" % [count, elapsed_ms, _tree_attach_queue.size()])
+
+
+func _process_rose_attachments() -> void:
+	if not enable_roses:
+		_rose_attach_queue.clear()
+		return
+	# Suavizado de carga: adjunta maximo 2 rosales por fotograma (~0.04 ms de CPU con arquetipos precalculados)
+	var count := 0
+	var t0 := Time.get_ticks_usec()
+	while not _rose_attach_queue.is_empty() and count < 2:
+		var item: Dictionary = _rose_attach_queue.pop_front()
+		var parent_ref: WeakRef = item.get("parent_ref")
+		if parent_ref == null:
+			continue
+		var parent: Node3D = parent_ref.get_ref() as Node3D
+		if parent == null or not is_instance_valid(parent):
+			continue # el chunk se descargo mientras esperaba
+		
+		var req: Dictionary = item["req"]
+		var pkg: ProceduralFlower.FlowerGenerationPackage = item["pkg"]
+		var rose := ProceduralFlower.new()
+		rose.name = "ChunkRose"
+		rose.apply_generation_package(pkg)
+		parent.add_child(rose)
+		rose.global_position = req["pos"]
+		rose.scale = req.get("scale", Vector3.ONE)
+		rose.rotate_y(req["rot_y"])
+		count += 1
+
+	if count > 0:
+		var elapsed_ms := (Time.get_ticks_usec() - t0) / 1000.0
+		ChunkProfiler.record_frame_event("AttachRoses (%d): %.2fms (cola: %d)" % [count, elapsed_ms, _rose_attach_queue.size()])
+
+
+func _process_bush_attachments() -> void:
+	# Suavizado de carga: adjunta maximo 1 arbusto por fotograma (~0.05 ms de CPU)
+	var count := 0
+	var t0 := Time.get_ticks_usec()
+	while not _bush_attach_queue.is_empty() and count < 1:
+		var item: Dictionary = _bush_attach_queue.pop_front()
+		var parent_ref: WeakRef = item.get("parent_ref")
+		if parent_ref == null:
+			continue
+		var parent: Node3D = parent_ref.get_ref() as Node3D
+		if parent == null or not is_instance_valid(parent):
+			continue # el chunk se descargo mientras esperaba
+		
+		var req: Dictionary = item["req"]
+		var model_idx: int = req["model_index"]
+		if model_idx >= _bush_scenes.size():
+			continue
+		var scene: PackedScene = _bush_scenes[model_idx]
+		if scene == null:
+			continue
+		var instance: Node3D = scene.instantiate()
+		parent.add_child(instance)
+		instance.global_position = req["pos"]
+		instance.rotate_y(req["rot_y"])
+		instance.scale = req["scale"]
+		
+		var texture: Texture2D = _bush_textures[model_idx] if model_idx < _bush_textures.size() else null
+		if texture != null:
+			var material: StandardMaterial3D = _bush_materials_cache.get(model_idx)
+			if material == null:
+				material = StandardMaterial3D.new()
+				material.albedo_texture = texture
+				material.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST
+				material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA_SCISSOR
+				material.alpha_scissor_threshold = 0.5
+				material.cull_mode = BaseMaterial3D.CULL_DISABLED
+				_bush_materials_cache[model_idx] = material
+			_apply_vegetation_material(instance, material)
+		count += 1
+
+	if count > 0:
+		var elapsed_ms := (Time.get_ticks_usec() - t0) / 1000.0
+		ChunkProfiler.record_frame_event("AttachBushes (%d): %.2fms (cola: %d)" % [count, elapsed_ms, _bush_attach_queue.size()])
 
 
 ## Encola la generacion de un chunk en un hilo de WorkerThreadPool. No
@@ -404,7 +753,7 @@ func _load_chunk(coord: Vector2i) -> void:
 		func() -> void: _generate_chunk_data_threaded(
 			coord, origin_x, origin_z, world_seed, city_center, city_inner_radius, city_outer_radius, city_flat_height
 		),
-		true # high_priority: minimiza la ventana sin colision real bajo el jugador
+		false # prioridad normal para no saturar los 8 núcleos ni congelar el hilo principal
 	)
 	_pending_task_ids[coord] = task_id
 
@@ -428,6 +777,374 @@ func _generate_chunk_data_threaded(
 		city_center.x, city_center.y, city_inner_radius, city_outer_radius, city_flat_height
 	)
 
+	# Determinar ecología del chunk según ruido de biomas (idéntico al shader de terreno)
+	var chunk_center_x := origin_x + CHUNK_WORLD_SIZE * 0.5
+	var chunk_center_z := origin_z + CHUNK_WORLD_SIZE * 0.5
+	var center_biome := get_biome_noise(chunk_center_x, chunk_center_z)
+
+	# Precalcular posicion, altura y orientacion de arboles en este MISMO hilo de fondo
+	var rng := RandomNumberGenerator.new()
+	rng.seed = hash(Vector2i(coord.x, coord.y)) ^ world_seed
+
+	var tree_requests: Array[Dictionary] = []
+	if enable_trees:
+		var target_tree_count := 0
+		var cluster_centers: Array[Vector2] = []
+		var cluster_radii: Array[float] = []
+
+		if center_biome >= 0.40:
+			# BOSQUE DENSO: 10 a 14 árboles agrupados formando masa forestal continua
+			target_tree_count = rng.randi_range(10, 14)
+			var c1 := Vector2(
+				origin_x + rng.randf_range(VEGETATION_MARGIN + 6.0, CHUNK_WORLD_SIZE - VEGETATION_MARGIN - 6.0),
+				origin_z + rng.randf_range(VEGETATION_MARGIN + 6.0, CHUNK_WORLD_SIZE - VEGETATION_MARGIN - 6.0)
+			)
+			cluster_centers.append(c1)
+			cluster_radii.append(rng.randf_range(7.0, 9.5))
+			if target_tree_count > 11:
+				var c2 := Vector2(
+					origin_x + rng.randf_range(VEGETATION_MARGIN + 5.0, CHUNK_WORLD_SIZE - VEGETATION_MARGIN - 5.0),
+					origin_z + rng.randf_range(VEGETATION_MARGIN + 5.0, CHUNK_WORLD_SIZE - VEGETATION_MARGIN - 5.0)
+				)
+				cluster_centers.append(c2)
+				cluster_radii.append(rng.randf_range(6.0, 8.5))
+		elif center_biome >= 0.12:
+			# ARBOLEDA / TRANSICIÓN: 3 a 5 árboles agrupados en un bosquecillo pequeño
+			target_tree_count = rng.randi_range(3, 5)
+			var c := Vector2(
+				origin_x + rng.randf_range(VEGETATION_MARGIN + 5.0, CHUNK_WORLD_SIZE - VEGETATION_MARGIN - 5.0),
+				origin_z + rng.randf_range(VEGETATION_MARGIN + 5.0, CHUNK_WORLD_SIZE - VEGETATION_MARGIN - 5.0)
+			)
+			cluster_centers.append(c)
+			cluster_radii.append(rng.randf_range(4.0, 6.5))
+		else:
+			# PRADERA / MEADOW ABIERTO: claros limpios, casi sin árboles.
+			# Ocasionalmente 1 árbol solitario majestuoso en loma alta (probabilidad 35%)
+			if rng.randf() < 0.35:
+				target_tree_count = 1
+				var c := Vector2(
+					origin_x + rng.randf_range(VEGETATION_MARGIN + 8.0, CHUNK_WORLD_SIZE - VEGETATION_MARGIN - 8.0),
+					origin_z + rng.randf_range(VEGETATION_MARGIN + 8.0, CHUNK_WORLD_SIZE - VEGETATION_MARGIN - 8.0)
+				)
+				cluster_centers.append(c)
+				cluster_radii.append(2.0)
+			else:
+				target_tree_count = 0
+
+		var attempts := 0
+		var max_attempts := target_tree_count * 5 + 10
+		while tree_requests.size() < target_tree_count and attempts < max_attempts:
+			attempts += 1
+			var wx: float
+			var wz: float
+			if not cluster_centers.is_empty():
+				var c_idx := rng.randi_range(0, cluster_centers.size() - 1)
+				var center_pt: Vector2 = cluster_centers[c_idx]
+				var rad: float = cluster_radii[c_idx]
+				var angle := rng.randf() * TAU
+				var dist := sqrt(rng.randf()) * rad
+				wx = center_pt.x + cos(angle) * dist
+				wz = center_pt.y + sin(angle) * dist
+			else:
+				wx = origin_x + rng.randf_range(VEGETATION_MARGIN, CHUNK_WORLD_SIZE - VEGETATION_MARGIN)
+				wz = origin_z + rng.randf_range(VEGETATION_MARGIN, CHUNK_WORLD_SIZE - VEGETATION_MARGIN)
+
+			wx = clampf(wx, origin_x + VEGETATION_MARGIN, origin_x + CHUNK_WORLD_SIZE - VEGETATION_MARGIN)
+			wz = clampf(wz, origin_z + VEGETATION_MARGIN, origin_z + CHUNK_WORLD_SIZE - VEGETATION_MARGIN)
+
+			if city_inner_radius > 0.0:
+				var cdx := wx - city_center.x
+				var cdz := wz - city_center.y
+				if cdx * cdx + cdz * cdz <= city_inner_radius * city_inner_radius:
+					continue
+
+			# Evitar solapamiento de troncos (mínimo 2.2m)
+			var too_close := false
+			for req in tree_requests:
+				var epos: Vector3 = req["pos"]
+				var tdx := wx - epos.x
+				var tdz := wz - epos.z
+				if tdx * tdx + tdz * tdz < 4.84:
+					too_close = true
+					break
+			if too_close:
+				continue
+
+			var h: float = _generator.sample_height(world_seed, wx, wz)
+			if h > VEGETATION_MAX_HEIGHT or h < 3.0:
+				continue
+
+			var eps := 0.5
+			var hl: float = _generator.sample_height(world_seed, wx - eps, wz)
+			var hr: float = _generator.sample_height(world_seed, wx + eps, wz)
+			var hd: float = _generator.sample_height(world_seed, wx, wz - eps)
+			var hu: float = _generator.sample_height(world_seed, wx, wz + eps)
+			var normal := Vector3(hl - hr, 2.0 * eps, hd - hu).normalized()
+			if normal.dot(Vector3.UP) < VEGETATION_MIN_SLOPE_DOT:
+				continue
+
+			var selected_profile_id := "classic_oak"
+			if center_biome < 0.12:
+				selected_profile_id = "pine_boreal" if rng.randf() < 0.60 else "classic_oak"
+			elif center_biome >= 0.40:
+				var roll := rng.randf()
+				if roll < 0.40:
+					selected_profile_id = "pine_boreal"
+				elif roll < 0.70:
+					selected_profile_id = "classic_oak"
+				elif roll < 0.88:
+					selected_profile_id = "autumn_birch"
+				else:
+					selected_profile_id = "dead_tree"
+			else:
+				var roll := rng.randf()
+				if roll < 0.35:
+					selected_profile_id = "classic_oak"
+				elif roll < 0.65:
+					selected_profile_id = "autumn_birch"
+				elif roll < 0.85:
+					selected_profile_id = "weeping_willow"
+				else:
+					selected_profile_id = "pine_boreal"
+
+			var height_scale := rng.randf_range(0.85, 1.25)
+			var canopy_spread := rng.randf_range(0.85, 1.20)
+			if center_biome < 0.12 and target_tree_count == 1:
+				height_scale *= 1.25
+				canopy_spread *= 1.20
+
+			var scale_vec := Vector3(canopy_spread, height_scale, canopy_spread)
+			var tilt_x := rng.randf_range(-0.055, 0.055)
+			var tilt_z := rng.randf_range(-0.055, 0.055)
+
+			tree_requests.append({
+				"profile_id": selected_profile_id,
+				"seed": rng.randi(),
+				"pos": Vector3(wx, h, wz),
+				"rot_y": rng.randf_range(0.0, TAU),
+				"scale_3d": scale_vec,
+				"tilt_x": tilt_x,
+				"tilt_z": tilt_z
+			})
+
+	data["tree_requests"] = tree_requests
+
+	# Precalcular instancias de césped FBX (PSX_Grass) en este hilo de fondo (0 ms en hilo principal)
+	var grass_requests: Array[Dictionary] = []
+	if enable_grass and _generator != null:
+		var target_grass_count := 0
+		if center_biome < 0.12:
+			target_grass_count = rng.randi_range(110, 150)
+		elif center_biome < 0.40:
+			target_grass_count = rng.randi_range(40, 65)
+		else:
+			target_grass_count = rng.randi_range(10, 18)
+
+		for i in target_grass_count:
+			if _generator == null:
+				break
+			var wx := origin_x + rng.randf_range(1.0, CHUNK_WORLD_SIZE - 1.0)
+			var wz := origin_z + rng.randf_range(1.0, CHUNK_WORLD_SIZE - 1.0)
+			if city_inner_radius > 0.0:
+				var cdx := wx - city_center.x
+				var cdz := wz - city_center.y
+				if cdx * cdx + cdz * cdz <= city_inner_radius * city_inner_radius:
+					continue
+
+			var h: float = _generator.sample_height(world_seed, wx, wz)
+			if h > VEGETATION_MAX_HEIGHT or h < 3.0:
+				continue
+
+			var eps := 0.5
+			var hl: float = _generator.sample_height(world_seed, wx - eps, wz)
+			var hr: float = _generator.sample_height(world_seed, wx + eps, wz)
+			var hd: float = _generator.sample_height(world_seed, wx, wz - eps)
+			var hu: float = _generator.sample_height(world_seed, wx, wz + eps)
+			var normal := Vector3(hl - hr, 2.0 * eps, hd - hu).normalized()
+			if normal.dot(Vector3.UP) < 0.65:
+				continue
+
+			var g_scale := rng.randf_range(1.10, 1.70)
+			var g_rot := rng.randf_range(0.0, TAU)
+			var g_tilt_x := deg_to_rad(rng.randf_range(-5.0, 5.0))
+			var g_tilt_z := deg_to_rad(rng.randf_range(-5.0, 5.0))
+
+			grass_requests.append({
+				"pos": Vector3(wx, h, wz),
+				"scale": g_scale,
+				"rot_y": g_rot,
+				"tilt_x": g_tilt_x,
+				"tilt_z": g_tilt_z
+			})
+
+	data["grass_requests"] = grass_requests
+
+	# Precalcular flores silvestres (Margaritas, Lavandas, Amapolas) en praderas abiertas
+	var flower_requests: Array[Dictionary] = []
+	if enable_wildflowers and _generator != null:
+		var target_flower_count := 0
+		if center_biome < 0.12:
+			target_flower_count = rng.randi_range(40, 65)
+		elif center_biome < 0.40:
+			target_flower_count = rng.randi_range(10, 18)
+		else:
+			target_flower_count = 0
+
+		for i in target_flower_count:
+			if _generator == null:
+				break
+			var wx := origin_x + rng.randf_range(1.5, CHUNK_WORLD_SIZE - 1.5)
+			var wz := origin_z + rng.randf_range(1.5, CHUNK_WORLD_SIZE - 1.5)
+			if city_inner_radius > 0.0:
+				var cdx := wx - city_center.x
+				var cdz := wz - city_center.y
+				if cdx * cdx + cdz * cdz <= city_inner_radius * city_inner_radius:
+					continue
+
+			var under_tree := false
+			for tr in tree_requests:
+				var tpos: Vector3 = tr["pos"]
+				var fdx := wx - tpos.x
+				var fdz := wz - tpos.z
+				if fdx * fdx + fdz * fdz < 3.24:
+					under_tree = true
+					break
+			if under_tree:
+				continue
+
+			var h: float = _generator.sample_height(world_seed, wx, wz)
+			if h > VEGETATION_MAX_HEIGHT or h < 3.0:
+				continue
+
+			var eps := 0.5
+			var hl: float = _generator.sample_height(world_seed, wx - eps, wz)
+			var hr: float = _generator.sample_height(world_seed, wx + eps, wz)
+			var hd: float = _generator.sample_height(world_seed, wx, wz - eps)
+			var hu: float = _generator.sample_height(world_seed, wx, wz + eps)
+			var normal := Vector3(hl - hr, 2.0 * eps, hd - hu).normalized()
+			if normal.dot(Vector3.UP) < 0.70:
+				continue
+
+			var f_type := "daisy"
+			var roll := rng.randf()
+			if roll < 0.50:
+				f_type = "daisy"
+			elif roll < 0.80:
+				f_type = "lavender"
+			else:
+				f_type = "poppy"
+
+			var f_scale := rng.randf_range(1.15, 1.65)
+			var f_rot := rng.randf_range(0.0, TAU)
+
+			flower_requests.append({
+				"type": f_type,
+				"pos": Vector3(wx, h, wz),
+				"scale": f_scale,
+				"rot_y": f_rot
+			})
+
+	data["flower_requests"] = flower_requests
+
+	# Precalcular rosales silvestres (ProceduralFlower) en praderas soleadas y orillas
+	var rose_requests: Array[Dictionary] = []
+	if enable_roses and _generator != null:
+		var target_rose_count := 0
+		if center_biome < 0.12:
+			target_rose_count = rng.randi_range(2, 4)
+		elif center_biome < 0.40:
+			target_rose_count = rng.randi_range(1, 2)
+		else:
+			target_rose_count = 0
+
+		for i in target_rose_count:
+			if _generator == null:
+				break
+			var wx := origin_x + rng.randf_range(2.0, CHUNK_WORLD_SIZE - 2.0)
+			var wz := origin_z + rng.randf_range(2.0, CHUNK_WORLD_SIZE - 2.0)
+			if city_inner_radius > 0.0:
+				var cdx := wx - city_center.x
+				var cdz := wz - city_center.y
+				if cdx * cdx + cdz * cdz <= city_inner_radius * city_inner_radius:
+					continue
+
+			var under_tree := false
+			for tr in tree_requests:
+				var tpos: Vector3 = tr["pos"]
+				var rdx := wx - tpos.x
+				var rdz := wz - tpos.z
+				if rdx * rdx + rdz * rdz < 6.25:
+					under_tree = true
+					break
+			if under_tree:
+				continue
+
+			var h: float = _generator.sample_height(world_seed, wx, wz)
+			if h > VEGETATION_MAX_HEIGHT or h < 3.0:
+				continue
+
+			var eps := 0.5
+			var hl: float = _generator.sample_height(world_seed, wx - eps, wz)
+			var hr: float = _generator.sample_height(world_seed, wx + eps, wz)
+			var hd: float = _generator.sample_height(world_seed, wx, wz - eps)
+			var hu: float = _generator.sample_height(world_seed, wx, wz + eps)
+			var normal := Vector3(hl - hr, 2.0 * eps, hd - hu).normalized()
+			if normal.dot(Vector3.UP) < 0.70:
+				continue
+
+			var r_scale := rng.randf_range(0.9, 1.25)
+			var r_rot := rng.randf_range(0.0, TAU)
+			var pool_idx := rng.randi_range(0, 17)
+
+			rose_requests.append({
+				"pos": Vector3(wx, h, wz),
+				"scale": Vector3.ONE * r_scale,
+				"rot_y": r_rot,
+				"pool_index": pool_idx
+			})
+
+	data["rose_requests"] = rose_requests
+
+	# Precalcular posicion, rotacion y escala de arbustos en este MISMO hilo de fondo (0 ms en hilo principal)
+	var bush_requests: Array[Dictionary] = []
+	if BUSH_MODEL_COUNT > 0 and _generator != null:
+		var bush_rng := RandomNumberGenerator.new()
+		bush_rng.seed = hash(Vector2i(coord.x, coord.y)) ^ (world_seed + 9999)
+		for i in BUSHES_PER_CHUNK:
+			if _generator == null:
+				break
+			var wx := origin_x + bush_rng.randf_range(VEGETATION_MARGIN, CHUNK_WORLD_SIZE - VEGETATION_MARGIN)
+			var wz := origin_z + bush_rng.randf_range(VEGETATION_MARGIN, CHUNK_WORLD_SIZE - VEGETATION_MARGIN)
+			if city_inner_radius > 0.0:
+				var dx := wx - city_center.x
+				var dz := wz - city_center.y
+				if dx * dx + dz * dz <= city_inner_radius * city_inner_radius:
+					continue
+			
+			var h: float = _generator.sample_height(world_seed, wx, wz)
+			if h > VEGETATION_MAX_HEIGHT:
+				continue
+			
+			var eps := 0.5
+			var hl: float = _generator.sample_height(world_seed, wx - eps, wz)
+			var hr: float = _generator.sample_height(world_seed, wx + eps, wz)
+			var hd: float = _generator.sample_height(world_seed, wx, wz - eps)
+			var hu: float = _generator.sample_height(world_seed, wx, wz + eps)
+			var normal := Vector3(hl - hr, 2.0 * eps, hd - hu).normalized()
+			if normal.dot(Vector3.UP) < VEGETATION_MIN_SLOPE_DOT:
+				continue
+			
+			var b_idx := bush_rng.randi_range(0, BUSH_MODEL_COUNT - 1)
+			var b_scale := Vector3.ONE * bush_rng.randf_range(0.8, 1.3) * VEGETATION_SCALE_MULTIPLIER
+			var b_rot := bush_rng.randf_range(0.0, TAU)
+			bush_requests.append({
+				"pos": Vector3(wx, h, wz),
+				"model_index": b_idx,
+				"scale": b_scale,
+				"rot_y": b_rot
+			})
+	data["bush_requests"] = bush_requests
+
 	_results_mutex.lock()
 	_pending_results[coord] = data
 	_results_mutex.unlock()
@@ -435,8 +1152,8 @@ func _generate_chunk_data_threaded(
 
 ## Se llama cada frame desde _process, en el hilo principal: revisa que
 ## tareas de fondo ya terminaron y construye su malla/colision/vegetacion.
-func _poll_pending_tasks() -> void:
-	var finished_chunks := 0
+## Retorna true si proceso un chunk en este fotograma.
+func _poll_pending_tasks() -> bool:
 	for coord in _pending_task_ids.keys().duplicate():
 		var task_id: int = _pending_task_ids[coord]
 		if not WorkerThreadPool.is_task_completed(task_id):
@@ -451,17 +1168,16 @@ func _poll_pending_tasks() -> void:
 		_results_mutex.unlock()
 
 		_finish_chunk(coord, data)
-		finished_chunks += 1
-		# Escalonar: procesar maximo 1 chunk por fotograma para garantizar 60 FPS estables
-		if finished_chunks >= 1:
-			break
+		return true # Escalonar: procesar maximo 1 chunk por fotograma para garantizar 60 FPS estables
+	return false
 
 
 func _is_chunk_needed(coord: Vector2i) -> bool:
 	if _local_player == null:
 		return false
 	var center := _world_to_chunk_coord(_local_player.global_position)
-	return abs(coord.x - center.x) <= VIEW_DISTANCE_CHUNKS and abs(coord.y - center.y) <= VIEW_DISTANCE_CHUNKS
+	var view_dist := _get_view_distance()
+	return abs(coord.x - center.x) <= view_dist and abs(coord.y - center.y) <= view_dist
 
 
 ## Trabajo que debe correr en el hilo principal: construir el ArrayMesh,
@@ -476,16 +1192,18 @@ func _finish_chunk(coord: Vector2i, data: Dictionary) -> void:
 	var mesh_instance := _build_chunk_mesh(coord, data)
 	_loaded_chunks[coord] = mesh_instance
 
-	# Se espera un frame de fisica para que la colision recien creada ya este
-	# activa en el espacio fisico antes de lanzar los raycasts de vegetacion.
-	await get_tree().physics_frame
-	if not is_instance_valid(mesh_instance) or _loaded_chunks.get(coord) != mesh_instance:
-		return # el chunk se descargo antes de que llegara este frame
+	# En modo editor/playtest por heightfield se espera un frame para raycasts fisicos
+	if _heightfield_mode:
+		await get_tree().physics_frame
+		if not is_instance_valid(mesh_instance) or _loaded_chunks.get(coord) != mesh_instance:
+			return # el chunk se descargo antes de que llegara este frame
+	
 	_ready_chunks[coord] = true
-	_scatter_vegetation(coord, origin_x, origin_z, mesh_instance)
+	_scatter_vegetation(coord, origin_x, origin_z, mesh_instance, data)
 
 
 func _build_chunk_mesh(coord: Vector2i, data: Dictionary) -> MeshInstance3D:
+	var t_arr0 := Time.get_ticks_usec()
 	var origin_x := float(coord.x) * CHUNK_WORLD_SIZE
 	var origin_z := float(coord.y) * CHUNK_WORLD_SIZE
 
@@ -498,24 +1216,28 @@ func _build_chunk_mesh(coord: Vector2i, data: Dictionary) -> MeshInstance3D:
 	var array_mesh := ArrayMesh.new()
 	array_mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
 
-	var material := ShaderMaterial.new()
-	material.shader = PSX_SHADER
-	material.set_shader_parameter("grid_precision", TERRAIN_GRID_PRECISION)
-	material.set_shader_parameter("use_height_gradient", true)
-	material.set_shader_parameter("low_color", LOW_COLOR)
-	material.set_shader_parameter("mid_color", MID_COLOR)
-	material.set_shader_parameter("high_color", HIGH_COLOR)
-	material.set_shader_parameter("gradient_low_height", GRADIENT_LOW_HEIGHT)
-	material.set_shader_parameter("gradient_mid_height", GRADIENT_MID_HEIGHT)
-	material.set_shader_parameter("gradient_high_height", GRADIENT_HIGH_HEIGHT)
-
 	var mesh_instance := MeshInstance3D.new()
 	mesh_instance.name = "TerrainChunk_%d_%d" % [coord.x, coord.y]
 	mesh_instance.mesh = array_mesh
-	mesh_instance.material_override = material
+	if _shared_terrain_material == null:
+		_init_shared_terrain_material()
+	mesh_instance.material_override = _shared_terrain_material
+	mesh_instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	mesh_instance.position = Vector3(origin_x, 0.0, origin_z)
-	add_child(mesh_instance)
+
+	var t_col0 := Time.get_ticks_usec()
 	mesh_instance.create_trimesh_collision()
+	var t_col1 := Time.get_ticks_usec()
+
+	add_child(mesh_instance)
+	var t_arr1 := Time.get_ticks_usec()
+
+	var mesh_ms := (t_arr1 - t_arr0) / 1000.0
+	var col_ms := (t_col1 - t_col0) / 1000.0
+	ChunkProfiler.record_frame_event("BuildChunk_%s: Malla=%.2fms, ColisionTrimesh=%.2fms" % [coord, mesh_ms, col_ms])
+	ChunkProfiler.log_event("[CARGA_CHUNK] %s -> ArrayMesh: %.2f ms | TrimeshCollision: %.2f ms | Total: %.2f ms" % [
+		coord, mesh_ms, col_ms, mesh_ms + col_ms
+	])
 	return mesh_instance
 
 
@@ -531,55 +1253,211 @@ func _load_vegetation_scenes() -> void:
 		push_warning("[chunk_manager] No se encontraron modelos de arbustos en tree_pack_1.1.")
 
 
-func _scatter_vegetation(coord: Vector2i, origin_x: float, origin_z: float, parent: Node3D) -> void:
-	# RNG determinista por chunk: mismas coordenadas + semilla -> misma
-	# vegetacion siempre (consistente entre recargas y entre peers en red).
-	var rng := RandomNumberGenerator.new()
-	rng.seed = hash(Vector2i(coord.x, coord.y)) ^ _world_seed
-
-	var space_state := get_world_3d().direct_space_state
-
-	var tree_requests: Array[Dictionary] = []
-	for i in TREES_PER_CHUNK:
-		var wx := origin_x + rng.randf_range(VEGETATION_MARGIN, CHUNK_WORLD_SIZE - VEGETATION_MARGIN)
-		var wz := origin_z + rng.randf_range(VEGETATION_MARGIN, CHUNK_WORLD_SIZE - VEGETATION_MARGIN)
-		if _is_inside_city_zone(wx, wz):
-			continue
-		var req := _collect_tree_spawn_data(wx, wz, rng, space_state)
-		if not req.is_empty():
-			tree_requests.append(req)
-
-	if not _bush_scenes.is_empty():
+func _scatter_vegetation(coord: Vector2i, origin_x: float, origin_z: float, parent: Node3D, data: Dictionary = {}) -> void:
+	var t_veg0 := Time.get_ticks_usec()
+	if _heightfield_mode:
+		var rng := RandomNumberGenerator.new()
+		rng.seed = hash(Vector2i(coord.x, coord.y)) ^ _world_seed
+		var space_state := get_world_3d().direct_space_state
 		for i in BUSHES_PER_CHUNK:
 			var wx := origin_x + rng.randf_range(VEGETATION_MARGIN, CHUNK_WORLD_SIZE - VEGETATION_MARGIN)
 			var wz := origin_z + rng.randf_range(VEGETATION_MARGIN, CHUNK_WORLD_SIZE - VEGETATION_MARGIN)
 			if _is_inside_city_zone(wx, wz):
 				continue
 			_try_place_vegetation(wx, wz, rng, _bush_scenes, _bush_textures, space_state, parent, false)
-
-	if tree_requests.is_empty():
 		return
 
-	# Generacion asincrona de mallas y buffers en hilo de fondo (WorkerThreadPool):
-	# Calcula la geometria completamente fuera del hilo principal (0 ms de bloqueo).
+	_chunk_vegetation_data[coord] = data
+	var center: Vector2i = _world_to_chunk_coord(_local_player.global_position) if _local_player != null else _last_player_chunk
+	var dist := maxi(abs(coord.x - center.x), abs(coord.y - center.y))
+	
+	# Activacion de vegetacion segun visibilidad real:
+	# Arboles: radio <= 2 chunks (<= 80m, limite de visibilidad LOD)
+	# Arbustos, Pasto, Flores y Rosales: radio <= 1 chunk (<= 40m)
+	var spawned_trees := 0
+	var spawned_bushes := 0
+	var spawned_grass := 0
+	var spawned_flowers := 0
+	var spawned_roses := 0
+	if enable_trees and dist <= 2:
+		spawned_trees = _spawn_chunk_trees(coord, parent, data)
+	if enable_bushes and dist <= 1:
+		spawned_bushes = _spawn_chunk_bushes(coord, parent, data)
+	if enable_grass and dist <= 1:
+		spawned_grass = _spawn_chunk_grass(coord, parent, data)
+	if enable_wildflowers and dist <= 1:
+		spawned_flowers = _spawn_chunk_flowers(coord, parent, data)
+	if enable_roses and dist <= 1:
+		spawned_roses = _spawn_chunk_roses(coord, parent, data)
+
+	var t_veg1 := Time.get_ticks_usec()
+	var veg_ms := (t_veg1 - t_veg0) / 1000.0
+	ChunkProfiler.record_frame_event("ScatterVeg_%s (Arboles:%d, Arbustos:%d, Pasto:%d, Flores:%d, Rosas:%d): %.2fms" % [coord, spawned_trees, spawned_bushes, spawned_grass, spawned_flowers, spawned_roses, veg_ms])
+	ChunkProfiler.log_event("[VEGETACION] %s -> %d arboles, %d arbustos, %d pasto, %d flores, %d rosas en %.2f ms (dist:%d)" % [coord, spawned_trees, spawned_bushes, spawned_grass, spawned_flowers, spawned_roses, veg_ms, dist])
+
+
+func _spawn_chunk_roses(coord: Vector2i, parent: Node3D, data: Dictionary) -> int:
+	if not enable_roses:
+		return 0
+	if _chunk_has_roses.has(coord):
+		return 0
+	var rose_requests: Array = data.get("rose_requests", [])
+	if rose_requests.is_empty():
+		return 0
+	if _rose_archetype_pool.is_empty():
+		return 0
+	_chunk_has_roses[coord] = true
 	var parent_ref: WeakRef = weakref(parent)
-	WorkerThreadPool.add_task(
-		func() -> void:
-			var generated_trees: Array[Dictionary] = []
-			for req: Dictionary in tree_requests:
-				var prof: ProceduralTreeProfiles.TreeProfile = ProceduralTreeProfiles.get_profile(req["profile_id"])
-				var res: ProceduralTreeGenerator.TreeGenerationResult = ProceduralTreeGenerator.generate_tree(prof, req["seed"])
-				generated_trees.append({
-					"parent_ref": parent_ref,
-					"req": req,
-					"res": res
-				})
-			call_deferred("_enqueue_generated_trees", generated_trees)
-	)
+	var rose_items: Array[Dictionary] = []
+	for req: Dictionary in rose_requests:
+		var p_idx: int = clampi(int(req.get("pool_index", 0)), 0, _rose_archetype_pool.size() - 1)
+		var pkg: ProceduralFlower.FlowerGenerationPackage = _rose_archetype_pool[p_idx]
+		rose_items.append({
+			"parent_ref": parent_ref,
+			"req": req,
+			"pkg": pkg
+		})
+	_rose_attach_queue.append_array(rose_items)
+	return rose_requests.size()
 
 
-func _enqueue_generated_trees(generated_trees: Array[Dictionary]) -> void:
+func _spawn_chunk_trees(coord: Vector2i, parent: Node3D, data: Dictionary) -> int:
+	if not enable_trees:
+		return 0
+	if _chunk_has_trees.has(coord):
+		return 0
+	_chunk_has_trees[coord] = true
+	var tree_requests: Array = data.get("tree_requests", [])
+	if tree_requests.is_empty():
+		return 0
+	var parent_ref: WeakRef = weakref(parent)
+	var generated_trees: Array[Dictionary] = []
+	for req: Dictionary in tree_requests:
+		var p_id: String = req["profile_id"]
+		var pool_list: Array = _tree_archetype_pool.get(p_id, [])
+		if pool_list.is_empty():
+			continue
+		var v_idx: int = int(abs(hash(Vector2i(int(req["pos"].x), int(req["pos"].z)))) % pool_list.size())
+		var res: ProceduralTreeGenerator.TreeGenerationResult = pool_list[v_idx]
+		generated_trees.append({
+			"parent_ref": parent_ref,
+			"req": req,
+			"res": res
+		})
 	_tree_attach_queue.append_array(generated_trees)
+	return tree_requests.size()
+
+
+func _spawn_chunk_bushes(coord: Vector2i, parent: Node3D, data: Dictionary) -> int:
+	if not enable_bushes:
+		return 0
+	if _chunk_has_bushes.has(coord):
+		return 0
+	_chunk_has_bushes[coord] = true
+	var bush_requests: Array = data.get("bush_requests", [])
+	if bush_requests.is_empty():
+		return 0
+	var parent_ref: WeakRef = weakref(parent)
+	var bush_items: Array[Dictionary] = []
+	for req: Dictionary in bush_requests:
+		bush_items.append({
+			"parent_ref": parent_ref,
+			"req": req
+		})
+	_bush_attach_queue.append_array(bush_items)
+	return bush_requests.size()
+
+
+func _spawn_chunk_grass(coord: Vector2i, parent: Node3D, data: Dictionary) -> int:
+	if not enable_grass or _chunk_has_grass.has(coord):
+		return 0
+	var grass_requests: Array = data.get("grass_requests", [])
+	if grass_requests.is_empty():
+		return 0
+	_chunk_has_grass[coord] = true
+
+	var mesh := _get_grass_mesh()
+	if mesh == null:
+		return 0
+
+	var mm_inst := MultiMeshInstance3D.new()
+	mm_inst.name = "ChunkGrass"
+	mm_inst.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	mm_inst.material_override = PSXGrass.get_material()
+
+	var mm := MultiMesh.new()
+	mm.transform_format = MultiMesh.TRANSFORM_3D
+	mm.mesh = mesh
+	mm.instance_count = grass_requests.size()
+
+	var parent_origin: Vector3 = parent.global_position
+	for i in range(grass_requests.size()):
+		var req: Dictionary = grass_requests[i]
+		var local_pos: Vector3 = req["pos"] - parent_origin
+		var basis := Basis()
+		basis = basis.rotated(Vector3.UP, req["rot_y"])
+		var tilt_x: float = float(req.get("tilt_x", 0.0))
+		var tilt_z: float = float(req.get("tilt_z", 0.0))
+		if absf(tilt_x) > 0.001:
+			basis = basis.rotated(Vector3.RIGHT, tilt_x)
+		if absf(tilt_z) > 0.001:
+			basis = basis.rotated(Vector3.FORWARD, tilt_z)
+		var s: float = float(req.get("scale", 1.0))
+		basis = basis.scaled(Vector3(s, s, s))
+		mm.set_instance_transform(i, Transform3D(basis, local_pos))
+
+	mm_inst.multimesh = mm
+	parent.add_child(mm_inst)
+	return grass_requests.size()
+
+
+func _spawn_chunk_flowers(coord: Vector2i, parent: Node3D, data: Dictionary) -> int:
+	if not enable_wildflowers or _chunk_has_flowers.has(coord):
+		return 0
+	var flower_requests: Array = data.get("flower_requests", [])
+	if flower_requests.is_empty():
+		return 0
+	_chunk_has_flowers[coord] = true
+
+	var by_type: Dictionary = {}
+	for req in flower_requests:
+		var f_type: String = req.get("type", "daisy")
+		if not by_type.has(f_type):
+			by_type[f_type] = []
+		by_type[f_type].append(req)
+
+	var parent_origin: Vector3 = parent.global_position
+	var total_flowers := 0
+	for f_type in by_type.keys():
+		var reqs: Array = by_type[f_type]
+		var mesh: Mesh = _get_flower_mesh(f_type)
+		if mesh == null:
+			continue
+
+		var mm_inst := MultiMeshInstance3D.new()
+		mm_inst.name = "ChunkFlowers_" + f_type
+		mm_inst.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		mm_inst.material_override = _get_flower_material()
+
+		var mm := MultiMesh.new()
+		mm.transform_format = MultiMesh.TRANSFORM_3D
+		mm.mesh = mesh
+		mm.instance_count = reqs.size()
+
+		for i in range(reqs.size()):
+			var req: Dictionary = reqs[i]
+			var local_pos: Vector3 = req["pos"] - parent_origin
+			var basis := Basis()
+			basis = basis.rotated(Vector3.UP, req["rot_y"])
+			var s: float = float(req.get("scale", 1.0))
+			basis = basis.scaled(Vector3(s, s, s))
+			mm.set_instance_transform(i, Transform3D(basis, local_pos))
+
+		mm_inst.multimesh = mm
+		parent.add_child(mm_inst)
+		total_flowers += reqs.size()
+
+	return total_flowers
 
 
 func _is_inside_city_zone(world_x: float, world_z: float) -> bool:
@@ -590,21 +1468,47 @@ func _is_inside_city_zone(world_x: float, world_z: float) -> bool:
 	return dx * dx + dz * dz <= _city_inner_radius * _city_inner_radius
 
 
+func _get_terrain_surface(world_x: float, world_z: float, space_state: PhysicsDirectSpaceState3D) -> Dictionary:
+	if _heightfield_mode or _generator == null:
+		if space_state == null:
+			return {}
+		var from := Vector3(world_x, 200.0, world_z)
+		var to := Vector3(world_x, -50.0, world_z)
+		var query := PhysicsRayQueryParameters3D.create(from, to)
+		var result := space_state.intersect_ray(query)
+		if result.is_empty():
+			return {}
+		return {
+			"position": result["position"],
+			"normal": result["normal"]
+		}
+	
+	# Muestreo matematico ultra-rapido directo desde Rust (0 ms, sin bloqueos de fisicas)
+	var h: float = _generator.sample_height(_world_seed, world_x, world_z)
+	var eps := 0.5
+	var hl: float = _generator.sample_height(_world_seed, world_x - eps, world_z)
+	var hr: float = _generator.sample_height(_world_seed, world_x + eps, world_z)
+	var hd: float = _generator.sample_height(_world_seed, world_x, world_z - eps)
+	var hu: float = _generator.sample_height(_world_seed, world_x, world_z + eps)
+	var normal := Vector3(hl - hr, 2.0 * eps, hd - hu).normalized()
+	return {
+		"position": Vector3(world_x, h, world_z),
+		"normal": normal
+	}
+
+
 func _collect_tree_spawn_data(
 	world_x: float,
 	world_z: float,
 	rng: RandomNumberGenerator,
 	space_state: PhysicsDirectSpaceState3D
 ) -> Dictionary:
-	var from := Vector3(world_x, 200.0, world_z)
-	var to := Vector3(world_x, -50.0, world_z)
-	var query := PhysicsRayQueryParameters3D.create(from, to)
-	var result := space_state.intersect_ray(query)
-	if result.is_empty():
+	var surface := _get_terrain_surface(world_x, world_z, space_state)
+	if surface.is_empty():
 		return {}
 
-	var hit_position: Vector3 = result["position"]
-	var hit_normal: Vector3 = result["normal"]
+	var hit_position: Vector3 = surface["position"]
+	var hit_normal: Vector3 = surface["normal"]
 
 	if hit_position.y > VEGETATION_MAX_HEIGHT:
 		return {}
@@ -625,11 +1529,25 @@ func _collect_tree_spawn_data(
 		else:
 			selected_profile_id = "weeping_willow"
 
+	# Variacion morfologica 3D organica:
+	# Altura y copa independientes (rompe proporcion de molde)
+	# X y Z uniformes para que el cilindro de colision en Jolt Physics sea perfecto
+	var height_scale := rng.randf_range(0.82, 1.25)
+	var canopy_spread := rng.randf_range(0.85, 1.20)
+	var scale_vec := Vector3(canopy_spread, height_scale, canopy_spread)
+	
+	# 2. Inclinacion organica sutil del tronco (+-3 a 4.5 grados)
+	var tilt_x := rng.randf_range(-0.065, 0.065)
+	var tilt_z := rng.randf_range(-0.065, 0.065)
+
 	return {
 		"profile_id": selected_profile_id,
 		"seed": rng.randi(),
 		"pos": hit_position,
-		"rot_y": rng.randf_range(0.0, TAU)
+		"rot_y": rng.randf_range(0.0, TAU),
+		"scale_3d": scale_vec,
+		"tilt_x": tilt_x,
+		"tilt_z": tilt_z
 	}
 
 
@@ -646,15 +1564,12 @@ func _try_place_vegetation(
 	if pool.is_empty():
 		return
 
-	var from := Vector3(world_x, 200.0, world_z)
-	var to := Vector3(world_x, -50.0, world_z)
-	var query := PhysicsRayQueryParameters3D.create(from, to)
-	var result := space_state.intersect_ray(query)
-	if result.is_empty():
+	var surface := _get_terrain_surface(world_x, world_z, space_state)
+	if surface.is_empty():
 		return
 
-	var hit_position: Vector3 = result["position"]
-	var hit_normal: Vector3 = result["normal"]
+	var hit_position: Vector3 = surface["position"]
+	var hit_normal: Vector3 = surface["normal"]
 
 	if hit_position.y > VEGETATION_MAX_HEIGHT:
 		return # zona rocosa/nevada, sin vegetacion
@@ -674,12 +1589,15 @@ func _try_place_vegetation(
 
 	var texture: Texture2D = texture_pool[index] if index < texture_pool.size() else null
 	if texture != null:
-		var material := StandardMaterial3D.new()
-		material.albedo_texture = texture
-		material.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST # consistente con el look PSX del resto del juego
-		material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA_SCISSOR # por si las texturas de hojas usan alpha
-		material.alpha_scissor_threshold = 0.5
-		material.cull_mode = BaseMaterial3D.CULL_DISABLED # tarjetas de hojas/ramas visibles desde ambos lados
+		var material: StandardMaterial3D = _bush_materials_cache.get(index)
+		if material == null:
+			material = StandardMaterial3D.new()
+			material.albedo_texture = texture
+			material.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST # consistente con look PSX
+			material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA_SCISSOR # por si las texturas de hojas usan alpha
+			material.alpha_scissor_threshold = 0.5
+			material.cull_mode = BaseMaterial3D.CULL_DISABLED # tarjetas de hojas visibles desde ambos lados
+			_bush_materials_cache[index] = material
 		_apply_vegetation_material(instance, material)
 
 
@@ -701,6 +1619,9 @@ func _apply_vegetation_material(node: Node, material: StandardMaterial3D) -> voi
 ## aplicado en este punto, asi que se mide en espacio de mundo y se
 ## convierte de vuelta a espacio local del arbol).
 func _add_tree_collision(tree_instance: Node3D) -> void:
+	if tree_instance.get_node_or_null("Collision") != null:
+		return # Ya tiene colision activa
+	
 	var height := 6.0
 	if "tree_height" in tree_instance and float(tree_instance.tree_height) > 0.1:
 		height = maxf(float(tree_instance.tree_height) * TREE_COLLISION_HEIGHT_RATIO, 1.0)
@@ -721,6 +1642,31 @@ func _add_tree_collision(tree_instance: Node3D) -> void:
 	shape.position = Vector3(0.0, height * 0.5, 0.0)
 	body.add_child(shape)
 	tree_instance.add_child(body)
+
+
+func _remove_tree_collision(tree_instance: Node3D) -> void:
+	var col := tree_instance.get_node_or_null("Collision")
+	if col != null:
+		col.queue_free()
+
+
+## Mantiene activas las colisiones fisicas de los arboles unicamente en los 9 chunks
+## adyacentes al jugador (radio 3x3). Todos los arboles a mayor distancia son 100%
+## visuales sin consumir recursos de fisica.
+func _update_nearby_tree_collisions(center: Vector2i) -> void:
+	if not enable_trees:
+		return
+	for coord: Vector2i in _loaded_chunks.keys():
+		var chunk_node: Node3D = _loaded_chunks[coord] as Node3D
+		if chunk_node == null or not is_instance_valid(chunk_node):
+			continue
+		var is_near: bool = abs(coord.x - center.x) <= 1 and abs(coord.y - center.y) <= 1
+		for child in chunk_node.get_children():
+			if child is ProceduralTree:
+				if is_near:
+					_add_tree_collision(child)
+				else:
+					_remove_tree_collision(child)
 
 
 ## Combina el AABB (en espacio de MUNDO) de todos los VisualInstance3D bajo
@@ -753,3 +1699,9 @@ func _unload_chunk(coord: Vector2i) -> void:
 	mesh_instance.queue_free()
 	_loaded_chunks.erase(coord)
 	_ready_chunks.erase(coord)
+	_chunk_vegetation_data.erase(coord)
+	_chunk_has_trees.erase(coord)
+	_chunk_has_bushes.erase(coord)
+	_chunk_has_grass.erase(coord)
+	_chunk_has_flowers.erase(coord)
+	_chunk_has_roses.erase(coord)

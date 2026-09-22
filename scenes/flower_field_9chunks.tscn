@@ -1,0 +1,111 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scenes/flower_field_9chunks.gd" id="1_field9c"]
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_sunset"]
+sky_top_color = Color(0.24, 0.16, 0.44, 1)
+sky_horizon_color = Color(0.98, 0.58, 0.38, 1)
+ground_bottom_color = Color(0.14, 0.12, 0.08, 1)
+ground_horizon_color = Color(0.85, 0.48, 0.28, 1)
+sun_angle_max = 35.0
+
+[sub_resource type="Sky" id="Sky_sunset"]
+sky_material = SubResource("ProceduralSkyMaterial_sunset")
+
+[sub_resource type="Environment" id="Environment_sunset"]
+background_mode = 2
+sky = SubResource("Sky_sunset")
+ambient_light_source = 3
+ambient_light_color = Color(0.58, 0.45, 0.55, 1)
+ambient_light_energy = 0.85
+ambient_light_sky_contribution = 0.55
+tonemap_mode = 2
+glow_enabled = true
+glow_intensity = 0.20
+glow_bloom = 0.10
+fog_enabled = true
+fog_light_color = Color(0.96, 0.72, 0.58, 1)
+fog_light_energy = 0.50
+fog_density = 0.001
+
+[node name="FlowerField9Chunks" type="Node3D"]
+script = ExtResource("1_field9c")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_sunset")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.819152, -0.228267, 0.526356, 0, 0.918006, 0.395388, -0.573576, -0.322924, 0.75237, 0, 30, 0)
+light_color = Color(1, 0.88, 0.72, 1)
+light_energy = 1.45
+shadow_enabled = true
+directional_shadow_max_distance = 45.0
+directional_shadow_blend_splits = true
+
+[node name="ChunksContainer" type="Node3D" parent="."]
+
+[node name="TreesContainer" type="Node3D" parent="."]
+
+[node name="CameraPivot" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 6, 15)
+
+[node name="Camera3D" type="Camera3D" parent="CameraPivot"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 12)
+current = true
+fov = 55.0
+far = 400.0
+
+[node name="HUD" type="CanvasLayer" parent="."]
+
+[node name="Margin" type="MarginContainer" parent="HUD"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 20
+
+[node name="VBox" type="VBoxContainer" parent="HUD/Margin"]
+layout_mode = 2
+mouse_filter = 2
+
+[node name="Panel" type="PanelContainer" parent="HUD/Margin/VBox"]
+layout_mode = 2
+size_flags_horizontal = 0
+
+[node name="Margin" type="MarginContainer" parent="HUD/Margin/VBox/Panel"]
+layout_mode = 2
+theme_override_constants/margin_left = 14
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 14
+theme_override_constants/margin_bottom = 10
+
+[node name="VBox" type="VBoxContainer" parent="HUD/Margin/VBox/Panel/Margin"]
+layout_mode = 2
+
+[node name="LabelTitle" type="Label" parent="HUD/Margin/VBox/Panel/Margin/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 17
+text = "🌹 PLAY SECTOR X — GRAN VALLE DE 9 CHUNKS DE PURAS ROSAS (120m x 120m)"
+
+[node name="LabelStats" type="Label" parent="HUD/Margin/VBox/Panel/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.90, 0.75, 1)
+theme_override_font_sizes/font_size = 13
+text = "Cargando océano de rosas..."
+
+[node name="LabelViews" type="Label" parent="HUD/Margin/VBox/Panel/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.88, 0.92, 1)
+theme_override_font_sizes/font_size = 13
+text = "[1] Mirador del Valle de Rosas | [2] Entre Rosas Carmesí y Coral | [3] Lomas de Rosas al Atardecer | [4] Sendero entre Rosales"
+
+[node name="LabelControls" type="Label" parent="HUD/Margin/VBox/Panel/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.72, 0.75, 0.8, 1)
+theme_override_font_sizes/font_size = 12
+text = "[Espacio / 1-4] Cambiar Vista | [Arrastrar Ratón] Orbitar | [Rueda] Zoom | [WASD] Mover Cámara | [R] Nueva Semilla"

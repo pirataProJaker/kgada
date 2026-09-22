@@ -21,6 +21,7 @@ const DEFAULT_GRAPHICS := {
 	"view_distance_chunks": 1,   # radio en chunks (1 = 3x3 = 9 chunks)
 	"window_mode": 0,            # 0 = ventana, 1 = pantalla completa, 2 = sin bordes
 	"vsync": true,
+	"low_spec_foliage": false,   # follaje detallado completo (STANDARD) por defecto
 }
 
 var keys: Dictionary = {}
@@ -98,3 +99,8 @@ func apply_graphics() -> void:
 ## Devuelve la distancia de chunks configurada.
 func get_view_distance() -> int:
 	return graphics.get("view_distance_chunks", 1)
+
+
+## Devuelve si el modo de follaje hiperoptimizado está activado.
+func is_low_spec_foliage() -> bool:
+	return bool(graphics.get("low_spec_foliage", false))

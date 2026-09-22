@@ -8,6 +8,7 @@ const ProceduralTree = preload("res://world/procedural_trees/procedural_tree.gd"
 ## de arboles procedurales hiperoptimizados.
 
 func _init() -> void:
+	ProceduralTree.trees_disabled = false
 	print("[VERIFY] Iniciando verificacion del sistema de arboles procedurales...")
 	
 	# 1. Verificar perfiles y especies
@@ -67,7 +68,15 @@ func _init() -> void:
 		assert(r.seed_used == test_seed)
 		assert(r.mm_branches_lod0.instance_count > 0)
 	
-	print("[VERIFY] Regeneraciones aleatorias (tecla R) probadas con exito.")
+	# 5. Verificar que disable_lod = true mantiene visible LOD0 y apaga LOD1 y LOD2
+	assert(tree_node.disable_lod == true, "disable_lod debe estar activo por defecto")
+	assert(tree_node._mi_branches_lod0.visible == true, "Ramas LOD0 deben estar visibles")
+	assert(tree_node._mi_leaves_lod0.visible == true, "Hojas LOD0 deben estar visibles")
+	assert(tree_node._mi_branches_lod0.visibility_range_end == 0.0, "Rango final LOD0 debe ser 0.0 (infinito)")
+	assert(tree_node._mi_branches_lod1.visible == false, "LOD1 debe estar invisible")
+	assert(tree_node._mi_branches_lod2.visible == false, "LOD2 debe estar invisible")
+	print("[VERIFY] Desactivacion de sistema LOD y visibilidad permanente de arbol normal verificadas.")
+	
 	print("[VERIFY] === TODAS LAS PRUEBAS PROCEDURALES PASARON CON EXITO ===")
 	
 	scene_node.queue_free()

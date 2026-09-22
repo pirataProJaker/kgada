@@ -2,7 +2,7 @@ extends Node3D
 ## Escena principal (Fase 2): terreno con streaming de chunks + jugador local
 ## + multijugador basico (host/join) + guardado simple de posicion/semilla.
 
-const AUTOSAVE_INTERVAL := 10.0
+const AUTOSAVE_INTERVAL := 60.0
 const DEFAULT_WORLD_SEED := 1
 const DEFAULT_SPAWN := Vector3(0.0, 50.0, 0.0)
 const SPAWN_WAIT_HEIGHT := 500.0 # altura "de limbo" mientras se genera el chunk, fuera de cualquier terreno
@@ -57,6 +57,44 @@ func _ready() -> void:
 	dog_spawner.spawn_around(player.global_position.x, player.global_position.z)
 
 	get_tree().root.close_requested.connect(func() -> void: _save_player_state(player))
+
+	if "--capture-screenshot" in OS.get_cmdline_args():
+		_schedule_screenshot_and_exit()
+
+
+func _schedule_screenshot_and_exit() -> void:
+	await get_tree().create_timer(4.5).timeout
+	var vp := get_viewport()
+
+	# Buscar un rosal generado en los chunks cercanos
+	var found_rose: Node3D = null
+	for coord in chunk_manager._loaded_chunks.keys():
+		var chunk_node: Node3D = chunk_manager._loaded_chunks[coord]
+		if chunk_node:
+			for child in chunk_node.get_children():
+				if child.name.begins_with("ChunkRose"):
+					found_rose = child as Node3D
+					break
+		if found_rose != null:
+			break
+
+	if found_rose != null:
+		print("[world_test] Enfocando rosal procedural en: ", found_rose.global_position)
+		var cam := Camera3D.new()
+		cam.current = true
+		cam.fov = 55.0
+		add_child(cam)
+		var rpos := found_rose.global_position
+		cam.global_position = rpos + Vector3(1.8, 1.0, 2.0)
+		cam.look_at(rpos + Vector3(0.0, 0.45, 0.0), Vector3.UP)
+		await get_tree().create_timer(0.6).timeout
+
+	if vp:
+		var img := vp.get_texture().get_image()
+		var save_path := "C:/Users/Eduardo Contreras/.gemini/antigravity-ide/brain/79db2cc8-f315-455f-b908-b6920dd6fb96/world_test_roses_and_grass.png"
+		img.save_png(save_path)
+		print("[world_test] Screenshot capturado exitosamente en: ", save_path)
+	get_tree().quit(0)
 
 
 func _load_playtest_document():

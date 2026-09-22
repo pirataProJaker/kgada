@@ -1,0 +1,219 @@
+[gd_scene load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://tests/test_procedural_rose.gd" id="1_test"]
+[ext_resource type="Script" path="res://world/procedural_flora/procedural_flower.gd" id="2_flower"]
+[ext_resource type="Shader" path="res://shaders/psx_vertex_snap.gdshader" id="3_shader"]
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_rose"]
+sky_top_color = Color(0.38, 0.58, 0.82, 1)
+sky_horizon_color = Color(0.70, 0.78, 0.84, 1)
+ground_bottom_color = Color(0.18, 0.24, 0.16, 1)
+ground_horizon_color = Color(0.70, 0.78, 0.84, 1)
+
+[sub_resource type="Sky" id="Sky_rose"]
+sky_material = SubResource("ProceduralSkyMaterial_rose")
+
+[sub_resource type="Environment" id="Environment_rose"]
+background_mode = 2
+sky = SubResource("Sky_rose")
+ambient_light_source = 3
+ambient_light_color = Color(0.45, 0.52, 0.58, 1)
+ambient_light_energy = 0.55
+ambient_light_sky_contribution = 0.35
+tonemap_mode = 2
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_ground"]
+size = Vector2(30, 30)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_ground"]
+render_priority = 0
+shader = ExtResource("3_shader")
+shader_parameter/grid_precision = 80
+shader_parameter/albedo_color = Color(1, 1, 1, 1)
+shader_parameter/texture_scale = 0.25
+shader_parameter/use_height_gradient = false
+shader_parameter/use_pixel_terrain = true
+shader_parameter/pixel_size = 0.08
+shader_parameter/grass_g1 = Color(0.09, 0.28, 0.07, 1)
+shader_parameter/grass_g2 = Color(0.14, 0.38, 0.11, 1)
+shader_parameter/grass_g3 = Color(0.20, 0.48, 0.15, 1)
+shader_parameter/grass_g4 = Color(0.26, 0.57, 0.19, 1)
+shader_parameter/grass_g5 = Color(0.33, 0.65, 0.22, 1)
+shader_parameter/slope_cliff_threshold = 0.65
+shader_parameter/use_psx_color_depth = true
+
+[node name="TestProceduralRose" type="Node3D"]
+script = ExtResource("1_test")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_rose")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.819152, -0.326356, 0.471958, 0, 0.822624, 0.568586, -0.573576, -0.46574, 0.673855, 0, 10, 0)
+light_energy = 1.15
+shadow_enabled = true
+directional_shadow_mode = 1
+directional_shadow_max_distance = 8.0
+
+[node name="Ground" type="MeshInstance3D" parent="."]
+mesh = SubResource("PlaneMesh_ground")
+surface_material_override/0 = SubResource("ShaderMaterial_ground")
+
+[node name="RoseSolitary" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.35, 0, 0.2)
+script = ExtResource("2_flower")
+profile_id = "solitary_rose"
+
+[node name="RoseShrub" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.45, 0, -0.1)
+script = ExtResource("2_flower")
+profile_id = "shrub_rose"
+
+[node name="CameraPivot" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.12, 0.4, 0)
+
+[node name="Camera3D" type="Camera3D" parent="CameraPivot"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1.95)
+current = true
+fov = 50.0
+far = 100.0
+
+[node name="HUD" type="CanvasLayer" parent="."]
+
+[node name="Margin" type="MarginContainer" parent="HUD"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 100
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 20
+
+[node name="VBox" type="VBoxContainer" parent="HUD/Margin"]
+layout_mode = 2
+mouse_filter = 2
+
+[node name="Panel" type="PanelContainer" parent="HUD/Margin/VBox"]
+custom_minimum_size = Vector2(280, 0)
+layout_mode = 2
+size_flags_horizontal = 0
+mouse_filter = 2
+
+[node name="Margin" type="MarginContainer" parent="HUD/Margin/VBox/Panel"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 14
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 14
+theme_override_constants/margin_bottom = 12
+
+[node name="VBox" type="VBoxContainer" parent="HUD/Margin/VBox/Panel/Margin"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 5
+
+[node name="LabelTitle" type="Label" parent="HUD/Margin/VBox/Panel/Margin/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+text = "BOTÁNICA PSX: ROSAS"
+
+[node name="HSeparator" type="HSeparator" parent="HUD/Margin/VBox/Panel/Margin/VBox"]
+layout_mode = 2
+
+[node name="LabelMode" type="Label" parent="HUD/Margin/VBox/Panel/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.92, 0.90, 0.70, 1)
+text = "Modo: Rosa Solitaria [M]"
+
+[node name="LabelStage" type="Label" parent="HUD/Margin/VBox/Panel/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.65, 0.95, 0.75, 1)
+text = "Etapa: Floración Plena (100%)"
+
+[node name="HBoxSlider" type="HBoxContainer" parent="HUD/Margin/VBox/Panel/Margin/VBox"]
+layout_mode = 2
+mouse_filter = 1
+theme_override_constants/separation = 8
+
+[node name="SliderLabel" type="Label" parent="HUD/Margin/VBox/Panel/Margin/VBox/HBoxSlider"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+theme_override_colors/font_color = Color(0.8, 0.8, 0.85, 1)
+text = "Crecimiento:"
+
+[node name="SliderGrowth" type="HSlider" parent="HUD/Margin/VBox/Panel/Margin/VBox/HBoxSlider"]
+custom_minimum_size = Vector2(140, 20)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+max_value = 1.0
+step = 0.01
+value = 1.0
+
+[node name="LabelColor" type="Label" parent="HUD/Margin/VBox/Panel/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.98, 0.75, 0.82, 1)
+text = "Color: Carmesí Clásico [C]"
+
+[node name="LabelSeed" type="Label" parent="HUD/Margin/VBox/Panel/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.75, 0.85, 0.95, 1)
+text = "Semilla: 12345 [R/Espacio]"
+
+[node name="LabelStats" type="Label" parent="HUD/Margin/VBox/Panel/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.85, 0.88, 1)
+text = "Stats..."
+
+[node name="LabelLOD" type="Label" parent="HUD/Margin/VBox/Panel/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.80, 0.40, 1)
+text = "LOD: AUTO [L]"
+
+[node name="LabelAutoGrow" type="Label" parent="HUD/Margin/VBox/Panel/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.70, 0.92, 0.85, 1)
+text = "Auto-crecimiento: Pausado [G]"
+
+[node name="LabelWind" type="Label" parent="HUD/Margin/VBox/Panel/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.75, 0.85, 0.75, 1)
+text = "Viento en Shader: ON [W]"
+
+[node name="Spacer" type="Control" parent="HUD/Margin/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+mouse_filter = 2
+
+[node name="PanelControls" type="PanelContainer" parent="HUD/Margin/VBox"]
+custom_minimum_size = Vector2(280, 0)
+layout_mode = 2
+size_flags_horizontal = 0
+mouse_filter = 2
+
+[node name="Margin" type="MarginContainer" parent="HUD/Margin/VBox/PanelControls"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 10
+
+[node name="LabelHelp" type="Label" parent="HUD/Margin/VBox/PanelControls/Margin"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.8, 0.85, 1)
+text = "CONTROLES:
+ • [L] Alternar LOD (Auto/LOD0/LOD1/LOD2)
+ • [M] Alternar Modo
+ • [C] Ciclar Color (6 tipos)
+ • [R / Espacio] Semilla
+ • [G] Auto-crecimiento en vivo
+ • [1-4] Brote/Veg/Capullo/Flor
+ • [← / → / Slider] Crecer
+ • [H] Cosechar flor
+ • [W] Viento en GPU
+ • [Click + Arrastrar] Órbita
+ • [Rueda] Zoom"

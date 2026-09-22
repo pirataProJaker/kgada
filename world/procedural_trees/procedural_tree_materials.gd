@@ -40,12 +40,12 @@ static func get_leaf_material(profile_id: String, use_textures: bool = true) -> 
 	mat.roughness = 0.95
 	mat.metallic = 0.0
 	mat.metallic_specular = 0.02 # Sin brillo de plástico pulido
-	mat.backlight_enabled = true
-	mat.backlight = Color(0.20, 0.28, 0.14) # Translucidez solar orgánica
+	mat.backlight_enabled = false # Desactivado para fill-rate maximo en GPUs integradas (Intel UHD)
 	mat.cull_mode = BaseMaterial3D.CULL_DISABLED # Visible por ambas caras
 	mat.vertex_color_use_as_albedo = true # Gradiente por instancia
-	mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC
+	mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS # Filtro optimo sin costo de anisotropia
 	mat.alpha_antialiasing_mode = BaseMaterial3D.ALPHA_ANTIALIASING_OFF # Máximo rendimiento en GPU integrada
+	mat.texture_repeat = true # Permite duplicación de textura en tarjetas de follaje (modo patata)
 	
 	if use_textures and profile.has_leaves:
 		mat.albedo_texture = ProceduralTreeTextures.get_foliage_texture(profile.id)

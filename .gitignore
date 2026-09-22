@@ -8,4 +8,5 @@
 # Scratch & temporary agent files
 scratch/
 tests/_*
+*.log
 

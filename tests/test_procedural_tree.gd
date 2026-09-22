@@ -6,7 +6,8 @@ const ProceduralTree = preload("res://world/procedural_trees/procedural_tree.gd"
 ## forzar niveles de LOD con [L], y navegar con la camara para observar
 ## la optimizacion de cerca y de lejos.
 
-@onready var tree: ProceduralTree = $ProceduralTree
+@onready var tree_left: ProceduralTree = $ProceduralTree
+@onready var tree_right: ProceduralTree = $ProceduralTreeLowSpec
 @onready var camera: Camera3D = $CameraPivot/Camera3D
 @onready var camera_pivot: Node3D = $CameraPivot
 
@@ -19,7 +20,7 @@ const ProceduralTree = preload("res://world/procedural_trees/procedural_tree.gd"
 @onready var label_stats: Label = $HUD/Margin/VBox/Panel/Margin/VBox/LabelStats
 @onready var label_draw_calls: Label = $HUD/Margin/VBox/Panel/Margin/VBox/LabelDrawCalls
 
-var _camera_distance: float = 14.0
+var _camera_distance: float = 18.0
 var _camera_pitch: float = deg_to_rad(15.0)
 var _camera_yaw: float = 0.0
 var _is_mouse_dragging := false
@@ -33,9 +34,9 @@ var _profile_keys := [
 	"dead_tree",
 	"shrub_sapling"
 ]
-var _current_profile_index := 0
+var _current_profile_index := 1 # Default classic_oak
 var _current_seed := 12345
-var _forced_lod_state := -1 # -1 = Auto, 0 = LOD0, 1 = LOD1, 2 = LOD2
+var _forced_lod_state := 0 # 0 = LOD0 Fijo (detalle máximo continuo para comparar sin cortes por distancia)
 
 
 func _ready() -> void:
@@ -71,12 +72,15 @@ func _unhandled_input(event: InputEvent) -> void:
 			_forced_lod_state += 1
 			if _forced_lod_state > 2:
 				_forced_lod_state = -1 # Regresar a Auto
-			tree.forced_lod_level = _forced_lod_state
+			tree_left.forced_lod_level = _forced_lod_state
+			tree_right.forced_lod_level = _forced_lod_state
 			return
 		
 		# Alternar textura de ramillete de hojas con [T]
 		if event.keycode == KEY_T:
-			tree.use_foliage_textures = not tree.use_foliage_textures
+			var n_tex := not tree_left.use_foliage_textures
+			tree_left.use_foliage_textures = n_tex
+			tree_right.use_foliage_textures = n_tex
 			return
 	
 	# Control de camara orbital con raton
@@ -87,7 +91,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		
 		# Zoom con rueda de raton
 		if event.button_index == MOUSE_BUTTON_WHEEL_UP and event.pressed:
-			_camera_distance = maxf(_camera_distance - 1.5, 1.5)
+			_camera_distance = maxf(_camera_distance - 1.5, 3.0)
 			_update_camera_transform()
 		elif event.button_index == MOUSE_BUTTON_WHEEL_DOWN and event.pressed:
 			_camera_distance = minf(_camera_distance + 2.5, 150.0)
@@ -109,62 +113,63 @@ func _update_camera_transform() -> void:
 
 
 func _apply_tree_generation(seed_val: int, prof_id: String) -> void:
-	if tree == null:
+	if tree_left == null or tree_right == null:
 		return
-	var res := tree.generate(seed_val, prof_id)
+	
+	tree_left.foliage_style = ProceduralTree.FoliageStyle.STANDARD
+	tree_left.forced_lod_level = _forced_lod_state
+	var res_l := tree_left.generate(seed_val, prof_id)
+	
+	tree_right.foliage_style = ProceduralTree.FoliageStyle.LOW_SPEC_TRIANGLE
+	tree_right.forced_lod_level = _forced_lod_state
+	var res_r := tree_right.generate(seed_val, prof_id)
 	
 	# Centrar el pivote de la camara a una altura proporcional a este arbol
 	var target_y := 4.0
-	if tree.current_profile:
-		target_y = (tree.current_profile.trunk_height_min + tree.current_profile.trunk_height_max) * 0.35
+	if tree_left.current_profile:
+		target_y = (tree_left.current_profile.trunk_height_min + tree_left.current_profile.trunk_height_max) * 0.35
 	camera_pivot.position = Vector3(0.0, target_y, 0.0)
 
 
 func _update_hud_realtime() -> void:
-	if tree == null or tree.current_profile == null or tree.current_generation_result == null:
+	if tree_left == null or tree_left.current_profile == null or tree_left.current_generation_result == null:
+		return
+	if tree_right == null or tree_right.current_generation_result == null:
 		return
 	
-	var prof := tree.current_profile
-	var res := tree.current_generation_result
-	var dist := camera.global_position.distance_to(tree.global_position + Vector3(0, camera_pivot.position.y, 0))
+	var prof := tree_left.current_profile
+	var res_l := tree_left.current_generation_result
+	var res_r := tree_right.current_generation_result
+	var dist := camera.global_position.distance_to(camera_pivot.position)
 	
-	label_title.text = "ARBOL PROCEDURAL ULTRA-OPTIMIZADO"
-	label_profile.text = "Especie: %s\nBioma: %s" % [prof.name, prof.biome_description]
-	label_seed.text = "Semilla (Seed): %d" % res.seed_used
-	label_distance.text = "Distancia de Camara: %.1f m" % dist
+	label_title.text = "COMPARATIVA: ESTANDAR (IZQ) vs HIPEROPTIMIZADO (DER)"
+	label_profile.text = "Especie: %s  |  Bioma: %s" % [prof.name, prof.biome_description]
+	label_seed.text = "Semilla compartida (Seed): %d  [R/Espacio para regenerar | 1-6 Especies]" % res_l.seed_used
+	label_distance.text = "Distancia de Camara: %.1f m (Orbitar con Raton / Rueda Zoom)" % dist
 	
-	# Determinar cual LOD esta activo segun distancia o forzado
 	var active_lod := 0
 	if _forced_lod_state >= 0:
 		active_lod = _forced_lod_state
-		label_lod.text = "Modo LOD: FORZADO A LOD %d (Presiona [L] para cambiar)" % active_lod
+		label_lod.text = "Modo LOD: FORZADO A LOD %d (Presiona [L] para alternar)" % active_lod
 	else:
-		if dist < tree.lod0_range_end:
+		if dist < tree_left.lod0_range_end:
 			active_lod = 0
-		elif dist < tree.lod1_range_end:
+		elif dist < tree_left.lod1_range_end:
 			active_lod = 1
 		else:
 			active_lod = 2
-		label_lod.text = "Modo LOD: AUTOMATICO (Activo: LOD %d)" % active_lod
+		label_lod.text = "Modo LOD: AUTOMATICO POR DISTANCIA (Activo: LOD %d)" % active_lod
 	
-	# Mostrar estadisticas del nivel activo
-	var b_count := 0
-	var l_count := 0
-	match active_lod:
-		0:
-			b_count = res.lod0_branches_count
-			l_count = res.lod0_leaves_count
-		1:
-			b_count = res.lod1_branches_count
-			l_count = res.lod1_leaves_count
-		2:
-			b_count = res.lod2_branches_count
-			l_count = res.lod2_leaves_count
+	var l_leaves := res_l.lod0_leaves_count if active_lod == 0 else (res_l.lod1_leaves_count if active_lod == 1 else res_l.lod2_leaves_count)
+	var r_leaves := res_r.lod0_leaves_count if active_lod == 0 else (res_r.lod1_leaves_count if active_lod == 1 else res_r.lod2_leaves_count)
 	
-	var total_triangles := (b_count * 12) + (l_count * 1) # 12 tri por cono (6 caras x 2), 1 tri por hoja
-	label_stats.text = "Instancias activas en LOD %d:\n • Conos de madera: %d\n • Hojas (1 triangulo): %d\n • Total triangulos estimados: %d" % [
-		active_lod, b_count, l_count, total_triangles
+	var red_percent := 0.0
+	if l_leaves > 0:
+		red_percent = 100.0 * (1.0 - float(r_leaves) / float(l_leaves))
+	
+	label_stats.text = "ESTADISTICAS EN LOD %d:\n [IZQ] ESTANDAR: %d ramas | %d hojas (triangulos)\n [DER] HIPEROPTIMIZADO: %d ramas | %d tarjetas de rama (triangulos)\n >>> REDUCCION EN FOLLAJE: -%.1f%% TRIANGULOS <<<" % [
+		active_lod, res_l.lod0_branches_count, l_leaves, res_r.lod0_branches_count, r_leaves, red_percent
 	]
 	
-	var tex_status := "ACTIVADA (Ramillete con corte alfa)" if tree.use_foliage_textures else "DESACTIVADA (Color base)"
-	label_draw_calls.text = "Draw Calls totales: EXACTAMENTE 2 (GPU MultiMesh)\nTextura de Hojas: %s [T]" % tex_status
+	var tex_status := "ACTIVADA (Con canal alfa)" if tree_left.use_foliage_textures else "DESACTIVADA (Color solido)"
+	label_draw_calls.text = "Draw Calls: 2 por cada arbol (MultiMesh GPU)  |  Texturas: %s [T]" % tex_status
