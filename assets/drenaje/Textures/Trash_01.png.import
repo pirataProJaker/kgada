@@ -3,7 +3,7 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://bs7poenyvqdvw"
-path.s3tc="res://.godot/imported/Trash_01.png-a588f1317f26eb462b2e7581c457db33.s3tc.ctex"
+path.s3tc="res://.godot/imported/Trash_01.png-187fa21ee4ebbb665002c0e57bb2f134.s3tc.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc"],
 "vram_texture": true
@@ -11,8 +11,8 @@ metadata={
 
 [deps]
 
-source_file="res://assets/drenaje/textures/Trash_01.png"
-dest_files=["res://.godot/imported/Trash_01.png-a588f1317f26eb462b2e7581c457db33.s3tc.ctex"]
+source_file="res://assets/drenaje/Textures/Trash_01.png"
+dest_files=["res://.godot/imported/Trash_01.png-187fa21ee4ebbb665002c0e57bb2f134.s3tc.ctex"]
 
 [params]
 

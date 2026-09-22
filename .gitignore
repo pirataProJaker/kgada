@@ -9,4 +9,5 @@
 scratch/
 tests/_*
 *.log
+.vscode/
 

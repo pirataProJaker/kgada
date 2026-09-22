@@ -3,7 +3,7 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://b6pmro0uyl7eu"
-path.s3tc="res://.godot/imported/door_metal_01.jpg-17ace97970131bc70054bdf936a6c4ff.s3tc.ctex"
+path.s3tc="res://.godot/imported/door_metal_01.jpg-baf1c0e8109ea6df8076b5542a76c2f8.s3tc.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc"],
 "vram_texture": true
@@ -11,8 +11,8 @@ metadata={
 
 [deps]
 
-source_file="res://assets/drenaje/textures/door_metal_01.jpg"
-dest_files=["res://.godot/imported/door_metal_01.jpg-17ace97970131bc70054bdf936a6c4ff.s3tc.ctex"]
+source_file="res://assets/drenaje/Textures/door_metal_01.jpg"
+dest_files=["res://.godot/imported/door_metal_01.jpg-baf1c0e8109ea6df8076b5542a76c2f8.s3tc.ctex"]
 
 [params]
 

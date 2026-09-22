@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://b80ac4v1k3m2a"]
+
+[ext_resource type="Script" path="res://tests/test_procedural_houses.gd" id="1_house_test"]
+
+[node name="TestProceduralHouses" type="Node3D"]
+script = ExtResource("1_house_test")

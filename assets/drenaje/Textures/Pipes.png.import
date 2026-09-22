@@ -3,7 +3,7 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://0la7yafvt6sl"
-path.s3tc="res://.godot/imported/Pipes.png-38b9bd07cee78cf8bb11b6c6fd404d00.s3tc.ctex"
+path.s3tc="res://.godot/imported/Pipes.png-e6bce89793770bb57d6adaee4f6b6b45.s3tc.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc"],
 "vram_texture": true
@@ -11,8 +11,8 @@ metadata={
 
 [deps]
 
-source_file="res://assets/drenaje/textures/Pipes.png"
-dest_files=["res://.godot/imported/Pipes.png-38b9bd07cee78cf8bb11b6c6fd404d00.s3tc.ctex"]
+source_file="res://assets/drenaje/Textures/Pipes.png"
+dest_files=["res://.godot/imported/Pipes.png-e6bce89793770bb57d6adaee4f6b6b45.s3tc.ctex"]
 
 [params]
 

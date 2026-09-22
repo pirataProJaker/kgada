@@ -227,8 +227,9 @@ func _get_ground_cursor_pos() -> Vector3:
 func _build_starter_network() -> void:
 	_road_system.clear()
 
-	# Tramo 1: Carretera recta inicial (sur a norte)
-	var ep0: RoadTrajectorySystem.RoadEndpoint = _road_system.add_endpoint(Vector3(0.0, 0.0, 20.0), Vector3.FORWARD, 8.0)
+	# Tramo 1: Carretera recta inicial (sur a norte, 2 carriles estándar = 6.50m)
+	var standard_w := 2.0 * RoadTrajectorySystem.STANDARD_LANE_WIDTH
+	var ep0: RoadTrajectorySystem.RoadEndpoint = _road_system.add_endpoint(Vector3(0.0, 0.0, 20.0), Vector3.FORWARD, standard_w)
 	var seg1: RoadTrajectorySystem.RoadSegment = _road_system.extend_road(ep0.id, 20.0)
 	_road_system.toggle_sidewalk(seg1.id, true)  # Banqueta izquierda
 	_road_system.toggle_sidewalk(seg1.id, false) # Banqueta derecha

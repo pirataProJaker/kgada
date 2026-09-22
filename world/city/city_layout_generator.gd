@@ -17,8 +17,9 @@ const DECORATION_GENERATOR_SCRIPT := preload("res://world/city/city_decoration.g
 @export var randomize_seed_on_run: bool = false
 @export var avenue_type: CityRoadPatterns.AvenueType = CityRoadPatterns.AvenueType.DIVIDED_BOULEVARD
 @export var neighborhood_pattern: CityRoadPatterns.NeighborhoodPattern = CityRoadPatterns.NeighborhoodPattern.STAGGERED_GRID
-@export_range(160.0, 480.0, 20.0) var city_length: float = 240.0
-@export_range(1, 3, 1) var neighborhood_blocks_per_side: int = 2
+@export var neighborhood_zone: CityRoadPatterns.NeighborhoodZoneType = CityRoadPatterns.NeighborhoodZoneType.ZONAS_MIXTAS
+@export_range(200.0, 3000.0, 20.0) var city_length: float = 720.0
+@export_range(1, 8, 1) var neighborhood_blocks_per_side: int = 4
 
 @export_group("Casas")
 @export var generate_houses: bool = true
@@ -96,7 +97,7 @@ func generate_city() -> void:
 	_build_median_features(avenue_cfg, layout_data["crossover_z"])
 
 	# 4. Cálculo de manzanas y parcelamiento de lotes
-	_build_parcels(layout_data["blocks"], avenue_cfg, hood_cfg)
+	_build_parcels(layout_data["blocks"], avenue_cfg, hood_cfg, layout_data.get("block_zones", []))
 
 	# 5. Medir huella total para el aplanado de terreno
 	_compute_footprint()
@@ -131,32 +132,85 @@ func _cleanup_children() -> void:
 
 func _build_road_network(avenue_cfg: CityRoadPatterns.AvenueConfig, hood_cfg: CityRoadPatterns.NeighborhoodConfig) -> Dictionary:
 	var half_len := city_length * 0.5
-	var crossover_interval: float = avenue_cfg.crossover_interval
-	var crossover_count := clampi(int(round(city_length / crossover_interval)), 2, 6)
-	var step_z := city_length / float(crossover_count)
+	var half_width := half_len
+	var cols := 3
+	var rows := 3
 
+	var step_z := city_length / float(rows)
+	var z_splits: Array[float] = []
+	for i in range(rows + 1):
+		z_splits.append(-half_len + float(i) * step_z)
+
+	var step_x := (half_width * 2.0) / float(cols)
+	var x_splits: Array[float] = []
+	for i in range(cols + 1):
+		x_splits.append(-half_width + float(i) * step_x)
+
+	# 1. Asignación de Zonificación Urbana (Macro-Colonias con reglas contiguas)
+	var sector_zones := _assign_sector_zones(cols, rows)
+
+	# 2. Asignación de Orientación por Sector ("Calles acostadas" vs "Calles paradas")
+	var sector_orientations := _assign_sector_orientations(cols, rows)
+
+	# 3. Trazado de Avenida Central / Boulevard Longitudinal (Eje X = 0)
 	var crossover_z: Array[float] = []
-	for i in range(crossover_count + 1):
-		var z := -half_len + float(i) * step_z
-		crossover_z.append(z)
-
-	var blocks: Array[Rect2] = []
+	for i in range(z_splits.size()):
+		crossover_z.append(z_splits[i])
+		if i < z_splits.size() - 1:
+			var mid_z := (z_splits[i] + z_splits[i + 1]) * 0.5
+			crossover_z.append(mid_z)
+	crossover_z.sort()
 
 	if avenue_cfg.type == CityRoadPatterns.AvenueType.COMMERCIAL_MAIN:
 		_build_commercial_avenue(avenue_cfg, crossover_z)
 	else:
 		_build_divided_avenue(avenue_cfg, crossover_z, hood_cfg)
 
-	# Trazado de colonias a ambos lados (Oeste y Este)
-	var west_blocks := _build_neighborhood_half(avenue_cfg, hood_cfg, crossover_z, -1.0)
-	var east_blocks := _build_neighborhood_half(avenue_cfg, hood_cfg, crossover_z, 1.0)
+	# 4. Trazado de Avenidas Transversales Colectoras (Este-Oeste)
+	_build_transverse_avenues(z_splits, x_splits, avenue_cfg, hood_cfg)
 
-	blocks.append_array(west_blocks)
-	blocks.append_array(east_blocks)
+	# 5. Trazado de Avenidas Secundarias Longitudinales (Norte-Sur)
+	_build_secondary_avenues(x_splits, z_splits, hood_cfg)
+
+	# 6. Trazado de Manzanas e Internos de cada Sector con medidas y orientaciones irregulares
+	var blocks: Array[Rect2] = []
+	var block_zones: Array = []
+
+	var r_w := avenue_cfg.roadway_width
+	var m_w := avenue_cfg.median_width
+	var avenue_outer_w: float
+	var avenue_outer_e: float
+	if avenue_cfg.type == CityRoadPatterns.AvenueType.COMMERCIAL_MAIN:
+		avenue_outer_w = -r_w * 0.5
+		avenue_outer_e = +r_w * 0.5
+	else:
+		avenue_outer_w = -(m_w * 0.5 + r_w)
+		avenue_outer_e = +(m_w * 0.5 + r_w)
+
+	for gx in range(cols):
+		for gz in range(rows):
+			var z0: float = z_splits[gz]
+			var z1: float = z_splits[gz + 1]
+			var zone: CityRoadPatterns.NeighborhoodZoneType = sector_zones[gx][gz]
+			var is_horiz: bool = sector_orientations[gx][gz]
+
+			if gx == 0:
+				# Flanco Oeste exterior: de x_splits[0] a x_splits[1]
+				_build_sector_blocks(x_splits[0], x_splits[1], z0, z1, zone, is_horiz, hood_cfg, blocks, block_zones)
+			elif gx == 1:
+				# Columna Central dividida por el boulevard en Ala Oeste y Ala Este:
+				if avenue_outer_w > x_splits[1] + 25.0:
+					_build_sector_blocks(x_splits[1], avenue_outer_w, z0, z1, zone, is_horiz, hood_cfg, blocks, block_zones)
+				if x_splits[2] > avenue_outer_e + 25.0:
+					_build_sector_blocks(avenue_outer_e, x_splits[2], z0, z1, zone, is_horiz, hood_cfg, blocks, block_zones)
+			elif gx == 2:
+				# Flanco Este exterior: de x_splits[2] a x_splits[3]
+				_build_sector_blocks(x_splits[2], x_splits[3], z0, z1, zone, is_horiz, hood_cfg, blocks, block_zones)
 
 	return {
 		"crossover_z": crossover_z,
-		"blocks": blocks
+		"blocks": blocks,
+		"block_zones": block_zones
 	}
 
 
@@ -165,7 +219,7 @@ func _build_divided_avenue(avenue_cfg: CityRoadPatterns.AvenueConfig, crossover_
 	var m_w := avenue_cfg.median_width
 	var x_west := -(m_w * 0.5 + r_w * 0.5)
 	var x_east := +(m_w * 0.5 + r_w * 0.5)
-	var cross_w: float = hood_cfg.primary_collector_width if hood_cfg != null else 8.5
+	var cross_w: float = hood_cfg.primary_collector_width if hood_cfg != null else (2.0 * RoadTrajectorySystem.STANDARD_LANE_WIDTH)
 
 	var z_count := crossover_z.size()
 	# Calzadas longitudinales de la avenida
@@ -199,17 +253,17 @@ func _build_divided_avenue(avenue_cfg: CityRoadPatterns.AvenueConfig, crossover_
 	for i in range(z_count):
 		var z_c: float = crossover_z[i]
 		# Segmento conector cruzando el camellón de x_west a x_east
-		var ep_c_w := _road_system.add_endpoint(Vector3(x_west, 0.0, z_c), Vector3(1.0, 0.0, 0.0), cross_w, RoadTrajectorySystem.RoadType.TWO_WAY_YELLOW)
-		var ep_c_e := _road_system.add_endpoint(Vector3(x_east, 0.0, z_c), Vector3(1.0, 0.0, 0.0), cross_w, RoadTrajectorySystem.RoadType.TWO_WAY_YELLOW)
-		var seg_cross = _road_system.connect_endpoints(ep_c_w.id, ep_c_e.id, cross_w, RoadTrajectorySystem.RoadType.TWO_WAY_YELLOW)
+		var ep_c_w := _road_system.add_endpoint(Vector3(x_west, 0.0, z_c), Vector3(1.0, 0.0, 0.0), cross_w, RoadTrajectorySystem.RoadType.TWO_WAY_2LANE)
+		var ep_c_e := _road_system.add_endpoint(Vector3(x_east, 0.0, z_c), Vector3(1.0, 0.0, 0.0), cross_w, RoadTrajectorySystem.RoadType.TWO_WAY_2LANE)
+		var seg_cross = _road_system.connect_endpoints(ep_c_w.id, ep_c_e.id, cross_w, RoadTrajectorySystem.RoadType.TWO_WAY_2LANE)
 		if i == 0:
 			# Extremo Norte de la avenida: banqueta exterior continua cerrando la avenida hacia el Norte (lado izquierdo)
-			_road_system.set_sidewalk(seg_cross.id, true, true, 2.2)
+			_road_system.set_sidewalk(seg_cross.id, true, true, CityRoadPatterns.SIDEWALK_WIDTH_RESIDENTIAL)
 			_road_system.set_sidewalk(seg_cross.id, false, false)
 		elif i == z_count - 1:
 			# Extremo Sur de la avenida: banqueta exterior continua cerrando la avenida hacia el Sur (lado derecho)
 			_road_system.set_sidewalk(seg_cross.id, true, false)
-			_road_system.set_sidewalk(seg_cross.id, false, true, 2.2)
+			_road_system.set_sidewalk(seg_cross.id, false, true, CityRoadPatterns.SIDEWALK_WIDTH_RESIDENTIAL)
 		else:
 			# Cruces intermedios del camellón: sin banquetas laterales para permitir giros vehiculares limpios
 			_road_system.set_sidewalk(seg_cross.id, true, false)
@@ -229,161 +283,255 @@ func _build_commercial_avenue(avenue_cfg: CityRoadPatterns.AvenueConfig, crossov
 		_road_system.set_sidewalk(seg.id, false, true, avenue_cfg.outer_sidewalk_width)
 
 
-## Construye medio cuadrante de colonia residencial (lado Oeste side_sign=-1, o Este side_sign=+1)
-func _build_neighborhood_half(
+# ==============================================================================
+# SUB-SISTEMA DE MACRO-SECTORES, ZONIFICACIÓN Y MANZANAS IRREGULARES
+# ==============================================================================
+
+func _assign_sector_zones(cols: int, rows: int) -> Array:
+	var zones: Array = []
+	for x in range(cols):
+		var col_arr: Array = []
+		for z in range(rows):
+			col_arr.append(CityRoadPatterns.NeighborhoodZoneType.COLONIA_VIEJA)
+		zones.append(col_arr)
+
+	if neighborhood_zone != CityRoadPatterns.NeighborhoodZoneType.ZONAS_MIXTAS:
+		for x in range(cols):
+			for z in range(rows):
+				zones[x][z] = neighborhood_zone
+		return zones
+
+	# REGLAS DE ZONIFICACIÓN URBANA:
+	# 1. El Centro de la ciudad (1, 1) es SIEMPRE Colonia Vieja / Centro Histórico
+	zones[1][1] = CityRoadPatterns.NeighborhoodZoneType.COLONIA_VIEJA
+
+	# 2. Zona X (Zona de Ricos): Cluster contiguo obligatorio (en flanco/esquina Norte-Oeste)
+	zones[0][0] = CityRoadPatterns.NeighborhoodZoneType.ZONA_X
+	zones[0][1] = CityRoadPatterns.NeighborhoodZoneType.ZONA_X
+
+	# 3. Colonia Nueva (Fraccionamiento Infonavit): Cluster contiguo obligatorio (en flanco/esquina Sur-Este)
+	zones[2][1] = CityRoadPatterns.NeighborhoodZoneType.COLONIA_NUEVA
+	zones[2][2] = CityRoadPatterns.NeighborhoodZoneType.COLONIA_NUEVA
+
+	# 4. Los demás sectores ([0, 2], [1, 0], [1, 2], [2, 0]) son Barrios Tradicionales (Colonia Vieja)
+	zones[0][2] = CityRoadPatterns.NeighborhoodZoneType.COLONIA_VIEJA
+	zones[1][0] = CityRoadPatterns.NeighborhoodZoneType.COLONIA_VIEJA
+	zones[1][2] = CityRoadPatterns.NeighborhoodZoneType.COLONIA_VIEJA
+	zones[2][0] = CityRoadPatterns.NeighborhoodZoneType.COLONIA_VIEJA
+
+	return zones
+
+
+func _assign_sector_orientations(cols: int, rows: int) -> Array:
+	var orientations: Array = []
+	for x in range(cols):
+		var col_arr: Array = []
+		for z in range(rows):
+			# Alternancia en patrón ortogonal:
+			# true = Calles acostadas (orientación Este-Oeste, eje X)
+			# false = Calles paradas (orientación Norte-Sur, eje Z)
+			var is_horiz := ((x + z) % 2 == 0)
+			col_arr.append(is_horiz)
+		orientations.append(col_arr)
+	return orientations
+
+
+func _build_transverse_avenues(
+	z_splits: Array[float],
+	x_splits: Array[float],
 	avenue_cfg: CityRoadPatterns.AvenueConfig,
-	hood_cfg: CityRoadPatterns.NeighborhoodConfig,
-	crossover_z: Array[float],
-	side_sign: float
-) -> Array[Rect2]:
-	var blocks: Array[Rect2] = []
+	hood_cfg: CityRoadPatterns.NeighborhoodConfig
+) -> void:
+	var trans_w: float = hood_cfg.primary_collector_width
+	var x_min: float = x_splits[0]
+	var x_max: float = x_splits[x_splits.size() - 1]
+
 	var r_w := avenue_cfg.roadway_width
 	var m_w := avenue_cfg.median_width
+	var x_center_w := -(m_w * 0.5 + r_w * 0.5) if avenue_cfg.type != CityRoadPatterns.AvenueType.COMMERCIAL_MAIN else 0.0
+	var x_center_e := +(m_w * 0.5 + r_w * 0.5) if avenue_cfg.type != CityRoadPatterns.AvenueType.COMMERCIAL_MAIN else 0.0
 
-	var avenue_center_x: float
-	var avenue_outer_x: float
-	if avenue_cfg.type == CityRoadPatterns.AvenueType.COMMERCIAL_MAIN:
-		avenue_center_x = 0.0
-		avenue_outer_x = side_sign * (r_w * 0.5)
-	else:
-		avenue_center_x = side_sign * (m_w * 0.5 + r_w * 0.5)
-		avenue_outer_x = side_sign * (m_w * 0.5 + r_w)
+	for i in range(1, z_splits.size() - 1):
+		var z_c: float = z_splits[i]
 
-	var block_depth := hood_cfg.block_depth
-	var num_blocks := neighborhood_blocks_per_side
-	var z_count := crossover_z.size()
+		# 1. Tramo Oeste: desde x_min hasta el centro de la calzada oeste de la avenida
+		var ep_w0 := _road_system.add_endpoint(Vector3(x_min, 0.0, z_c), Vector3(1.0, 0.0, 0.0), trans_w, RoadTrajectorySystem.RoadType.TWO_WAY_2LANE)
+		var ep_w1 := _road_system.add_endpoint(Vector3(x_center_w, 0.0, z_c), Vector3(1.0, 0.0, 0.0), trans_w, RoadTrajectorySystem.RoadType.TWO_WAY_2LANE)
+		var seg_w := _road_system.connect_endpoints(ep_w0.id, ep_w1.id, trans_w, RoadTrajectorySystem.RoadType.TWO_WAY_2LANE)
+		_road_system.set_both_sidewalks(seg_w.id, true, true, CityRoadPatterns.SIDEWALK_WIDTH_AVENUE)
 
-	# Calles transversales colectoras que entran a la colonia
-	var cross_w := hood_cfg.primary_collector_width
+		# 2. Tramo Este: desde el centro de la calzada este de la avenida hasta x_max
+		var ep_e0 := _road_system.add_endpoint(Vector3(x_center_e, 0.0, z_c), Vector3(1.0, 0.0, 0.0), trans_w, RoadTrajectorySystem.RoadType.TWO_WAY_2LANE)
+		var ep_e1 := _road_system.add_endpoint(Vector3(x_max, 0.0, z_c), Vector3(1.0, 0.0, 0.0), trans_w, RoadTrajectorySystem.RoadType.TWO_WAY_2LANE)
+		var seg_e := _road_system.connect_endpoints(ep_e0.id, ep_e1.id, trans_w, RoadTrajectorySystem.RoadType.TWO_WAY_2LANE)
+		_road_system.set_both_sidewalks(seg_e.id, true, true, CityRoadPatterns.SIDEWALK_WIDTH_AVENUE)
+
+
+func _build_secondary_avenues(
+	x_splits: Array[float],
+	z_splits: Array[float],
+	hood_cfg: CityRoadPatterns.NeighborhoodConfig
+) -> void:
+	var sec_w: float = hood_cfg.primary_collector_width
+
+	for i in range(1, x_splits.size() - 1):
+		var x_c: float = x_splits[i]
+		for z_idx in range(z_splits.size() - 1):
+			var z0: float = z_splits[z_idx]
+			var z1: float = z_splits[z_idx + 1]
+			var ep0 := _road_system.add_endpoint(Vector3(x_c, 0.0, z0), Vector3(0.0, 0.0, 1.0), sec_w, RoadTrajectorySystem.RoadType.TWO_WAY_2LANE)
+			var ep1 := _road_system.add_endpoint(Vector3(x_c, 0.0, z1), Vector3(0.0, 0.0, 1.0), sec_w, RoadTrajectorySystem.RoadType.TWO_WAY_2LANE)
+			var seg := _road_system.connect_endpoints(ep0.id, ep1.id, sec_w, RoadTrajectorySystem.RoadType.TWO_WAY_2LANE)
+			_road_system.set_both_sidewalks(seg.id, true, true, CityRoadPatterns.SIDEWALK_WIDTH_RESIDENTIAL)
+
+
+func _build_sector_blocks(
+	sec_x0: float, sec_x1: float,
+	sec_z0: float, sec_z1: float,
+	zone: CityRoadPatterns.NeighborhoodZoneType,
+	default_is_horiz: bool,
+	hood_cfg: CityRoadPatterns.NeighborhoodConfig,
+	out_blocks: Array[Rect2],
+	out_zones: Array
+) -> void:
 	var res_w := hood_cfg.residential_street_width
+	var sw_w := CityRoadPatterns.SIDEWALK_WIDTH_RESIDENTIAL
+	var margin := res_w * 0.5 + sw_w # 5.25m
+	var corridor_w := res_w + 2.0 * sw_w # 10.5m
 
-	# Tiers en X: tier 0 = eje de la calzada de avenida, tiers 1..N = calles residenciales
-	var x_tiers: Array[float] = [avenue_center_x]
-	for b in range(1, num_blocks + 1):
-		var x := avenue_outer_x + side_sign * (float(b) * block_depth)
-		x_tiers.append(x)
+	var sec_w := absf(sec_x1 - sec_x0)
+	var sec_h := absf(sec_z1 - sec_z0)
 
-	# 1. Calles transversales colectoras: conectar tramo por tramo entre cada tier (0->1, 1->2, ...)
-	# De esta forma cada cruce con una calle longitudinal es un nodo compartido real (intersección +).
-	for z_c in crossover_z:
-		var dir_x := Vector3(side_sign, 0.0, 0.0)
-		for b in range(num_blocks):
-			var x0: float = x_tiers[b]
-			var x1: float = x_tiers[b + 1]
-			var ep_start := _road_system.add_endpoint(Vector3(x0, 0.0, z_c), dir_x, cross_w, RoadTrajectorySystem.RoadType.TWO_WAY_YELLOW)
-			var ep_end := _road_system.add_endpoint(Vector3(x1, 0.0, z_c), dir_x, cross_w, RoadTrajectorySystem.RoadType.TWO_WAY_YELLOW)
-			var seg = _road_system.connect_endpoints(ep_start.id, ep_end.id, cross_w, RoadTrajectorySystem.RoadType.TWO_WAY_YELLOW)
-			_road_system.set_sidewalk(seg.id, true, true, 2.2)
-			_road_system.set_sidewalk(seg.id, false, true, 2.2)
+	if sec_w < 35.0 or sec_h < 35.0:
+		return
 
-	# 2. Calles longitudinales residenciales y calles intermedias
-	for b in range(1, num_blocks + 1):
-		var street_x: float = x_tiers[b]
-		for i in range(z_count - 1):
-			var z0: float = crossover_z[i]
-			var z1: float = crossover_z[i + 1]
-			var mid_z := (z0 + z1) * 0.5
+	var b_rng := RandomNumberGenerator.new()
+	b_rng.seed = rng_seed + int(absf(sec_x0) * 19.0 + absf(sec_z0) * 37.0)
 
-			match hood_cfg.pattern:
-				CityRoadPatterns.NeighborhoodPattern.STAGGERED_GRID:
-					if b == num_blocks and b > 1:
-						# En el bloque exterior, se divide en dos tramos longitudinales en mid_z
-						var ep0 := _road_system.add_endpoint(Vector3(street_x, 0.0, z0), Vector3(0.0, 0.0, 1.0), res_w, RoadTrajectorySystem.RoadType.TWO_WAY_YELLOW)
-						var ep_m := _road_system.add_endpoint(Vector3(street_x, 0.0, mid_z), Vector3(0.0, 0.0, 1.0), res_w, RoadTrajectorySystem.RoadType.TWO_WAY_YELLOW)
-						var ep1 := _road_system.add_endpoint(Vector3(street_x, 0.0, z1), Vector3(0.0, 0.0, 1.0), res_w, RoadTrajectorySystem.RoadType.TWO_WAY_YELLOW)
-						var seg0 = _road_system.connect_endpoints(ep0.id, ep_m.id, res_w, RoadTrajectorySystem.RoadType.TWO_WAY_YELLOW)
-						_road_system.set_sidewalk(seg0.id, true, true, 2.0)
-						_road_system.set_sidewalk(seg0.id, false, true, 2.0)
+	# Subdividir el sector en macro-bloques (super-cuadras) para permitir alternancia
+	# entre cuadras de casas horizontales y verticales (como en plano real de México / Imagen 2).
+	var macro_cols := 2 if sec_w >= 150.0 else 1
+	var macro_rows := 2 if sec_h >= 150.0 else 1
 
-						var seg1 = _road_system.connect_endpoints(ep_m.id, ep1.id, res_w, RoadTrajectorySystem.RoadType.TWO_WAY_YELLOW)
-						_road_system.set_sidewalk(seg1.id, true, true, 2.0)
-						_road_system.set_sidewalk(seg1.id, false, true, 2.0)
+	var step_mx := sec_w / float(macro_cols)
+	var step_mz := sec_h / float(macro_rows)
 
-						# Calle intermedia transversal que forma cruces en T
-						var prev_x: float = x_tiers[b - 1]
-						var ep_t0 := _road_system.add_endpoint(Vector3(prev_x, 0.0, mid_z), Vector3(side_sign, 0.0, 0.0), res_w, RoadTrajectorySystem.RoadType.TWO_WAY_YELLOW)
-						var seg_t = _road_system.connect_endpoints(ep_t0.id, ep_m.id, res_w, RoadTrajectorySystem.RoadType.TWO_WAY_YELLOW)
-						_road_system.set_sidewalk(seg_t.id, true, true, 2.0)
-						_road_system.set_sidewalk(seg_t.id, false, true, 2.0)
-					else:
-						# Si es el tier anterior al exterior, también lo dividimos en mid_z para recibir el cruce en T
-						var ep0 := _road_system.add_endpoint(Vector3(street_x, 0.0, z0), Vector3(0.0, 0.0, 1.0), res_w, RoadTrajectorySystem.RoadType.TWO_WAY_YELLOW)
-						var ep_m := _road_system.add_endpoint(Vector3(street_x, 0.0, mid_z), Vector3(0.0, 0.0, 1.0), res_w, RoadTrajectorySystem.RoadType.TWO_WAY_YELLOW)
-						var ep1 := _road_system.add_endpoint(Vector3(street_x, 0.0, z1), Vector3(0.0, 0.0, 1.0), res_w, RoadTrajectorySystem.RoadType.TWO_WAY_YELLOW)
-						var seg0 = _road_system.connect_endpoints(ep0.id, ep_m.id, res_w, RoadTrajectorySystem.RoadType.TWO_WAY_YELLOW)
-						_road_system.set_sidewalk(seg0.id, true, true, 2.0)
-						_road_system.set_sidewalk(seg0.id, false, true, 2.0)
+	# 1. Calles secundarias divisorias continuas y completamente rectas (cero quiebres)
+	if macro_cols > 1:
+		for c in range(1, macro_cols):
+			var div_x := sec_x0 + float(c) * step_mx
+			var ep0 := _road_system.add_endpoint(Vector3(div_x, 0.0, sec_z0), Vector3(0.0, 0.0, 1.0), res_w, RoadTrajectorySystem.RoadType.TWO_WAY_2LANE)
+			var ep1 := _road_system.add_endpoint(Vector3(div_x, 0.0, sec_z1), Vector3(0.0, 0.0, 1.0), res_w, RoadTrajectorySystem.RoadType.TWO_WAY_2LANE)
+			var seg := _road_system.connect_endpoints(ep0.id, ep1.id, res_w, RoadTrajectorySystem.RoadType.TWO_WAY_2LANE)
+			_road_system.set_both_sidewalks(seg.id, true, true, sw_w)
 
-						var seg1 = _road_system.connect_endpoints(ep_m.id, ep1.id, res_w, RoadTrajectorySystem.RoadType.TWO_WAY_YELLOW)
-						_road_system.set_sidewalk(seg1.id, true, true, 2.0)
-						_road_system.set_sidewalk(seg1.id, false, true, 2.0)
+	if macro_rows > 1:
+		for r in range(1, macro_rows):
+			var div_z := sec_z0 + float(r) * step_mz
+			var ep0 := _road_system.add_endpoint(Vector3(sec_x0, 0.0, div_z), Vector3(1.0, 0.0, 0.0), res_w, RoadTrajectorySystem.RoadType.TWO_WAY_2LANE)
+			var ep1 := _road_system.add_endpoint(Vector3(sec_x1, 0.0, div_z), Vector3(1.0, 0.0, 0.0), res_w, RoadTrajectorySystem.RoadType.TWO_WAY_2LANE)
+			var seg := _road_system.connect_endpoints(ep0.id, ep1.id, res_w, RoadTrajectorySystem.RoadType.TWO_WAY_2LANE)
+			_road_system.set_both_sidewalks(seg.id, true, true, sw_w)
 
-				CityRoadPatterns.NeighborhoodPattern.CUL_DE_SAC_SUBURB:
-					if b < num_blocks:
-						var ep0 := _road_system.add_endpoint(Vector3(street_x, 0.0, z0), Vector3(0.0, 0.0, 1.0), res_w, RoadTrajectorySystem.RoadType.TWO_WAY_YELLOW)
-						var ep_m := _road_system.add_endpoint(Vector3(street_x, 0.0, mid_z), Vector3(0.0, 0.0, 1.0), res_w, RoadTrajectorySystem.RoadType.TWO_WAY_YELLOW)
-						var ep1 := _road_system.add_endpoint(Vector3(street_x, 0.0, z1), Vector3(0.0, 0.0, 1.0), res_w, RoadTrajectorySystem.RoadType.TWO_WAY_YELLOW)
-						var seg0 = _road_system.connect_endpoints(ep0.id, ep_m.id, res_w, RoadTrajectorySystem.RoadType.TWO_WAY_YELLOW)
-						_road_system.set_sidewalk(seg0.id, true, true, 2.0)
-						_road_system.set_sidewalk(seg0.id, false, true, 2.0)
+	# 2. Generar cada macro-cuadra con su orientación congruente (Horizontal vs Vertical)
+	var target_depth := CityRoadPatterns.get_zone_block_depth(zone)
 
-						var seg1 = _road_system.connect_endpoints(ep_m.id, ep1.id, res_w, RoadTrajectorySystem.RoadType.TWO_WAY_YELLOW)
-						_road_system.set_sidewalk(seg1.id, true, true, 2.0)
-						_road_system.set_sidewalk(seg1.id, false, true, 2.0)
+	for mc in range(macro_cols):
+		for mr in range(macro_rows):
+			var mx0 := sec_x0 + float(mc) * step_mx
+			var mx1 := mx0 + step_mx
+			var mz0 := sec_z0 + float(mr) * step_mz
+			var mz1 := mz0 + step_mz
 
-						# Cerrada residencial adentrándose en el bloque exterior
-						var next_x: float = x_tiers[b + 1]
-						var ep_c_end := _road_system.add_endpoint(Vector3(next_x, 0.0, mid_z), Vector3(side_sign, 0.0, 0.0), res_w, RoadTrajectorySystem.RoadType.TWO_WAY_YELLOW)
-						var seg_c = _road_system.connect_endpoints(ep_m.id, ep_c_end.id, res_w, RoadTrajectorySystem.RoadType.TWO_WAY_YELLOW)
-						_road_system.set_sidewalk(seg_c.id, true, true, 2.0)
-						_road_system.set_sidewalk(seg_c.id, false, true, 2.0)
+			var mb_w := mx1 - mx0
+			var mb_h := mz1 - mz0
 
-				CityRoadPatterns.NeighborhoodPattern.RESIDENTIAL_LOOPS, _:
-					var ep0 := _road_system.add_endpoint(Vector3(street_x, 0.0, z0), Vector3(0.0, 0.0, 1.0), res_w, RoadTrajectorySystem.RoadType.TWO_WAY_YELLOW)
-					var ep1 := _road_system.add_endpoint(Vector3(street_x, 0.0, z1), Vector3(0.0, 0.0, 1.0), res_w, RoadTrajectorySystem.RoadType.TWO_WAY_YELLOW)
-					var seg = _road_system.connect_endpoints(ep0.id, ep1.id, res_w, RoadTrajectorySystem.RoadType.TWO_WAY_YELLOW)
-					_road_system.set_sidewalk(seg.id, true, true, 2.0)
-					_road_system.set_sidewalk(seg.id, false, true, 2.0)
+			# Alternancia natural de orientación entre cuadras vecinas (tablero o variabilidad orgánica)
+			var is_horiz := ((mc + mr) % 2 == 0) if default_is_horiz else ((mc + mr) % 2 == 1)
+			if b_rng.randf() < 0.15:
+				is_horiz = not is_horiz
 
-			# 3. Registrar manzanas para generación de parcelas
-			var x_inner: float = avenue_outer_x if b == 1 else x_tiers[b - 1]
-			var x_outer: float = x_tiers[b]
-			var x_a := minf(x_inner, x_outer)
-			var x_b := maxf(x_inner, x_outer)
-			var margin_x := (res_w * 0.5 + 2.5)
-			var margin_z := (cross_w * 0.5 + 2.2)
+			if is_horiz:
+				# CUADRA DE CASAS EN HORIZONTAL: calles corren en X (Este-Oeste), profundidad en Z
+				var num_tiers := maxi(int(round(mb_h / (target_depth + corridor_w))), 1)
+				var pitch_z := mb_h / float(num_tiers)
 
-			# Si la manzana exterior está dividida por una calle intermedia en mid_z:
-			var has_subdivision := (hood_cfg.pattern == CityRoadPatterns.NeighborhoodPattern.STAGGERED_GRID and b == num_blocks) or \
-				(hood_cfg.pattern == CityRoadPatterns.NeighborhoodPattern.CUL_DE_SAC_SUBURB and b == num_blocks)
+				# Calles internas horizontales rectas
+				for t in range(1, num_tiers):
+					var z_line := mz0 + float(t) * pitch_z
+					var ep0 := _road_system.add_endpoint(Vector3(mx0, 0.0, z_line), Vector3(1.0, 0.0, 0.0), res_w, RoadTrajectorySystem.RoadType.TWO_WAY_2LANE)
+					var ep1 := _road_system.add_endpoint(Vector3(mx1, 0.0, z_line), Vector3(1.0, 0.0, 0.0), res_w, RoadTrajectorySystem.RoadType.TWO_WAY_2LANE)
+					var seg := _road_system.connect_endpoints(ep0.id, ep1.id, res_w, RoadTrajectorySystem.RoadType.TWO_WAY_2LANE)
+					_road_system.set_both_sidewalks(seg.id, true, true, sw_w)
 
-			if has_subdivision:
-				var z_min := minf(z0, z1)
-				var z_max := maxf(z0, z1)
-				var rect1 := Rect2(
-					Vector2(x_a + margin_x, z_min + margin_z),
-					Vector2((x_b - x_a) - margin_x * 2.0, (mid_z - z_min) - margin_z * 2.0)
-				)
-				if rect1.size.x > 14.0 and rect1.size.y > 14.0:
-					blocks.append(rect1)
+				# Cortes transversales en X rectos para todo el macro-bloque (sin quiebres!)
+				var target_len := 150.0 if zone != CityRoadPatterns.NeighborhoodZoneType.ZONA_X else 200.0
+				var num_cuts := maxi(int(round(mb_w / target_len)), 1)
+				var pitch_x := mb_w / float(num_cuts)
 
-				var rect2 := Rect2(
-					Vector2(x_a + margin_x, mid_z + margin_z),
-					Vector2((x_b - x_a) - margin_x * 2.0, (z_max - mid_z) - margin_z * 2.0)
-				)
-				if rect2.size.x > 14.0 and rect2.size.y > 14.0:
-					blocks.append(rect2)
+				if num_cuts > 1:
+					for c in range(1, num_cuts):
+						var cut_x := mx0 + float(c) * pitch_x
+						var ep0 := _road_system.add_endpoint(Vector3(cut_x, 0.0, mz0), Vector3(0.0, 0.0, 1.0), res_w, RoadTrajectorySystem.RoadType.TWO_WAY_2LANE)
+						var ep1 := _road_system.add_endpoint(Vector3(cut_x, 0.0, mz1), Vector3(0.0, 0.0, 1.0), res_w, RoadTrajectorySystem.RoadType.TWO_WAY_2LANE)
+						var seg := _road_system.connect_endpoints(ep0.id, ep1.id, res_w, RoadTrajectorySystem.RoadType.TWO_WAY_2LANE)
+						_road_system.set_both_sidewalks(seg.id, true, true, sw_w)
+
+				for t in range(num_tiers):
+					var bz0 := mz0 + float(t) * pitch_z
+					var bz1 := bz0 + pitch_z
+					for c in range(num_cuts):
+						var bx0 := mx0 + float(c) * pitch_x
+						var bx1 := bx0 + pitch_x
+
+						var block_rect := Rect2(
+							Vector2(bx0 + margin, bz0 + margin),
+							Vector2((bx1 - bx0) - margin * 2.0, (bz1 - bz0) - margin * 2.0)
+						)
+						if block_rect.size.x >= 14.0 and block_rect.size.y >= 14.0:
+							out_blocks.append(block_rect)
+							out_zones.append(zone)
+
 			else:
-				var z_min := minf(z0, z1)
-				var z_max := maxf(z0, z1)
-				var inner_rect := Rect2(
-					Vector2(x_a + margin_x, z_min + margin_z),
-					Vector2((x_b - x_a) - margin_x * 2.0, (z_max - z_min) - margin_z * 2.0)
-				)
-				if inner_rect.size.x > 14.0 and inner_rect.size.y > 14.0:
-					blocks.append(inner_rect)
+				# CUADRA DE CASAS EN VERTICAL: calles corren en Z (Norte-Sur), profundidad en X
+				var num_tiers := maxi(int(round(mb_w / (target_depth + corridor_w))), 1)
+				var pitch_x := mb_w / float(num_tiers)
 
-	return blocks
+				# Calles internas verticales rectas
+				for t in range(1, num_tiers):
+					var x_line := mx0 + float(t) * pitch_x
+					var ep0 := _road_system.add_endpoint(Vector3(x_line, 0.0, mz0), Vector3(0.0, 0.0, 1.0), res_w, RoadTrajectorySystem.RoadType.TWO_WAY_2LANE)
+					var ep1 := _road_system.add_endpoint(Vector3(x_line, 0.0, mz1), Vector3(0.0, 0.0, 1.0), res_w, RoadTrajectorySystem.RoadType.TWO_WAY_2LANE)
+					var seg := _road_system.connect_endpoints(ep0.id, ep1.id, res_w, RoadTrajectorySystem.RoadType.TWO_WAY_2LANE)
+					_road_system.set_both_sidewalks(seg.id, true, true, sw_w)
+
+				# Cortes transversales en Z rectos para todo el macro-bloque (sin quiebres!)
+				var target_len := 150.0 if zone != CityRoadPatterns.NeighborhoodZoneType.ZONA_X else 200.0
+				var num_cuts := maxi(int(round(mb_h / target_len)), 1)
+				var pitch_z := mb_h / float(num_cuts)
+
+				if num_cuts > 1:
+					for c in range(1, num_cuts):
+						var cut_z := mz0 + float(c) * pitch_z
+						var ep0 := _road_system.add_endpoint(Vector3(mx0, 0.0, cut_z), Vector3(1.0, 0.0, 0.0), res_w, RoadTrajectorySystem.RoadType.TWO_WAY_2LANE)
+						var ep1 := _road_system.add_endpoint(Vector3(mx1, 0.0, cut_z), Vector3(1.0, 0.0, 0.0), res_w, RoadTrajectorySystem.RoadType.TWO_WAY_2LANE)
+						var seg := _road_system.connect_endpoints(ep0.id, ep1.id, res_w, RoadTrajectorySystem.RoadType.TWO_WAY_2LANE)
+						_road_system.set_both_sidewalks(seg.id, true, true, sw_w)
+
+				for t in range(num_tiers):
+					var bx0 := mx0 + float(t) * pitch_x
+					var bx1 := bx0 + pitch_x
+					for c in range(num_cuts):
+						var bz0 := mz0 + float(c) * pitch_z
+						var bz1 := bz0 + pitch_z
+
+						var block_rect := Rect2(
+							Vector2(bx0 + margin, bz0 + margin),
+							Vector2((bx1 - bx0) - margin * 2.0, (bz1 - bz0) - margin * 2.0)
+						)
+						if block_rect.size.x >= 14.0 and block_rect.size.y >= 14.0:
+							out_blocks.append(block_rect)
+							out_zones.append(zone)
 
 
 # ==============================================================================
@@ -510,7 +658,7 @@ func _create_stream_segment(z0: float, z1: float, m_w: float, avenue_cfg: CityRo
 # SUBDIVISIÓN DE MANZANAS EN PARCELAS / LOTES (block_parcels)
 # ==============================================================================
 
-func _build_parcels(blocks: Array[Rect2], avenue_cfg: CityRoadPatterns.AvenueConfig, hood_cfg: CityRoadPatterns.NeighborhoodConfig) -> void:
+func _build_parcels(blocks: Array[Rect2], avenue_cfg: CityRoadPatterns.AvenueConfig, hood_cfg: CityRoadPatterns.NeighborhoodConfig, block_zones: Array = []) -> void:
 	block_rects = blocks
 	block_parcels.clear()
 
@@ -519,82 +667,252 @@ func _build_parcels(blocks: Array[Rect2], avenue_cfg: CityRoadPatterns.AvenueCon
 		_parcel_outline_root.name = "ParcelOutlines"
 		add_child(_parcel_outline_root)
 
-	var lot_f_min := hood_cfg.lot_frontage_min
-	var lot_f_max := hood_cfg.lot_frontage_max
-	var lot_d := hood_cfg.lot_depth
-
 	for b_idx in range(blocks.size()):
 		var block := blocks[b_idx]
-		var lots := _subdivide_single_block(block, lot_f_min, lot_f_max, lot_d)
+		
+		# Determinar la zona de la manzana
+		var eff_zone := neighborhood_zone
+		if b_idx < block_zones.size() and block_zones[b_idx] != null:
+			eff_zone = block_zones[b_idx]
+		elif neighborhood_zone == CityRoadPatterns.NeighborhoodZoneType.ZONAS_MIXTAS:
+			var b_center := block.position + block.size * 0.5
+			if b_center.x < 0.0:
+				if b_center.y < 0.0:
+					eff_zone = CityRoadPatterns.NeighborhoodZoneType.COLONIA_VIEJA
+				else:
+					eff_zone = CityRoadPatterns.NeighborhoodZoneType.ZONA_X
+			else:
+				eff_zone = CityRoadPatterns.NeighborhoodZoneType.COLONIA_NUEVA
+
+		var block_prototype_seed := rng_seed + b_idx * 1337
+		var lots := _subdivide_single_block(block, eff_zone, block_prototype_seed)
 		for l_idx in range(lots.size()):
 			var lot: Dictionary = lots[l_idx]
 			lot["source_index"] = block_parcels.size()
 			lot["block_index"] = b_idx
 			lot["lot_index"] = l_idx
+			lot["zone_type"] = eff_zone
+			lot["prototype_seed"] = block_prototype_seed
 			block_parcels.append(lot)
 
 			if show_parcel_outlines and _parcel_outline_root != null:
 				_add_parcel_outline_visual(lot["rect"])
 
 
-func _subdivide_single_block(block: Rect2, f_min: float, f_max: float, depth: float) -> Array[Dictionary]:
+func _subdivide_single_block(block: Rect2, zone: CityRoadPatterns.NeighborhoodZoneType, b_seed: int) -> Array[Dictionary]:
 	var result: Array[Dictionary] = []
 	var w := block.size.x
 	var h := block.size.y
 
-	# Si la manzana es alargada horizontalmente (eje X mayor que Z)
+	var b_rng := RandomNumberGenerator.new()
+	b_rng.seed = b_seed
+
 	if w >= h:
-		# Fila Norte (lotes mirando al Norte, front_side = 0)
-		var lots_n := _divide_edge_into_lots(block.position.x, w, f_min, f_max)
-		for l in lots_n:
-			var lot_rect := Rect2(Vector2(l["start"], block.position.y), Vector2(l["len"], minf(depth, h * 0.5)))
-			result.append({ "rect": lot_rect, "front_side": 0 })
+		# Manzana horizontal: calles en Norte y Sur. Slices a lo largo del eje X, fondo transversal en eje Y.
+		var cur_x := block.position.x
+		var end_x := block.position.x + w
 
-		# Fila Sur (lotes mirando al Sur, front_side = 2)
-		var lots_s := _divide_edge_into_lots(block.position.x, w, f_min, f_max)
-		for l in lots_s:
-			var lot_rect := Rect2(Vector2(l["start"], block.position.y + h - minf(depth, h * 0.5)), Vector2(l["len"], minf(depth, h * 0.5)))
-			result.append({ "rect": lot_rect, "front_side": 2 })
+		while cur_x < end_x - 0.5:
+			var rem_x := end_x - cur_x
+			var slice_len: float
+
+			match zone:
+				CityRoadPatterns.NeighborhoodZoneType.COLONIA_NUEVA:
+					var target_len := 6.50
+					var count := maxi(int(round(rem_x / target_len)), 1)
+					slice_len = rem_x / float(count) if count == 1 else target_len
+
+				CityRoadPatterns.NeighborhoodZoneType.COLONIA_VIEJA:
+					if rem_x <= 15.0:
+						slice_len = rem_x
+					else:
+						slice_len = b_rng.randf_range(8.0, 14.0)
+						if rem_x - slice_len < 7.5:
+							slice_len = rem_x * 0.5
+
+				CityRoadPatterns.NeighborhoodZoneType.ZONA_X:
+					if rem_x <= 46.0:
+						slice_len = rem_x
+					else:
+						slice_len = b_rng.randf_range(22.0, 44.0)
+						if rem_x - slice_len < 20.0:
+							slice_len = rem_x * 0.5
+
+				_:
+					var count := maxi(int(round(rem_x / 12.0)), 1)
+					slice_len = rem_x / float(count)
+
+			# Partición en el eje transversal Y (fondo h entre Norte y Sur)
+			# ¡Garantía matemática: depth_norte + depth_sur = h EXACTO (cero traslapes, cero vacíos)!
+			match zone:
+				CityRoadPatterns.NeighborhoodZoneType.COLONIA_NUEVA:
+					var d := h * 0.50
+					var r_n := Rect2(Vector2(cur_x, block.position.y), Vector2(slice_len, d))
+					var r_s := Rect2(Vector2(cur_x, block.position.y + d), Vector2(slice_len, d))
+					result.append({ "rect": r_n, "front_side": 0 })
+					result.append({ "rect": r_s, "front_side": 2 })
+
+				CityRoadPatterns.NeighborhoodZoneType.COLONIA_VIEJA:
+					var split := b_rng.randf_range(0.46, 0.54)
+					var d_n := h * split
+					var d_s := h - d_n
+					var r_n := Rect2(Vector2(cur_x, block.position.y), Vector2(slice_len, d_n))
+					var r_s := Rect2(Vector2(cur_x, block.position.y + d_n), Vector2(slice_len, d_s))
+					result.append({ "rect": r_n, "front_side": 0 })
+					result.append({ "rect": r_s, "front_side": 2 })
+
+				CityRoadPatterns.NeighborhoodZoneType.ZONA_X:
+					var roll := b_rng.randf()
+					if roll < 0.15 and slice_len >= 26.0 and slice_len <= 38.0:
+						# Lote pasante / mega finca de doble frente (abarca todo el fondo de calle a calle)
+						var r_full := Rect2(Vector2(cur_x, block.position.y), Vector2(slice_len, h))
+						result.append({ "rect": r_full, "front_side": 0 })
+					elif roll < 0.45 and slice_len >= 38.0:
+						# Asimétrico: 1 lote monumental de un lado frente a 2 lotes en la espalda
+						var wide_is_north := b_rng.randf() < 0.5
+						var split := b_rng.randf_range(0.42, 0.48)
+						var sub_len := slice_len * 0.5
+						if wide_is_north:
+							var d_n := h * split
+							var d_s := h - d_n
+							var r_n := Rect2(Vector2(cur_x, block.position.y), Vector2(slice_len, d_n))
+							var r_s1 := Rect2(Vector2(cur_x, block.position.y + d_n), Vector2(sub_len, d_s))
+							var r_s2 := Rect2(Vector2(cur_x + sub_len, block.position.y + d_n), Vector2(sub_len, d_s))
+							result.append({ "rect": r_n, "front_side": 0 })
+							result.append({ "rect": r_s1, "front_side": 2 })
+							result.append({ "rect": r_s2, "front_side": 2 })
+						else:
+							var d_s := h * split
+							var d_n := h - d_s
+							var r_n1 := Rect2(Vector2(cur_x, block.position.y), Vector2(sub_len, d_n))
+							var r_n2 := Rect2(Vector2(cur_x + sub_len, block.position.y), Vector2(sub_len, d_n))
+							var r_s := Rect2(Vector2(cur_x, block.position.y + d_n), Vector2(slice_len, d_s))
+							result.append({ "rect": r_n1, "front_side": 0 })
+							result.append({ "rect": r_n2, "front_side": 0 })
+							result.append({ "rect": r_s, "front_side": 2 })
+					else:
+						# Dos lotes espalda con espalda con fondo aleatorio complementario
+						var split := b_rng.randf_range(0.38, 0.62)
+						var d_n := h * split
+						var d_s := h - d_n
+						var r_n := Rect2(Vector2(cur_x, block.position.y), Vector2(slice_len, d_n))
+						var r_s := Rect2(Vector2(cur_x, block.position.y + d_n), Vector2(slice_len, d_s))
+						result.append({ "rect": r_n, "front_side": 0 })
+						result.append({ "rect": r_s, "front_side": 2 })
+
+				_:
+					var d := h * 0.50
+					var r_n := Rect2(Vector2(cur_x, block.position.y), Vector2(slice_len, d))
+					var r_s := Rect2(Vector2(cur_x, block.position.y + d), Vector2(slice_len, d))
+					result.append({ "rect": r_n, "front_side": 0 })
+					result.append({ "rect": r_s, "front_side": 2 })
+
+			cur_x += slice_len
+
 	else:
-		# Fila Oeste (lotes mirando al Oeste, front_side = 3)
-		var lots_w := _divide_edge_into_lots(block.position.y, h, f_min, f_max)
-		for l in lots_w:
-			var lot_rect := Rect2(Vector2(block.position.x, l["start"]), Vector2(minf(depth, w * 0.5), l["len"]))
-			result.append({ "rect": lot_rect, "front_side": 3 })
+		# Manzana vertical (más común, paralela a la avenida en eje Z)
+		# Slices a lo largo del eje Z, fondo transversal en eje X (entre Oeste y Este).
+		var cur_z := block.position.y
+		var end_z := block.position.y + h
 
-		# Fila Este (lotes mirando al Este, front_side = 1)
-		var lots_e := _divide_edge_into_lots(block.position.y, h, f_min, f_max)
-		for l in lots_e:
-			var lot_rect := Rect2(Vector2(block.position.x + w - minf(depth, w * 0.5), l["start"]), Vector2(minf(depth, w * 0.5), l["len"]))
-			result.append({ "rect": lot_rect, "front_side": 1 })
+		while cur_z < end_z - 0.5:
+			var rem_z := end_z - cur_z
+			var slice_len: float
+
+			match zone:
+				CityRoadPatterns.NeighborhoodZoneType.COLONIA_NUEVA:
+					var target_len := 6.50
+					var count := maxi(int(round(rem_z / target_len)), 1)
+					slice_len = rem_z / float(count) if count == 1 else target_len
+
+				CityRoadPatterns.NeighborhoodZoneType.COLONIA_VIEJA:
+					if rem_z <= 15.0:
+						slice_len = rem_z
+					else:
+						slice_len = b_rng.randf_range(8.0, 14.0)
+						if rem_z - slice_len < 7.5:
+							slice_len = rem_z * 0.5
+
+				CityRoadPatterns.NeighborhoodZoneType.ZONA_X:
+					if rem_z <= 46.0:
+						slice_len = rem_z
+					else:
+						slice_len = b_rng.randf_range(22.0, 44.0)
+						if rem_z - slice_len < 20.0:
+							slice_len = rem_z * 0.5
+
+				_:
+					var count := maxi(int(round(rem_z / 12.0)), 1)
+					slice_len = rem_z / float(count)
+
+			# Partición en el eje transversal X (fondo w entre Oeste y Este)
+			# ¡Garantía matemática: depth_oeste + depth_este = w EXACTO (cero traslapes, cero vacíos)!
+			match zone:
+				CityRoadPatterns.NeighborhoodZoneType.COLONIA_NUEVA:
+					var d := w * 0.50
+					var r_w := Rect2(Vector2(block.position.x, cur_z), Vector2(d, slice_len))
+					var r_e := Rect2(Vector2(block.position.x + d, cur_z), Vector2(d, slice_len))
+					result.append({ "rect": r_w, "front_side": 3 })
+					result.append({ "rect": r_e, "front_side": 1 })
+
+				CityRoadPatterns.NeighborhoodZoneType.COLONIA_VIEJA:
+					var split := b_rng.randf_range(0.46, 0.54)
+					var d_w := w * split
+					var d_e := w - d_w
+					var r_w := Rect2(Vector2(block.position.x, cur_z), Vector2(d_w, slice_len))
+					var r_e := Rect2(Vector2(block.position.x + d_w, cur_z), Vector2(d_e, slice_len))
+					result.append({ "rect": r_w, "front_side": 3 })
+					result.append({ "rect": r_e, "front_side": 1 })
+
+				CityRoadPatterns.NeighborhoodZoneType.ZONA_X:
+					var roll := b_rng.randf()
+					if roll < 0.15 and slice_len >= 26.0 and slice_len <= 38.0:
+						# Lote pasante / mega finca de doble frente (abarca todo el fondo de calle a calle)
+						var r_full := Rect2(Vector2(block.position.x, cur_z), Vector2(w, slice_len))
+						result.append({ "rect": r_full, "front_side": 3 })
+					elif roll < 0.45 and slice_len >= 38.0:
+						# Asimétrico: 1 lote monumental de un lado frente a 2 lotes en la espalda
+						var wide_is_west := b_rng.randf() < 0.5
+						var split := b_rng.randf_range(0.42, 0.48)
+						var sub_len := slice_len * 0.5
+						if wide_is_west:
+							var d_w := w * split
+							var d_e := w - d_w
+							var r_w := Rect2(Vector2(block.position.x, cur_z), Vector2(d_w, slice_len))
+							var r_e1 := Rect2(Vector2(block.position.x + d_w, cur_z), Vector2(d_e, sub_len))
+							var r_e2 := Rect2(Vector2(block.position.x + d_w, cur_z + sub_len), Vector2(d_e, sub_len))
+							result.append({ "rect": r_w, "front_side": 3 })
+							result.append({ "rect": r_e1, "front_side": 1 })
+							result.append({ "rect": r_e2, "front_side": 1 })
+						else:
+							var d_e := w * split
+							var d_w := w - d_e
+							var r_w1 := Rect2(Vector2(block.position.x, cur_z), Vector2(d_w, sub_len))
+							var r_w2 := Rect2(Vector2(block.position.x, cur_z + sub_len), Vector2(d_w, sub_len))
+							var r_e := Rect2(Vector2(block.position.x + d_w, cur_z), Vector2(d_e, slice_len))
+							result.append({ "rect": r_w1, "front_side": 3 })
+							result.append({ "rect": r_w2, "front_side": 3 })
+							result.append({ "rect": r_e, "front_side": 1 })
+					else:
+						# Dos lotes espalda con espalda con fondo aleatorio complementario
+						var split := b_rng.randf_range(0.38, 0.62)
+						var d_w := w * split
+						var d_e := w - d_w
+						var r_w := Rect2(Vector2(block.position.x, cur_z), Vector2(d_w, slice_len))
+						var r_e := Rect2(Vector2(block.position.x + d_w, cur_z), Vector2(d_e, slice_len))
+						result.append({ "rect": r_w, "front_side": 3 })
+						result.append({ "rect": r_e, "front_side": 1 })
+
+				_:
+					var d := w * 0.50
+					var r_w := Rect2(Vector2(block.position.x, cur_z), Vector2(d, slice_len))
+					var r_e := Rect2(Vector2(block.position.x + d, cur_z), Vector2(d, slice_len))
+					result.append({ "rect": r_w, "front_side": 3 })
+					result.append({ "rect": r_e, "front_side": 1 })
+
+			cur_z += slice_len
 
 	return result
-
-
-func _divide_edge_into_lots(start_coord: float, total_length: float, f_min: float, f_max: float) -> Array[Dictionary]:
-	var lots: Array[Dictionary] = []
-	if total_length < f_min:
-		return lots
-
-	var count := clampi(int(round(total_length / ((f_min + f_max) * 0.5))), 1, 16)
-	var avg_len := total_length / float(count)
-	var cur := start_coord
-
-	for i in range(count):
-		var lot_len := avg_len
-		if i < count - 1:
-			var var_span := minf(avg_len - f_min, f_max - avg_len) * 0.4
-			lot_len += _rng.randf_range(-var_span, var_span)
-		else:
-			lot_len = (start_coord + total_length) - cur
-
-		lots.append({
-			"start": cur,
-			"len": lot_len
-		})
-		cur += lot_len
-
-	return lots
 
 
 func _add_parcel_outline_visual(rect: Rect2) -> void:
@@ -673,7 +991,7 @@ func _create_house_generator() -> void:
 	_house_generator.front_yard_depth = 4.5
 	_house_generator.rear_yard_depth = 2.5
 	add_child(_house_generator)
-	_house_generator.call_deferred("generate_houses")
+	_house_generator.generate_houses()
 
 
 func _create_decoration_generator() -> void:
@@ -691,7 +1009,7 @@ func _create_decoration_generator() -> void:
 		_decoration_generator.rng_seed = rng_seed + decoration_rng_seed_offset
 
 	add_child(_decoration_generator)
-	call_deferred("_run_decoration_pass")
+	_run_decoration_pass()
 
 
 func _run_decoration_pass() -> void:

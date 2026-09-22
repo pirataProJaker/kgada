@@ -1,0 +1,15 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://world/city/mexican_city_generator.gd" id="1_mexican_city"]
+
+[node name="MexicanCityGenerator" type="Node3D"]
+script = ExtResource("1_mexican_city")
+city_length = 360.0
+neighborhood_blocks_per_side = 2
+neighborhood_zone = 3
+avenue_type = 0
+neighborhood_pattern = 0
+generate_houses = true
+scatter_decorations = true
+generate_zocalo = true
+generate_corner_tienditas = true

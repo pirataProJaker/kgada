@@ -6,11 +6,41 @@ extends Node3D
 
 const ProceduralRoadMaterials = preload("res://world/city/procedural_road_materials.gd")
 
+## Anchos métricos estándar de carril según jerarquía y contexto vial
+const LANE_WIDTH_RESIDENTIAL: float = 3.25   # Calles de colonia, residenciales y privadas
+const LANE_WIDTH_AVENUE: float = 4.00        # Avenidas primarias, bulevares y vías comerciales
+const LANE_WIDTH_HIGHWAY: float = 4.00       # Carreteras interurbanas e internacionales
+const STANDARD_LANE_WIDTH: float = LANE_WIDTH_RESIDENTIAL
+
 enum RoadType {
-	TWO_WAY_YELLOW,   # Calle de 2 sentidos con doble línea amarilla central
-	AVENUE_WHITE,     # Avenida con líneas blancas de carril
-	RURAL_PLAIN,      # Carretera simple de asfalto sin pintar
+	TWO_WAY_2LANE,        # Calle estándar de 2 sentidos (1 por sentido, doble amarilla central)
+	AVENUE_ONEWAY_2LANE,  # Calzada de avenida unidireccional de 2 carriles (1 línea blanca discontinua)
+	AVENUE_ONEWAY_3LANE,  # Calzada de avenida unidireccional de 3 carriles (2 líneas blancas discontinuas)
+	COMMERCIAL_4LANE,     # Avenida comercial de 4 carriles (2 por sentido, doble amarilla central + líneas blancas)
+	RURAL_PLAIN_2LANE,    # Carretera rural de 2 carriles sin pintar
+	# Aliases retrocompatibles
+	TWO_WAY_YELLOW = TWO_WAY_2LANE,
+	AVENUE_WHITE = AVENUE_ONEWAY_3LANE,
+	RURAL_PLAIN = RURAL_PLAIN_2LANE,
 }
+
+static func get_lane_count_for_type(type: RoadType) -> int:
+	match type:
+		RoadType.AVENUE_ONEWAY_2LANE:
+			return 2
+		RoadType.AVENUE_ONEWAY_3LANE:
+			return 3
+		RoadType.COMMERCIAL_4LANE:
+			return 4
+		RoadType.RURAL_PLAIN_2LANE:
+			return 2
+		_:
+			return 2
+
+
+static func get_standard_width_for_type(type: RoadType) -> float:
+	return float(get_lane_count_for_type(type)) * STANDARD_LANE_WIDTH
+
 
 class RoadEndpoint:
 	var id: int
@@ -236,13 +266,158 @@ func set_sidewalk(segment_id: int, is_left_side: bool, enabled: bool, sidewalk_w
 		rebuild_geometry()
 
 
+## Asigna explícitamente ambas banquetas (izquierda y derecha) en una sola llamada
+func set_both_sidewalks(segment_id: int, enabled_left: bool, enabled_right: bool, sidewalk_width: float = 2.5, auto_rebuild: bool = true) -> void:
+	var seg: RoadSegment = _segments.get(segment_id, null)
+	if seg == null:
+		return
+
+	seg.has_left_sidewalk = enabled_left
+	seg.left_sidewalk_width = sidewalk_width
+	seg.has_right_sidewalk = enabled_right
+	seg.right_sidewalk_width = sidewalk_width
+
+	if auto_rebuild:
+		rebuild_geometry()
+
+
 func get_all_segments() -> Array:
 	return _segments.values()
 
 
 # ==============================================================================
 # GENERACIÓN GEOMÉTRICA CONTINUA (INSTANT BOX & RIBBON MESH)
-# ==============================================================================
+func _resolve_network_intersections() -> void:
+	# 1. Detectar cruces 2D entre segmentos rectos y asegurar que exista un endpoint compartido
+	var initial_segs := _segments.values().duplicate()
+	for i in range(initial_segs.size()):
+		var sA: RoadSegment = initial_segs[i]
+		var p0 := Vector2(sA.start_pos.x, sA.start_pos.z)
+		var p1 := Vector2(sA.end_pos.x, sA.end_pos.z)
+		var dA := p1 - p0
+		for j in range(i + 1, initial_segs.size()):
+			var sB: RoadSegment = initial_segs[j]
+			var q0 := Vector2(sB.start_pos.x, sB.start_pos.z)
+			var q1 := Vector2(sB.end_pos.x, sB.end_pos.z)
+			var dB := q1 - q0
+
+			var det := -dA.x * dB.y + dB.x * dA.y
+			if absf(det) < 0.001:
+				continue
+
+			var diff := q0 - p0
+			var t1 := (-diff.x * dB.y + diff.y * dB.x) / det
+			var t2 := (dA.x * diff.y - diff.x * dA.y) / det
+
+			if t1 > 0.02 and t1 < 0.98 and t2 > 0.02 and t2 < 0.98:
+				var inter_2d := p0 + dA * t1
+				var inter_pos := Vector3(inter_2d.x, (sA.start_pos.y + sB.start_pos.y) * 0.5, inter_2d.y)
+				add_endpoint(inter_pos, Vector3.ZERO, minf(sA.width, sB.width), sA.road_type)
+
+	# 2. Particionar segmentos continuos en todos los endpoints que intersectan su trayectoria
+	var pass_count := 0
+	var has_splits := true
+	while has_splits and pass_count < 10:
+		has_splits = false
+		pass_count += 1
+		var current_segs := _segments.values().duplicate()
+		for s_item in current_segs:
+			var seg: RoadSegment = s_item
+			if not _segments.has(seg.id):
+				continue
+			var p0 := seg.start_pos
+			var p1 := seg.end_pos
+			var d := p1 - p0
+			var len_sq := d.x * d.x + d.z * d.z
+			if len_sq < 1.0:
+				continue
+
+			var split_eps: Array[Dictionary] = []
+			for ep_item in _endpoints.values():
+				var ep: RoadEndpoint = ep_item
+				if ep.id == seg.start_endpoint_id or ep.id == seg.end_endpoint_id:
+					continue
+				var w := Vector2(ep.position.x - p0.x, ep.position.z - p0.z)
+				var v := Vector2(d.x, d.z)
+				var t := w.dot(v) / len_sq
+				if t > 0.01 and t < 0.99:
+					var proj := Vector2(p0.x, p0.z) + v * t
+					var dist := (Vector2(ep.position.x, ep.position.z) - proj).length()
+					if dist < 0.35: # Dentro del eje del tramo
+						split_eps.append({"t": t, "ep": ep})
+
+			if split_eps.is_empty():
+				continue
+
+			split_eps.sort_custom(func(a, b): return a["t"] < b["t"])
+
+			var prev_ep_id := seg.start_endpoint_id
+			var prev_pos := p0
+
+			var start_ep := get_endpoint(seg.start_endpoint_id)
+			if start_ep != null:
+				start_ep.connected_segments.erase(seg.id)
+			var end_ep := get_endpoint(seg.end_endpoint_id)
+			if end_ep != null:
+				end_ep.connected_segments.erase(seg.id)
+
+			for split_info in split_eps:
+				var curr_ep: RoadEndpoint = split_info["ep"]
+				if prev_pos.distance_to(curr_ep.position) < 0.2:
+					continue
+				var sub_seg := RoadSegment.new(
+					_next_segment_id,
+					prev_ep_id,
+					curr_ep.id,
+					prev_pos,
+					curr_ep.position,
+					seg.width,
+					seg.road_type
+				)
+				sub_seg.has_left_sidewalk = seg.has_left_sidewalk
+				sub_seg.has_right_sidewalk = seg.has_right_sidewalk
+				sub_seg.left_sidewalk_width = seg.left_sidewalk_width
+				sub_seg.right_sidewalk_width = seg.right_sidewalk_width
+
+				_segments[sub_seg.id] = sub_seg
+				_next_segment_id += 1
+
+				var ep_a := get_endpoint(prev_ep_id)
+				if ep_a != null and not ep_a.connected_segments.has(sub_seg.id):
+					ep_a.connected_segments.append(sub_seg.id)
+				if not curr_ep.connected_segments.has(sub_seg.id):
+					curr_ep.connected_segments.append(sub_seg.id)
+
+				prev_ep_id = curr_ep.id
+				prev_pos = curr_ep.position
+
+			if prev_pos.distance_to(p1) >= 0.2:
+				var last_sub_seg := RoadSegment.new(
+					_next_segment_id,
+					prev_ep_id,
+					seg.end_endpoint_id,
+					prev_pos,
+					p1,
+					seg.width,
+					seg.road_type
+				)
+				last_sub_seg.has_left_sidewalk = seg.has_left_sidewalk
+				last_sub_seg.has_right_sidewalk = seg.has_right_sidewalk
+				last_sub_seg.left_sidewalk_width = seg.left_sidewalk_width
+				last_sub_seg.right_sidewalk_width = seg.right_sidewalk_width
+
+				_segments[last_sub_seg.id] = last_sub_seg
+				_next_segment_id += 1
+
+				var ep_last_a := get_endpoint(prev_ep_id)
+				if ep_last_a != null and not ep_last_a.connected_segments.has(last_sub_seg.id):
+					ep_last_a.connected_segments.append(last_sub_seg.id)
+				if end_ep != null and not end_ep.connected_segments.has(last_sub_seg.id):
+					end_ep.connected_segments.append(last_sub_seg.id)
+
+			_segments.erase(seg.id)
+			has_splits = true
+
 
 func rebuild_geometry() -> void:
 	if is_batch_updating:
@@ -253,6 +428,8 @@ func rebuild_geometry() -> void:
 	for child in _static_body.get_children():
 		if child is CollisionShape3D:
 			child.queue_free()
+
+	_resolve_network_intersections()
 
 	if _segments.is_empty():
 		_mesh_instance.mesh = null
@@ -287,7 +464,7 @@ func rebuild_geometry() -> void:
 		var connected_list: Array[RoadSegment] = []
 		for seg_item in _segments.values():
 			var s: RoadSegment = seg_item
-			if s.start_pos.distance_to(ep.position) < 0.25 or s.end_pos.distance_to(ep.position) < 0.25:
+			if s.start_pos.distance_to(ep.position) < 0.30 or s.end_pos.distance_to(ep.position) < 0.30:
 				if not connected_list.has(s):
 					connected_list.append(s)
 
@@ -297,7 +474,7 @@ func rebuild_geometry() -> void:
 		# Ramas ordenadas cíclicamente alrededor del endpoint
 		var branches := []
 		for s in connected_list:
-			var is_start := s.start_pos.distance_to(ep.position) < 0.25
+			var is_start := s.start_pos.distance_to(ep.position) < 0.30
 			var u: Vector3 = (s.end_pos - s.start_pos).normalized() if is_start else (s.start_pos - s.end_pos).normalized()
 			var angle := atan2(u.x, -u.z)
 			branches.append({
@@ -456,28 +633,59 @@ func rebuild_geometry() -> void:
 
 		_append_oriented_slab(geom_data[ProceduralRoadMaterials.KEY_ASPHALT], c0, c1, c2, c3, 0.0, ROAD_HEIGHT)
 
-		# B. Señalización vial central
-		if seg.road_type == RoadType.TWO_WAY_YELLOW:
-			var stripe_w := 0.14
-			var y_paint := ROAD_HEIGHT + PAINT_HEIGHT
-			var s0_l := p0 - right * (stripe_w * 1.5)
-			var s1_l := p0 - right * (stripe_w * 0.5)
-			var s2_l := p1 - right * (stripe_w * 0.5)
-			var s3_l := p1 - right * (stripe_w * 1.5)
-			_append_quad(geom_data[ProceduralRoadMaterials.KEY_YELLOW_LINE], s0_l, s1_l, s2_l, s3_l, y_paint, Vector3.UP)
+		# B. Señalización vial
+		var stripe_w := 0.14
+		var white_stripe_w := 0.12
+		var y_paint := ROAD_HEIGHT + PAINT_HEIGHT
 
-			var s0_r := p0 + right * (stripe_w * 0.5)
-			var s1_r := p0 + right * (stripe_w * 1.5)
-			var s2_r := p1 + right * (stripe_w * 1.5)
-			var s3_r := p1 + right * (stripe_w * 0.5)
-			_append_quad(geom_data[ProceduralRoadMaterials.KEY_YELLOW_LINE], s0_r, s1_r, s2_r, s3_r, y_paint, Vector3.UP)
-		elif seg.road_type == RoadType.AVENUE_WHITE:
-			var lane_w := seg.width / 3.0
-			var y_paint := ROAD_HEIGHT + PAINT_HEIGHT
-			var stripe_w := 0.12
-			for lane_idx in [-1, 1]:
-				var center_offset := float(lane_idx) * (lane_w * 0.5)
-				_append_dashed_line(geom_data[ProceduralRoadMaterials.KEY_WHITE_LINE], p0 + right * center_offset, p1 + right * center_offset, right, stripe_w, y_paint)
+		match seg.road_type:
+			RoadType.TWO_WAY_2LANE:
+				# Doble línea amarilla continua al centro exacto
+				var s0_l := p0 - right * (stripe_w * 1.5)
+				var s1_l := p0 - right * (stripe_w * 0.5)
+				var s2_l := p1 - right * (stripe_w * 0.5)
+				var s3_l := p1 - right * (stripe_w * 1.5)
+				_append_quad(geom_data[ProceduralRoadMaterials.KEY_YELLOW_LINE], s0_l, s1_l, s2_l, s3_l, y_paint, Vector3.UP)
+
+				var s0_r := p0 + right * (stripe_w * 0.5)
+				var s1_r := p0 + right * (stripe_w * 1.5)
+				var s2_r := p1 + right * (stripe_w * 1.5)
+				var s3_r := p1 + right * (stripe_w * 0.5)
+				_append_quad(geom_data[ProceduralRoadMaterials.KEY_YELLOW_LINE], s0_r, s1_r, s2_r, s3_r, y_paint, Vector3.UP)
+
+			RoadType.AVENUE_ONEWAY_2LANE:
+				# 2 carriles unidireccionales: 1 línea blanca discontinua exactamente al centro
+				_append_dashed_line(geom_data[ProceduralRoadMaterials.KEY_WHITE_LINE], p0, p1, right, white_stripe_w, y_paint)
+
+			RoadType.AVENUE_ONEWAY_3LANE:
+				# 3 carriles unidireccionales: 2 líneas blancas discontinuas a +-half_w / 3.0
+				var lane_w := seg.width / 3.0
+				for lane_idx in [-1, 1]:
+					var center_offset := float(lane_idx) * (lane_w * 0.5)
+					_append_dashed_line(geom_data[ProceduralRoadMaterials.KEY_WHITE_LINE], p0 + right * center_offset, p1 + right * center_offset, right, white_stripe_w, y_paint)
+
+			RoadType.COMMERCIAL_4LANE:
+				# 4 carriles: 2 por sentido
+				# 1. Doble línea amarilla continua al centro exacto
+				var s0_l := p0 - right * (stripe_w * 1.5)
+				var s1_l := p0 - right * (stripe_w * 0.5)
+				var s2_l := p1 - right * (stripe_w * 0.5)
+				var s3_l := p1 - right * (stripe_w * 1.5)
+				_append_quad(geom_data[ProceduralRoadMaterials.KEY_YELLOW_LINE], s0_l, s1_l, s2_l, s3_l, y_paint, Vector3.UP)
+
+				var s0_r := p0 + right * (stripe_w * 0.5)
+				var s1_r := p0 + right * (stripe_w * 1.5)
+				var s2_r := p1 + right * (stripe_w * 1.5)
+				var s3_r := p1 + right * (stripe_w * 0.5)
+				_append_quad(geom_data[ProceduralRoadMaterials.KEY_YELLOW_LINE], s0_r, s1_r, s2_r, s3_r, y_paint, Vector3.UP)
+
+				# 2. Líneas blancas discontinuas dividiendo los dos carriles de cada sentido
+				var lane_w := seg.width / 4.0
+				_append_dashed_line(geom_data[ProceduralRoadMaterials.KEY_WHITE_LINE], p0 - right * lane_w, p1 - right * lane_w, right, white_stripe_w, y_paint)
+				_append_dashed_line(geom_data[ProceduralRoadMaterials.KEY_WHITE_LINE], p0 + right * lane_w, p1 + right * lane_w, right, white_stripe_w, y_paint)
+
+			RoadType.RURAL_PLAIN_2LANE:
+				pass
 
 		# C. Banqueta Paralela Izquierda (recortada antes del cruce)
 		if seg.has_left_sidewalk:

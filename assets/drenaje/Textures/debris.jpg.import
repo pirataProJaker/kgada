@@ -3,7 +3,7 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://b5kmwlyu365jq"
-path.s3tc="res://.godot/imported/debris.jpg-fe97eea44b2c83722950f03ff81a6578.s3tc.ctex"
+path.s3tc="res://.godot/imported/debris.jpg-31888a8ce1ff8bfef7952ca245af027a.s3tc.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc"],
 "vram_texture": true
@@ -11,8 +11,8 @@ metadata={
 
 [deps]
 
-source_file="res://assets/drenaje/textures/debris.jpg"
-dest_files=["res://.godot/imported/debris.jpg-fe97eea44b2c83722950f03ff81a6578.s3tc.ctex"]
+source_file="res://assets/drenaje/Textures/debris.jpg"
+dest_files=["res://.godot/imported/debris.jpg-31888a8ce1ff8bfef7952ca245af027a.s3tc.ctex"]
 
 [params]
 

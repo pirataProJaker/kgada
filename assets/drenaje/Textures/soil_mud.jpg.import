@@ -3,7 +3,7 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://cl4u4fiencva"
-path.s3tc="res://.godot/imported/soil_mud.jpg-75ce0d26b2c6926441335631e88f90a8.s3tc.ctex"
+path.s3tc="res://.godot/imported/soil_mud.jpg-717085eca2e3f6363e8e73d526478f85.s3tc.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc"],
 "vram_texture": true
@@ -11,8 +11,8 @@ metadata={
 
 [deps]
 
-source_file="res://assets/drenaje/textures/soil_mud.jpg"
-dest_files=["res://.godot/imported/soil_mud.jpg-75ce0d26b2c6926441335631e88f90a8.s3tc.ctex"]
+source_file="res://assets/drenaje/Textures/soil_mud.jpg"
+dest_files=["res://.godot/imported/soil_mud.jpg-717085eca2e3f6363e8e73d526478f85.s3tc.ctex"]
 
 [params]
 

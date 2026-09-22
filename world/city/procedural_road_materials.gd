@@ -30,15 +30,15 @@ static func get_material(key: String) -> StandardMaterial3D:
 			mat.metallic = 0.02
 			mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 		KEY_SIDEWALK:
-			# Concreto de acera / banqueta urbano calibrado
-			mat.albedo_color = Color(0.52, 0.53, 0.55, 1.0)
-			mat.roughness = 0.85
+			# Concreto de acera / banqueta urbano calibrado, limpio y claro
+			mat.albedo_color = Color(0.78, 0.77, 0.75, 1.0)
+			mat.roughness = 0.82
 			mat.metallic = 0.0
 			mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 		KEY_CURB:
-			# Piedra de guarnición / bordillo intermedio
-			mat.albedo_color = Color(0.33, 0.34, 0.36, 1.0)
-			mat.roughness = 0.78
+			# Guarnición / bordillo de piedra o concreto claro destacado
+			mat.albedo_color = Color(0.88, 0.88, 0.86, 1.0)
+			mat.roughness = 0.70
 			mat.metallic = 0.0
 			mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 		KEY_YELLOW_LINE:
@@ -60,3 +60,7 @@ static func get_material(key: String) -> StandardMaterial3D:
 
 static func get_all_material_keys() -> Array[String]:
 	return [KEY_ASPHALT, KEY_SIDEWALK, KEY_CURB, KEY_YELLOW_LINE, KEY_WHITE_LINE]
+
+
+static func clear_cache() -> void:
+	_materials.clear()

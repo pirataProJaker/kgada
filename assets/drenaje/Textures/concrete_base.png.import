@@ -3,7 +3,7 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://dkk2jgsxdfpdv"
-path.s3tc="res://.godot/imported/concrete_base.png-096e6e3ce401e02a3db5d5c66384acdf.s3tc.ctex"
+path.s3tc="res://.godot/imported/concrete_base.png-c5d32ce9af6e39c618368f0627912b5f.s3tc.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc"],
 "vram_texture": true
@@ -11,8 +11,8 @@ metadata={
 
 [deps]
 
-source_file="res://assets/drenaje/textures/concrete_base.png"
-dest_files=["res://.godot/imported/concrete_base.png-096e6e3ce401e02a3db5d5c66384acdf.s3tc.ctex"]
+source_file="res://assets/drenaje/Textures/concrete_base.png"
+dest_files=["res://.godot/imported/concrete_base.png-c5d32ce9af6e39c618368f0627912b5f.s3tc.ctex"]
 
 [params]
 

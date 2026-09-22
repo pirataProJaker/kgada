@@ -3,7 +3,7 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://dbsa1iw6ast3j"
-path.s3tc="res://.godot/imported/brick_pavement.jpg-a589b8e4d7ff319578303cda033ea045.s3tc.ctex"
+path.s3tc="res://.godot/imported/brick_pavement.jpg-f7a363d46553354c711889c63d02f636.s3tc.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc"],
 "vram_texture": true
@@ -11,8 +11,8 @@ metadata={
 
 [deps]
 
-source_file="res://assets/drenaje/textures/brick_pavement.jpg"
-dest_files=["res://.godot/imported/brick_pavement.jpg-a589b8e4d7ff319578303cda033ea045.s3tc.ctex"]
+source_file="res://assets/drenaje/Textures/brick_pavement.jpg"
+dest_files=["res://.godot/imported/brick_pavement.jpg-f7a363d46553354c711889c63d02f636.s3tc.ctex"]
 
 [params]
 
