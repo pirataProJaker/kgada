@@ -1,10 +1,10 @@
 shader_type spatial;
-render_mode cull_back, diffuse_burley, specular_schlick_ggx;
+render_mode cull_back, diffuse_burley, specular_disabled;
 
 uniform sampler2D bark_texture : source_color, filter_linear_mipmap_anisotropic, repeat_enable;
 uniform vec4 bark_color : source_color = vec4(0.34, 0.23, 0.15, 1.0);
-uniform float roughness : hint_range(0.0, 1.0) = 0.98;
-uniform float specular : hint_range(0.0, 1.0) = 0.02;
+uniform float roughness : hint_range(0.0, 1.0) = 1.0;
+uniform float specular : hint_range(0.0, 1.0) = 0.0;
 uniform float metallic : hint_range(0.0, 1.0) = 0.0;
 uniform bool use_texture = true;
 

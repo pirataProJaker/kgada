@@ -228,8 +228,127 @@ class TreeGenerationResult:
 	var mm_leaves_lod2: MultiMesh = null
 
 
+const PSXPine = preload("res://world/vegetation/trees/psx_pine.gd")
+static func _generate_psx_pine(profile: ProceduralTreeProfiles.TreeProfile, tree_seed: int) -> TreeGenerationResult:
+	var res := TreeGenerationResult.new()
+	res.seed_used = tree_seed
+	res.profile = profile
+	res.foliage_mode = FoliageMode.STANDARD
+	
+	var rng := RandomNumberGenerator.new()
+	rng.seed = tree_seed
+	
+	var height_scale := rng.randf_range(0.92, 1.12)
+	res.tree_height = 34.2 * height_scale
+	
+	var t := Transform3D().scaled(Vector3(height_scale, height_scale, height_scale))
+	
+	# LOD 0 (0-100m, 30 triangulos)
+	res.mm_branches_lod0 = MultiMesh.new()
+	res.mm_branches_lod0.transform_format = MultiMesh.TRANSFORM_3D
+	res.mm_branches_lod0.mesh = PSXPine.get_lod0_trunk_mesh()
+	res.mm_branches_lod0.instance_count = 1
+	res.mm_branches_lod0.set_instance_transform(0, t)
+	
+	res.mm_leaves_lod0 = MultiMesh.new()
+	res.mm_leaves_lod0.transform_format = MultiMesh.TRANSFORM_3D
+	res.mm_leaves_lod0.mesh = PSXPine.get_lod0_crown_mesh()
+	res.mm_leaves_lod0.instance_count = 1
+	res.mm_leaves_lod0.set_instance_transform(0, t)
+	
+	# LOD 1 (100-400m, EXACTAMENTE 2 triangulos: 1 tronco + 1 copa)
+	res.mm_branches_lod1 = MultiMesh.new()
+	res.mm_branches_lod1.transform_format = MultiMesh.TRANSFORM_3D
+	res.mm_branches_lod1.mesh = PSXPine.get_lod1_trunk_mesh()
+	res.mm_branches_lod1.instance_count = 1
+	res.mm_branches_lod1.set_instance_transform(0, t)
+	
+	res.mm_leaves_lod1 = MultiMesh.new()
+	res.mm_leaves_lod1.transform_format = MultiMesh.TRANSFORM_3D
+	res.mm_leaves_lod1.mesh = PSXPine.get_lod1_crown_mesh()
+	res.mm_leaves_lod1.instance_count = 1
+	res.mm_leaves_lod1.set_instance_transform(0, t)
+	
+	# LOD 2 (reutiliza LOD 1)
+	res.mm_branches_lod2 = res.mm_branches_lod1
+	res.mm_leaves_lod2 = res.mm_leaves_lod1
+	
+	res.lod0_branches_count = 1
+	res.lod0_leaves_count = 1
+	res.lod1_branches_count = 1
+	res.lod1_leaves_count = 1
+	res.lod2_branches_count = 1
+	res.lod2_leaves_count = 1
+	return res
+
+## Genera un árbol con el motor botánico procedural hiperoptimizado de Rust.
+## Sustituye las mallas de miles de triángulos por mallas orgánicas de ~1,000 tris (LOD0), ~400 tris (LOD1) y ~66 tris (LOD2).
+static func _generate_botanical_tree(profile: ProceduralTreeProfiles.TreeProfile, tree_seed: int) -> TreeGenerationResult:
+	var res := TreeGenerationResult.new()
+	res.seed_used = tree_seed
+	res.profile = profile
+	res.foliage_mode = FoliageMode.STANDARD
+
+	var bot = ClassDB.instantiate("BotanicalTree")
+	var pid := profile.id if profile != null else "classic_oak"
+	bot.set_species_id(pid)
+	bot.set_tree_seed(tree_seed)
+	bot.set_age(0.85)
+	bot.set_foliage_mode(2) # 2 = LushBranchBoughs (ramas cruzadas de 5m con atlas auténtico)
+
+	res.tree_height = bot.get_height()
+
+	# LOD 0
+	var lod0_pair: Array = bot.get_lod_split_meshes(0)
+	var wood_mesh_lod0: ArrayMesh = lod0_pair[0] if lod0_pair.size() > 0 else null
+	var leaves_mesh_lod0: ArrayMesh = lod0_pair[1] if lod0_pair.size() > 1 else null
+	res.mm_branches_lod0 = _create_single_instance_multimesh(wood_mesh_lod0)
+	res.mm_leaves_lod0 = _create_single_instance_multimesh(leaves_mesh_lod0)
+
+	# LOD 1
+	var lod1_pair: Array = bot.get_lod_split_meshes(1)
+	var wood_mesh_lod1: ArrayMesh = lod1_pair[0] if lod1_pair.size() > 0 else null
+	var leaves_mesh_lod1: ArrayMesh = lod1_pair[1] if lod1_pair.size() > 1 else null
+	res.mm_branches_lod1 = _create_single_instance_multimesh(wood_mesh_lod1)
+	res.mm_leaves_lod1 = _create_single_instance_multimesh(leaves_mesh_lod1)
+
+	# LOD 2
+	var lod2_pair: Array = bot.get_lod_split_meshes(2)
+	var wood_mesh_lod2: ArrayMesh = lod2_pair[0] if lod2_pair.size() > 0 else null
+	var leaves_mesh_lod2: ArrayMesh = lod2_pair[1] if lod2_pair.size() > 1 else null
+	res.mm_branches_lod2 = _create_single_instance_multimesh(wood_mesh_lod2)
+	res.mm_leaves_lod2 = _create_single_instance_multimesh(leaves_mesh_lod2)
+
+	res.lod0_branches_count = bot.get_total_triangles(0)
+	res.lod0_leaves_count = 0
+	res.lod1_branches_count = bot.get_total_triangles(1)
+	res.lod1_leaves_count = 0
+	res.lod2_branches_count = bot.get_total_triangles(2)
+	res.lod2_leaves_count = 0
+
+	return res
+
+
+static func _create_single_instance_multimesh(mesh: ArrayMesh) -> MultiMesh:
+	var mm := MultiMesh.new()
+	mm.transform_format = MultiMesh.TRANSFORM_3D
+	if mesh != null and mesh.get_surface_count() > 0:
+		mm.mesh = mesh
+		mm.instance_count = 1
+		mm.set_instance_transform(0, Transform3D.IDENTITY)
+	else:
+		mm.instance_count = 0
+	return mm
+
+
 ## Genera un arbol completo garantizando uniones continuas y follaje adherido.
 static func generate_tree(profile: ProceduralTreeProfiles.TreeProfile, tree_seed: int, foliage_mode: int = FoliageMode.STANDARD) -> TreeGenerationResult:
+	if profile != null and profile.id.to_lower().begins_with("pine"):
+		return _generate_psx_pine(profile, tree_seed)
+
+	if ClassDB.class_exists("BotanicalTree"):
+		return _generate_botanical_tree(profile, tree_seed)
+
 	var res := TreeGenerationResult.new()
 	res.seed_used = tree_seed
 	res.profile = profile

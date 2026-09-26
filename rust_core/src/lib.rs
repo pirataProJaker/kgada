@@ -3,6 +3,8 @@ use godot::prelude::*;
 mod mob_ai;
 mod terrain;
 mod zombie_population;
+pub mod botanical;
+pub mod roads;
 
 struct RustCoreExtension;
 

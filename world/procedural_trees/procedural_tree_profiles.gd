@@ -47,6 +47,7 @@ static func get_profile_ids() -> Array[String]:
 	return [
 		"pine_boreal",
 		"classic_oak",
+		"alnus_acuminata",
 		"autumn_birch",
 		"weeping_willow",
 		"dead_tree",
@@ -61,6 +62,8 @@ static func get_profile(profile_id: String) -> TreeProfile:
 			return _create_pine_boreal()
 		"classic_oak", "oak", "green":
 			return _create_classic_oak()
+		"alnus_acuminata", "alnus":
+			return _create_alnus_acuminata()
 		"autumn_birch", "birch", "autumn", "yellow":
 			return _create_autumn_birch()
 		"weeping_willow", "willow":
@@ -302,3 +305,42 @@ static func _create_shrub_sapling() -> TreeProfile:
 	p.leaf_color_primary = Color(0.22, 0.54, 0.15)
 	p.leaf_color_secondary = Color(0.32, 0.64, 0.22)
 	return p
+
+
+## 7. Aliso Común / Andino (Alnus acuminata)
+## Árbol caducifolio de montaña con tronco esbelto orgánico y grandes ramas con follaje 5m.
+static func _create_alnus_acuminata() -> TreeProfile:
+	var p := TreeProfile.new()
+	p.id = "alnus_acuminata"
+	p.name = "Aliso Común / Aliso Andino (Alnus acuminata)"
+	p.biome_description = "Bosque templado de montaña y riberas andinas con copas aireadas y frondosas."
+	
+	p.trunk_height_min = 12.0
+	p.trunk_height_max = 16.0
+	p.trunk_radius_base = 0.38
+	p.trunk_segments = 16
+	p.trunk_taper = 0.65
+	p.trunk_max_tilt_deg = 8.0
+	p.trunk_split_chance = 0.45
+	
+	p.branch_start_ratio = 0.20
+	p.branch_density = 16
+	p.branch_length_ratio = 0.36
+	p.branch_elevation_deg = 48.0
+	p.branch_droop = 0.0
+	p.branch_radius_ratio = 0.45
+	p.branch_segments = 5
+	p.secondary_branches_per_branch = 3
+	p.twigs_per_secondary = 2
+	
+	p.has_leaves = true
+	p.leaves_per_tip = 4
+	p.leaf_size = 1.40
+	p.leaf_spread_radius = 0.85
+	p.leaf_conical_cluster = false
+	
+	p.bark_color = Color(0.38, 0.35, 0.30)
+	p.leaf_color_primary = Color(0.38, 0.58, 0.22)
+	p.leaf_color_secondary = Color(0.45, 0.65, 0.26)
+	return p
+

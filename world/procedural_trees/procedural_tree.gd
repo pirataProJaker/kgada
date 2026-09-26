@@ -36,8 +36,8 @@ static var trees_disabled: bool = false
 		cast_shadows = value
 		_update_shadow_settings()
 
-## Desactiva por completo el sistema de LOD: siempre muestra los árboles normales completos (LOD0) sin importar la distancia.
-@export var disable_lod: bool = true:
+## Desactiva por completo el sistema de LOD: si es verdadero, siempre muestra LOD0.
+@export var disable_lod: bool = false:
 	set(value):
 		disable_lod = value
 		if is_node_ready():
@@ -51,12 +51,12 @@ static var trees_disabled: bool = false
 			_apply_lod_distance_ranges()
 
 # Distancias de transicion para los niveles de detalle (LOD)
-# LOD0 (0-15m): Follaje de cáscara exterior 1:1 + ramas completas + SOMBRAS REALES DE HOJAS Y TRONCO
-# LOD1 (15-40m): Follaje al 50% a escala idéntica 1:1 (cero pop) + sombra sólida de tronco
-# LOD2 (40-80m): Tronco 2D en cruz (8 triángulos) + silueta perimetral 1:1 sin sombras
-@export var lod0_range_end: float = 15.0
-@export var lod1_range_end: float = 40.0
-@export var lod2_range_end: float = 80.0
+# LOD0 (0-30m): Tronco continuo completo + ramas y follaje 3D cruzado (LushBranchBoughs, ~1,058 tris)
+# LOD1 (30-75m): Tronco de 4 lados + aletas y tarjetas al 50% (~438 tris)
+# LOD2 (75-160m): Cinta vertical continua + silueta perimetral (~66 tris)
+@export var lod0_range_end: float = 30.0
+@export var lod1_range_end: float = 75.0
+@export var lod2_range_end: float = 160.0
 
 var tree_height: float = 0.0
 
@@ -135,11 +135,22 @@ func _update_shadow_settings() -> void:
 	_mi_leaves_lod2.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 
 
+const PSXPine = preload("res://world/vegetation/trees/psx_pine.gd")
+
 ## Asigna los materiales compartidos desde la caché global (batching GPU óptimo).
 func _apply_shared_materials() -> void:
 	if _mi_branches_lod0 == null:
 		return
 	var target_pid := profile_id if not profile_id.is_empty() else "classic_oak"
+	if target_pid.to_lower().begins_with("pine"):
+		_mi_branches_lod0.material_override = PSXPine.get_lod0_trunk_material()
+		_mi_leaves_lod0.material_override = PSXPine.get_lod0_crown_material()
+		_mi_branches_lod1.material_override = PSXPine.get_lod1_trunk_material()
+		_mi_leaves_lod1.material_override = PSXPine.get_lod1_crown_material()
+		_mi_branches_lod2.material_override = PSXPine.get_lod1_trunk_material()
+		_mi_leaves_lod2.material_override = PSXPine.get_lod1_crown_material()
+		return
+		
 	var bark_mat := ProceduralTreeMaterials.get_bark_material(target_pid, use_foliage_textures)
 	var leaf_mat := ProceduralTreeMaterials.get_leaf_material(target_pid, use_foliage_textures)
 	
@@ -176,6 +187,23 @@ func _apply_lod_distance_ranges() -> void:
 		_update_forced_lod_visibility()
 		return
 	
+	# Pinos PSX: LOD 0 (30 tris) de 0m a 100m, LOD 1 (2 tris en GPU) de 100m a 400m
+	var target_pid := profile_id if not profile_id.is_empty() else "classic_oak"
+	if target_pid.to_lower().begins_with("pine"):
+		_set_visibility_range(_mi_branches_lod0, 0.0, 100.0)
+		_set_visibility_range(_mi_leaves_lod0, 0.0, 100.0)
+		_set_visibility_range(_mi_branches_lod1, 100.0, 400.0)
+		_set_visibility_range(_mi_leaves_lod1, 100.0, 400.0)
+		if _mi_branches_lod2 != null:
+			_mi_branches_lod2.visible = false
+			_mi_branches_lod2.visibility_range_begin = 99999.0
+			_mi_branches_lod2.visibility_range_end = 99999.0
+		if _mi_leaves_lod2 != null:
+			_mi_leaves_lod2.visible = false
+			_mi_leaves_lod2.visibility_range_begin = 99999.0
+			_mi_leaves_lod2.visibility_range_end = 99999.0
+		return
+
 	if disable_lod:
 		# Sistema LOD desactivado: siempre renderizar arboles normales completos (LOD0) a cualquier distancia
 		_set_visibility_range(_mi_branches_lod0, 0.0, 0.0)

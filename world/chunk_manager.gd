@@ -218,7 +218,7 @@ func _pregenerate_tree_archetypes() -> void:
 		use_low_spec = sm.is_low_spec_foliage()
 	
 	var mode: int = ProceduralTreeGenerator.FoliageMode.LOW_SPEC_TRIANGLE if use_low_spec else ProceduralTreeGenerator.FoliageMode.STANDARD
-	var species := ["classic_oak", "pine_boreal", "autumn_birch", "weeping_willow", "dead_tree"]
+	var species := ["classic_oak", "pine_boreal", "alnus_acuminata", "autumn_birch", "weeping_willow", "dead_tree"]
 	
 	var t0 := Time.get_ticks_msec()
 	for p_id in species:
@@ -885,24 +885,28 @@ func _generate_chunk_data_threaded(
 
 			var selected_profile_id := "classic_oak"
 			if center_biome < 0.12:
-				selected_profile_id = "pine_boreal" if rng.randf() < 0.60 else "classic_oak"
+				selected_profile_id = "pine_boreal" if rng.randf() < 0.55 else "alnus_acuminata"
 			elif center_biome >= 0.40:
 				var roll := rng.randf()
-				if roll < 0.40:
+				if roll < 0.35:
 					selected_profile_id = "pine_boreal"
-				elif roll < 0.70:
+				elif roll < 0.60:
 					selected_profile_id = "classic_oak"
-				elif roll < 0.88:
+				elif roll < 0.80:
+					selected_profile_id = "alnus_acuminata"
+				elif roll < 0.92:
 					selected_profile_id = "autumn_birch"
 				else:
 					selected_profile_id = "dead_tree"
 			else:
 				var roll := rng.randf()
-				if roll < 0.35:
+				if roll < 0.30:
 					selected_profile_id = "classic_oak"
-				elif roll < 0.65:
+				elif roll < 0.60:
+					selected_profile_id = "alnus_acuminata"
+				elif roll < 0.80:
 					selected_profile_id = "autumn_birch"
-				elif roll < 0.85:
+				elif roll < 0.92:
 					selected_profile_id = "weeping_willow"
 				else:
 					selected_profile_id = "pine_boreal"

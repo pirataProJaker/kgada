@@ -1,0 +1,142 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scenes/pine_lod_showcase.gd" id="1_showcase"]
+
+[sub_resource type="Environment" id="Environment_pine"]
+background_mode = 1
+background_color = Color(0.35, 0.42, 0.50, 1.0)
+ambient_light_source = 2
+ambient_light_color = Color(0.70, 0.75, 0.80, 1.0)
+ambient_light_energy = 1.0
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_floor"]
+size = Vector2(400, 400)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_floor"]
+albedo_color = Color(0.18, 0.24, 0.16, 1.0)
+roughness = 0.95
+
+[node name="PineLODShowcase" type="Node3D"]
+script = ExtResource("1_showcase")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_pine")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.707107, -0.353553, 0.612372, 0, 0.866025, 0.5, -0.707107, -0.353553, 0.612372, 0, 30, 0)
+light_color = Color(1.0, 0.96, 0.90, 1.0)
+light_energy = 1.3
+shadow_enabled = true
+
+[node name="Floor" type="MeshInstance3D" parent="."]
+mesh = SubResource("PlaneMesh_floor")
+surface_material_override/0 = SubResource("StandardMaterial3D_floor")
+
+[node name="TreeNormal" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -22, 0, 0)
+
+[node name="LabelNormal" type="Label3D" parent="TreeNormal"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 36.5, 0)
+billboard = 1
+pixel_size = 0.015
+text = "Árbol Normal (LOD 0)
+30 Triángulos | 44 Vértices
+Cruz 3D (Visible 360°)"
+font_size = 32
+outline_size = 8
+
+[node name="TreeDynamic" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -12, 0, 0)
+
+[node name="LabelDynamic" type="Label3D" parent="TreeDynamic"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 36.5, 0)
+billboard = 1
+pixel_size = 0.015
+text = "Árbol Dinámico (LOD a 100m)
+0m - 100m: LOD 0 (30 Tris)
+>100m: LOD 1 (2 Tris)"
+font_size = 32
+outline_size = 8
+
+[node name="TreeLOD" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2, 0, 0)
+
+[node name="LabelLOD" type="Label3D" parent="TreeLOD"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 36.5, 0)
+billboard = 1
+pixel_size = 0.015
+text = "Árbol LOD (LOD 1)
+2 Triángulos | 6 Vértices
+1 Tronco + 1 Copa (Billboard)"
+font_size = 32
+outline_size = 8
+
+[node name="Camera3D" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.990268, -0.139173, 0, 0.139173, 0.990268, -12, 18, 55)
+current = true
+fov = 50.0
+
+[node name="UI" type="CanvasLayer" parent="."]
+
+[node name="Margin" type="MarginContainer" parent="UI"]
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -380.0
+offset_right = 0.0
+offset_bottom = 340.0
+grow_horizontal = 0
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 16
+
+[node name="Panel" type="PanelContainer" parent="UI/Margin"]
+layout_mode = 2
+
+[node name="VBox" type="VBoxContainer" parent="UI/Margin/Panel"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Title" type="Label" parent="UI/Margin/Panel/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+text = "=== COMPARADOR DE PINO PSX ==="
+horizontal_alignment = 1
+
+[node name="DistanceLabel" type="Label" parent="UI/Margin/Panel/VBox"]
+layout_mode = 2
+text = "Distancia de Cámara: 50.0 m"
+
+[node name="LODStatusLabel" type="Label" parent="UI/Margin/Panel/VBox"]
+layout_mode = 2
+text = "Árbol Dinámico: [LOD 0] Activo"
+
+[node name="HSeparator" type="HSeparator" parent="UI/Margin/Panel/VBox"]
+layout_mode = 2
+
+[node name="BtnNear" type="Button" parent="UI/Margin/Panel/VBox"]
+layout_mode = 2
+text = "[1] Vista Cercana (25m)"
+
+[node name="BtnMid" type="Button" parent="UI/Margin/Panel/VBox"]
+layout_mode = 2
+text = "[2] Vista Media (50m)"
+
+[node name="Btn100m" type="Button" parent="UI/Margin/Panel/VBox"]
+layout_mode = 2
+text = "[3] Punto de Transición (100m)"
+
+[node name="BtnFar" type="Button" parent="UI/Margin/Panel/VBox"]
+layout_mode = 2
+text = "[4] Vista Lejana (150m)"
+
+[node name="BtnRotate" type="Button" parent="UI/Margin/Panel/VBox"]
+layout_mode = 2
+text = "[Espacio / T] Alternar Giro 360°"
+
+[node name="Help" type="Label" parent="UI/Margin/Panel/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.75, 0.75, 0.75, 1)
+theme_override_font_sizes/font_size = 11
+text = "Clic Izq: Capturar ratón (Volar)
+WASD: Moverse | Q/E: Altura
+Shift: Acelerar | ESC: Liberar ratón"

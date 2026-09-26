@@ -1,0 +1,332 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scenes/botanical_growth_showcase.gd" id="1_showcase"]
+
+[sub_resource type="Environment" id="Environment_botanical"]
+background_mode = 1
+background_color = Color(0.42, 0.50, 0.58, 1.0)
+ambient_light_source = 2
+ambient_light_color = Color(0.72, 0.78, 0.82, 1.0)
+ambient_light_energy = 0.95
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_floor"]
+size = Vector2(250, 250)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_floor"]
+albedo_color = Color(0.20, 0.26, 0.18, 1.0)
+roughness = 0.95
+
+[node name="BotanicalGrowthShowcase" type="Node3D"]
+script = ExtResource("1_showcase")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_botanical")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.707107, -0.353553, 0.612372, 0, 0.866025, 0.5, -0.707107, -0.353553, 0.612372, 0, 30, 0)
+light_color = Color(1.0, 0.97, 0.92, 1.0)
+light_energy = 1.35
+shadow_enabled = true
+
+[node name="Floor" type="MeshInstance3D" parent="."]
+mesh = SubResource("PlaneMesh_floor")
+surface_material_override/0 = SubResource("StandardMaterial3D_floor")
+
+[node name="SingleTreeContainer" type="Node3D" parent="."]
+
+[node name="LODLineupContainer" type="Node3D" parent="."]
+visible = false
+
+[node name="LabelLOD0" type="Label3D" parent="LODLineupContainer"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -9, 19, 0)
+billboard = 1
+pixel_size = 0.015
+text = "LOD 0 (3D Completo)
+Prisma 3 caras
+~250 Triángulos"
+font_size = 28
+outline_size = 8
+
+[node name="LabelLOD1" type="Label3D" parent="LODLineupContainer"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3, 19, 0)
+billboard = 1
+pixel_size = 0.015
+text = "LOD 1 (Aletas 2D)
+Ángulo idéntico
+~130 Triángulos"
+font_size = 28
+outline_size = 8
+
+[node name="LabelLOD2" type="Label3D" parent="LODLineupContainer"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3, 19, 0)
+billboard = 1
+pixel_size = 0.015
+text = "LOD 2 (Planos cruz)
+Follaje dominante
+~28 Triángulos"
+font_size = 28
+outline_size = 8
+
+[node name="LabelLOD3" type="Label3D" parent="LODLineupContainer"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9, 19, 0)
+billboard = 1
+pixel_size = 0.015
+text = "LOD 3 (Billboard)
+Impostor lejano
+2 Triángulos"
+font_size = 28
+outline_size = 8
+
+[node name="TimelineContainer" type="Node3D" parent="."]
+visible = false
+
+[node name="LabelStage0" type="Label3D" parent="TimelineContainer"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -9, 4, 0)
+billboard = 1
+pixel_size = 0.015
+text = "1. Brote (0.08)
+~2.0 m | 24 tris"
+font_size = 26
+outline_size = 6
+
+[node name="LabelStage1" type="Label3D" parent="TimelineContainer"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3, 9, 0)
+billboard = 1
+pixel_size = 0.015
+text = "2. Retoño (0.30)
+~6.5 m | 90 tris"
+font_size = 26
+outline_size = 6
+
+[node name="LabelStage2" type="Label3D" parent="TimelineContainer"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3, 14, 0)
+billboard = 1
+pixel_size = 0.015
+text = "3. Juvenil (0.65)
+~12.0 m | 190 tris"
+font_size = 26
+outline_size = 6
+
+[node name="LabelStage3" type="Label3D" parent="TimelineContainer"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9, 20, 0)
+billboard = 1
+pixel_size = 0.015
+text = "4. Adulto (1.00)
+~18.0 m | 258 tris"
+font_size = 26
+outline_size = 6
+
+[node name="Camera3D" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.997564, -0.0697565, 0, 0.0697565, 0.997564, 0, 7.5, 20)
+current = true
+fov = 48.0
+
+[node name="UI" type="CanvasLayer" parent="."]
+
+[node name="PanelMain" type="PanelContainer" parent="UI"]
+offset_left = 20.0
+offset_top = 20.0
+offset_right = 430.0
+offset_bottom = 600.0
+
+[node name="VBox" type="VBoxContainer" parent="UI/PanelMain"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="HeaderTitle" type="Label" parent="UI/PanelMain/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "🌿 SISTEMA BOTÁNICO RUST (GDExtension)"
+horizontal_alignment = 1
+
+[node name="SubTitle" type="Label" parent="UI/PanelMain/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "Aliso común (Alnus acuminata) - Crecimiento & Poda"
+horizontal_alignment = 1
+
+[node name="HSeparator1" type="HSeparator" parent="UI/PanelMain/VBox"]
+layout_mode = 2
+
+[node name="ModeTabs" type="HBoxContainer" parent="UI/PanelMain/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="BtnModeInteractive" type="Button" parent="UI/PanelMain/VBox/ModeTabs"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "[1] Interactivo"
+
+[node name="BtnModeLODs" type="Button" parent="UI/PanelMain/VBox/ModeTabs"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "[2] 4 LODs"
+
+[node name="BtnModeTimeline" type="Button" parent="UI/PanelMain/VBox/ModeTabs"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "[3] Timeline"
+
+[node name="HSeparator2" type="HSeparator" parent="UI/PanelMain/VBox"]
+layout_mode = 2
+
+[node name="GrowthControls" type="VBoxContainer" parent="UI/PanelMain/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="GrowthLabel" type="Label" parent="UI/PanelMain/VBox/GrowthControls"]
+layout_mode = 2
+text = "🌱 Crecimiento Biológico Continuo:"
+
+[node name="AgeSlider" type="HSlider" parent="UI/PanelMain/VBox/GrowthControls"]
+layout_mode = 2
+max_value = 1.0
+step = 0.01
+value = 0.85
+
+[node name="AgeValueLabel" type="Label" parent="UI/PanelMain/VBox/GrowthControls"]
+layout_mode = 2
+text = "Edad: 85% (0.85 / 1.00)"
+
+[node name="StageButtons" type="HBoxContainer" parent="UI/PanelMain/VBox/GrowthControls"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="BtnSprout" type="Button" parent="UI/PanelMain/VBox/GrowthControls/StageButtons"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Brote"
+
+[node name="BtnSapling" type="Button" parent="UI/PanelMain/VBox/GrowthControls/StageButtons"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Retoño"
+
+[node name="BtnYoung" type="Button" parent="UI/PanelMain/VBox/GrowthControls/StageButtons"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Joven"
+
+[node name="BtnMature" type="Button" parent="UI/PanelMain/VBox/GrowthControls/StageButtons"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Adulto"
+
+[node name="HSeparator3" type="HSeparator" parent="UI/PanelMain/VBox"]
+layout_mode = 2
+
+[node name="PruneControls" type="VBoxContainer" parent="UI/PanelMain/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="PruneLabel" type="Label" parent="UI/PanelMain/VBox/PruneControls"]
+layout_mode = 2
+text = "✂️ Poda Interactiva de Ramas:"
+
+[node name="BtnPrune" type="Button" parent="UI/PanelMain/VBox/PruneControls"]
+layout_mode = 2
+text = "Podar Rama Primaria (Corte & Vigor)"
+
+[node name="BtnRestore" type="Button" parent="UI/PanelMain/VBox/PruneControls"]
+layout_mode = 2
+text = "Restaurar Árbol Completo"
+
+[node name="BtnNewSeed" type="Button" parent="UI/PanelMain/VBox/PruneControls"]
+layout_mode = 2
+text = "🎲 Nueva Semilla Procedural"
+
+[node name="HSeparator4" type="HSeparator" parent="UI/PanelMain/VBox"]
+layout_mode = 2
+
+[node name="LODControls" type="VBoxContainer" parent="UI/PanelMain/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="LODLabelTitle" type="Label" parent="UI/PanelMain/VBox/LODControls"]
+layout_mode = 2
+text = "📐 Nivel de Detalle (LOD):"
+
+[node name="LODButtons" type="HBoxContainer" parent="UI/PanelMain/VBox/LODControls"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="BtnLODAuto" type="Button" parent="UI/PanelMain/VBox/LODControls/LODButtons"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Auto"
+
+[node name="BtnLOD0" type="Button" parent="UI/PanelMain/VBox/LODControls/LODButtons"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "LOD 0"
+
+[node name="BtnLOD1" type="Button" parent="UI/PanelMain/VBox/LODControls/LODButtons"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "LOD 1"
+
+[node name="BtnLOD2" type="Button" parent="UI/PanelMain/VBox/LODControls/LODButtons"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "LOD 2"
+
+[node name="BtnLOD3" type="Button" parent="UI/PanelMain/VBox/LODControls/LODButtons"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "LOD 3"
+
+[node name="ControlsMisc" type="HBoxContainer" parent="UI/PanelMain/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="BtnRotate" type="Button" parent="UI/PanelMain/VBox/ControlsMisc"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Rotación (R)"
+
+[node name="BtnCamReset" type="Button" parent="UI/PanelMain/VBox/ControlsMisc"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Reiniciar Cámara"
+
+[node name="PanelStats" type="PanelContainer" parent="UI"]
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -380.0
+offset_top = 20.0
+offset_right = -20.0
+offset_bottom = 240.0
+grow_horizontal = 0
+
+[node name="VBox" type="VBoxContainer" parent="UI/PanelStats"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="TitleStats" type="Label" parent="UI/PanelStats/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+text = "📊 TELEMETRÍA EN TIEMPO REAL"
+
+[node name="HSep" type="HSeparator" parent="UI/PanelStats/VBox"]
+layout_mode = 2
+
+[node name="SpeciesLabel" type="Label" parent="UI/PanelStats/VBox"]
+layout_mode = 2
+text = "Especie: Alnus acuminata"
+
+[node name="HeightLabel" type="Label" parent="UI/PanelStats/VBox"]
+layout_mode = 2
+text = "Altura Biológica: 15.0 m"
+
+[node name="BranchesLabel" type="Label" parent="UI/PanelStats/VBox"]
+layout_mode = 2
+text = "Ramas Vivas: 12"
+
+[node name="TrianglesLabel" type="Label" parent="UI/PanelStats/VBox"]
+layout_mode = 2
+text = "Triángulos Totales: 258"
+
+[node name="LODLabel" type="Label" parent="UI/PanelStats/VBox"]
+layout_mode = 2
+text = "Nivel de LOD: LOD 0"
