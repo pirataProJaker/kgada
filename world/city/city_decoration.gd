@@ -10,18 +10,10 @@ class_name CityDecoration
 ## deja un bote/tacho de basura cerca de la banqueta, a veces con 1-2
 ## bolsas sueltas al lado que "no cupieron".
 ##
-## Reusa 3 fuentes de props ya presentes en el proyecto (sin agregar
-## ningun asset nuevo):
-##  - assets/URBAN/URBAN/Litter/Trash/ - bolsas y montones sueltos.
-##  - assets/URBAN/URBAN/Litter/TrashCan/ + "Metal trashcan"/ - botes,
-##    variantes cerradas/abiertas/desbordadas.
-##  - assets/URBAN/URBAN/Litter/Dumpsters/ - contenedores grandes, solo
-##    para lotes baldios con area suficiente.
-##  - assets/drenaje/Models/Sewers.fbx - 52 nodos sueltos SIN el prefijo
-##    "Serwers" (Trash_*/debris_*/Garbage_bag/Box_T/Bricks/Tire/etc), la
-##    MISMA lista ya validada y usada como props en
-##    DrainageDungeonGenerator.PROP_NAMES - se duplican esos nodos en vez
-##    de instanciar una escena propia (ver _duplicate_sewer_prop).
+## Reusa los props ya presentes en el proyecto en assets/drenaje/Models/Sewers.fbx:
+## 52 nodos sueltos SIN el prefijo "Serwers" (Trash_*/debris_*/Garbage_bag/Box_T/Bricks/Tire/TB/Cylinder/etc),
+## la MISMA lista ya validada y usada como props en DrainageDungeonGenerator.PROP_NAMES.
+## Se duplican esos nodos del template Sewers.fbx (ver _duplicate_sewer_prop).
 ##
 ## Se crea como hijo de CityBlockGenerator (mismo patron que
 ## HouseGenerator) y generate_decorations(house_generator) se llama UNA
@@ -36,49 +28,7 @@ const SEWERS_SCENE_PATH := "res://assets/drenaje/Models/Sewers.fbx"
 ## Los árboles y pinos en patios y lotes baldíos se generan exclusivamente
 ## con ProceduralTree (res://world/procedural_trees/procedural_tree.gd).
 
-## Props sueltos para lotes baldios: montones y bolsas de basura (varios
-## colores/tamaños, pack URBAN) - deliberadamente NO se usan los dumpsters
-## grandes aqui (ver VACANT_LOT_LARGE_SCENES, se ven raros tirados sueltos
-## en medio de un lote sin pared/muro contra la que apoyarse).
-const VACANT_LOT_SCENES: Array[PackedScene] = [
-	preload("res://assets/URBAN/URBAN/Litter/Trash/trashpile_1.fbx"),
-	preload("res://assets/URBAN/URBAN/Litter/Trash/trashpile_2.fbx"),
-	preload("res://assets/URBAN/URBAN/Litter/Trash/trashbag_1.fbx"),
-	preload("res://assets/URBAN/URBAN/Litter/Trash/trashbag_1_blue.fbx"),
-	preload("res://assets/URBAN/URBAN/Litter/Trash/trashbag_2.fbx"),
-	preload("res://assets/URBAN/URBAN/Litter/Trash/trashbag_2_white.fbx"),
-	preload("res://assets/URBAN/URBAN/Litter/Trash/trashbag_3.fbx"),
-	preload("res://assets/URBAN/URBAN/Litter/Trash/trashbag_3_red.fbx"),
-]
-
-## Contenedores grandes - solo para lotes baldios con area suficiente (ver
-## vacant_lot_min_area_for_dumpster), apoyados cerca de una esquina del
-## lote en vez de al centro (como se veria un dumpster real de callejon).
-const VACANT_LOT_LARGE_SCENES: Array[PackedScene] = [
-	preload("res://assets/URBAN/URBAN/Litter/Dumpsters/dumpster_full_no_lid.fbx"),
-	preload("res://assets/URBAN/URBAN/Litter/Dumpsters/dumpster_lid_closed.fbx"),
-	preload("res://assets/URBAN/URBAN/Litter/Dumpsters/dumpster_diagonal_full_open.fbx"),
-]
-
-## Botes/tachos de basura para dejar afuera de algunas casas, cerca de la
-## banqueta - variedad de estado (cerrado/abierto/desbordado) y de modelo
-## (plastico clasico, alt1/alt2, metalico golpeado) para que no se vean
-## todos iguales.
-const HOUSE_TRASH_CAN_SCENES: Array[PackedScene] = [
-	preload("res://assets/URBAN/URBAN/Litter/TrashCan/trash_can.fbx"),
-	preload("res://assets/URBAN/URBAN/Litter/TrashCan/trash_can_open.fbx"),
-	preload("res://assets/URBAN/URBAN/Litter/TrashCan/trash_can_overflowing.fbx"),
-	preload("res://assets/URBAN/URBAN/Litter/TrashCan/trash_can_alt1.fbx"),
-	preload("res://assets/URBAN/URBAN/Litter/TrashCan/trash_can_alt2_overflowing.fbx"),
-	preload("res://assets/URBAN/URBAN/Litter/Metal trashcan/metaltrashcan_open.fbx"),
-	preload("res://assets/URBAN/URBAN/Litter/Metal trashcan/metaltrashcan_beaten.fbx"),
-	preload("res://assets/URBAN/URBAN/Litter/Metal trashcan/metaltrashcan_beaten_overflowing.fbx"),
-]
-
-## Los mismos 52 nodos sueltos (sin el prefijo "Serwers") que
-## DrainageDungeonGenerator.PROP_NAMES ya usa como props de basura/
-## escombros - se duplican del template Sewers.fbx (ver
-## _duplicate_sewer_prop), no son escenas propias.
+## Props sueltos para lotes baldios: montones de basura, escombros, bolsas, etc.
 const SEWER_PROP_NAMES: Array[String] = [
 	"Trash", "Trash_001", "Trash_002", "Trash_003", "Trash_004", "Trash_005",
 	"Trash_006", "Trash_007", "Trash_008", "Trash_009", "Trash_010",
@@ -86,6 +36,21 @@ const SEWER_PROP_NAMES: Array[String] = [
 	"debris", "debris_01", "debris_02", "debris_03", "debris_04", "debris_05",
 	"Garbage_bag", "Garbage_bag_001", "Box_T", "Box_T_01", "Box_T_02",
 	"Box_T_03", "Bricks", "Brick", "Tire", "Cylinder", "TB",
+]
+
+## Props voluminosos para esquinas de lotes baldios grandes (cajas apiladas, barriles, llantas)
+const VACANT_LOT_LARGE_PROPS: Array[String] = [
+	"Box_T", "Box_T_01", "Box_T_02", "Box_T_03", "Cylinder", "Tire", "TB",
+]
+
+## Botes / tachos / cajas para dejar afuera de las casas cerca de la banqueta
+const HOUSE_TRASH_CAN_PROPS: Array[String] = [
+	"TB", "Cylinder", "Garbage_bag", "Garbage_bag_001", "Box_T",
+]
+
+## Bolsas sueltas de basura al lado del bote
+const HOUSE_LOOSE_BAG_PROPS: Array[String] = [
+	"Garbage_bag", "Garbage_bag_001", "Trash_M", "Trash_M_01",
 ]
 
 @export var rng_seed: int = 0
@@ -221,21 +186,19 @@ func _scatter_vacant_lot(parcel: Dictionary) -> int:
 	for i in range(count):
 		var local_x := _rng.randf_range(rect.position.x + margin_x, rect.position.x + rect.size.x - margin_x)
 		var local_z := _rng.randf_range(rect.position.y + margin_z, rect.position.y + rect.size.y - margin_z)
-		var instance: Node3D = null
-		if _rng.randf() < vacant_lot_sewer_prop_ratio:
-			instance = _duplicate_sewer_prop(SEWER_PROP_NAMES[_rng.randi_range(0, SEWER_PROP_NAMES.size() - 1)])
-		if instance == null:
-			var scene: PackedScene = VACANT_LOT_SCENES[_rng.randi_range(0, VACANT_LOT_SCENES.size() - 1)]
-			instance = scene.instantiate()
-		_place_prop(instance, local_x, local_z, _rng.randf_range(0.0, TAU), _rng.randf_range(0.85, 1.25))
-		placed += 1
+		var prop_name: String = SEWER_PROP_NAMES[_rng.randi_range(0, SEWER_PROP_NAMES.size() - 1)]
+		var instance: Node3D = _duplicate_sewer_prop(prop_name)
+		if instance != null:
+			_place_prop(instance, local_x, local_z, _rng.randf_range(0.0, TAU), _rng.randf_range(0.85, 1.25))
+			placed += 1
 
 	if rect.size.x * rect.size.y >= vacant_lot_min_area_for_dumpster and _rng.randf() < vacant_lot_dumpster_chance:
 		var corner := _random_corner_point(rect, vacant_lot_dumpster_edge_inset)
-		var dumpster_scene: PackedScene = VACANT_LOT_LARGE_SCENES[_rng.randi_range(0, VACANT_LOT_LARGE_SCENES.size() - 1)]
-		var dumpster := dumpster_scene.instantiate()
-		_place_prop(dumpster, corner.x, corner.y, _rng.randf_range(0.0, TAU), _rng.randf_range(0.95, 1.1))
-		placed += 1
+		var prop_name: String = VACANT_LOT_LARGE_PROPS[_rng.randi_range(0, VACANT_LOT_LARGE_PROPS.size() - 1)]
+		var dumpster: Node3D = _duplicate_sewer_prop(prop_name)
+		if dumpster != null:
+			_place_prop(dumpster, corner.x, corner.y, _rng.randf_range(0.0, TAU), _rng.randf_range(1.1, 1.4))
+			placed += 1
 
 	return placed
 
@@ -255,18 +218,20 @@ func _scatter_house_trash_can(spec: Dictionary) -> bool:
 	var front_side: int = int(spec.get("front_side", 0))
 	var point := _front_curb_point(parcel_rect, front_side)
 
-	var can_scene: PackedScene = HOUSE_TRASH_CAN_SCENES[_rng.randi_range(0, HOUSE_TRASH_CAN_SCENES.size() - 1)]
-	var can_instance := can_scene.instantiate()
-	_place_prop(can_instance, point.x, point.y, _rng.randf_range(0.0, TAU), _rng.randf_range(0.9, 1.1))
+	var can_prop: String = HOUSE_TRASH_CAN_PROPS[_rng.randi_range(0, HOUSE_TRASH_CAN_PROPS.size() - 1)]
+	var can_instance := _duplicate_sewer_prop(can_prop)
+	if can_instance != null:
+		_place_prop(can_instance, point.x, point.y, _rng.randf_range(0.0, TAU), _rng.randf_range(0.9, 1.1))
 
 	if _rng.randf() < house_loose_bag_chance:
 		var bag_count := _rng.randi_range(1, 2)
 		for i in range(bag_count):
-			var bag_scene: PackedScene = VACANT_LOT_SCENES[_rng.randi_range(0, VACANT_LOT_SCENES.size() - 1)]
-			var bag := bag_scene.instantiate()
-			var jitter_x := point.x + _rng.randf_range(-0.9, 0.9)
-			var jitter_z := point.y + _rng.randf_range(-0.9, 0.9)
-			_place_prop(bag, jitter_x, jitter_z, _rng.randf_range(0.0, TAU), _rng.randf_range(0.7, 1.0))
+			var bag_name: String = HOUSE_LOOSE_BAG_PROPS[_rng.randi_range(0, HOUSE_LOOSE_BAG_PROPS.size() - 1)]
+			var bag := _duplicate_sewer_prop(bag_name)
+			if bag != null:
+				var jitter_x := point.x + _rng.randf_range(-0.9, 0.9)
+				var jitter_z := point.y + _rng.randf_range(-0.9, 0.9)
+				_place_prop(bag, jitter_x, jitter_z, _rng.randf_range(0.0, TAU), _rng.randf_range(0.7, 1.0))
 
 	return true
 
