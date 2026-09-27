@@ -38,11 +38,11 @@ uniform float gradient_high_height = 32.0;
 // Modo terreno con pixeles más pequeños y pasto estrictamente verde estilo PSX
 uniform bool use_pixel_terrain = false;
 uniform float pixel_size : hint_range(0.02, 0.5) = 0.08; // 0.08m = ~12.5 px/metro
-uniform vec4 grass_g1 : source_color = vec4(0.09, 0.28, 0.07, 1.0); // Verde sombra denso (verde puro, no negro)
-uniform vec4 grass_g2 : source_color = vec4(0.14, 0.38, 0.11, 1.0); // Verde césped medio-oscuro
-uniform vec4 grass_g3 : source_color = vec4(0.20, 0.48, 0.15, 1.0); // Verde pradera estándar
-uniform vec4 grass_g4 : source_color = vec4(0.26, 0.57, 0.19, 1.0); // Verde fresco vivo
-uniform vec4 grass_g5 : source_color = vec4(0.33, 0.65, 0.22, 1.0); // Verde sol brillante (verde puro, no blanco)
+uniform vec4 grass_g1 : source_color = vec4(0.10, 0.24, 0.08, 1.0); // Verde sombra denso
+uniform vec4 grass_g2 : source_color = vec4(0.14, 0.32, 0.11, 1.0); // Verde césped medio-oscuro
+uniform vec4 grass_g3 : source_color = vec4(0.19, 0.42, 0.14, 1.0); // Verde pradera estándar
+uniform vec4 grass_g4 : source_color = vec4(0.25, 0.52, 0.18, 1.0); // Verde fresco vivo
+uniform vec4 grass_g5 : source_color = vec4(0.32, 0.62, 0.22, 1.0); // Verde sol brillante
 uniform float slope_cliff_threshold : hint_range(0.3, 0.9) = 0.65;    // Umbral de pendiente para roca
 uniform bool use_psx_color_depth = true;                              // Cuantizacion 15-bit (RGB555 de PS1)
 
@@ -55,6 +55,21 @@ uniform vec4 dirt_d5 : source_color = vec4(0.47, 0.35, 0.22, 1.0); // Tierra sec
 
 uniform bool use_vertex_dirt = false;                                // Si es true, lee COLOR.r (usado en showcase)
 uniform bool use_procedural_biomes = true;                            // Si es true y use_vertex_dirt es false, calcula biomas por coordenadas de mundo
+
+// Hash entero de 32 bits determinista y libre de artefactos de precision de GPU (AMD/NVIDIA/Intel).
+// Evita bandas, diagonales y moiré que produce sin() en hardware AMD y con coordenadas grandes.
+float hash_cell_2d(vec2 p) {
+	ivec2 ip = ivec2(floor(p));
+	uvec2 u = uvec2(uint(ip.x), uint(ip.y));
+	u = u * uvec2(0x1f1f1f1fu, 0x5b5b5b5bu);
+	u.x ^= (u.y * 0x85ebca6bu);
+	u.y ^= (u.x * 0xc2b2ae35u);
+	uint n = u.x * 0x27d4eb2du + u.y * 0x165667b1u;
+	n ^= (n >> 15u);
+	n *= 0x27d4eb2du;
+	n ^= (n >> 15u);
+	return float(n & 0x00ffffffu) * (1.0 / 16777216.0);
+}
 
 varying vec3 world_position;
 varying vec3 world_normal;
@@ -90,8 +105,8 @@ void fragment() {
 		float n2 = cos(snapped_pos.z * 0.04 + sin(snapped_pos.x * 0.025) * 2.0);
 		float macro = (n1 + n2) * 0.5; // -1.0 a 1.0
 
-		// 2. Micro-patrón de píxel: hash determinista por celda
-		float h = fract(sin(dot(pixel_cell, vec2(127.1, 311.7))) * 43758.5453123);
+		// 2. Micro-patrón de píxel: hash determinista entero por celda (sin bandas ni moiré)
+		float h = hash_cell_2d(pixel_cell);
 
 		// Combinación de macro + micro para seleccionar el tono de verde exacto
 		float val = h * 0.70 + (macro * 0.5 + 0.5) * 0.30;
@@ -150,7 +165,7 @@ void fragment() {
 		if (slope < slope_cliff_threshold) {
 			float cliff_t = smoothstep(slope_cliff_threshold * 0.7, slope_cliff_threshold, slope);
 			vec2 side_cell = floor(snapped_pos.xy / pixel_size) + floor(snapped_pos.zy / pixel_size);
-			float rock_rnd = fract(sin(dot(side_cell, vec2(127.1, 311.7))) * 43758.5453123);
+			float rock_rnd = hash_cell_2d(side_cell);
 			vec3 cliff_rock = mid_color.rgb * (0.85 + rock_rnd * 0.28);
 			final_ground = mix(cliff_rock, pixel_green, cliff_t);
 		}

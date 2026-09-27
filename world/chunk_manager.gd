@@ -204,6 +204,18 @@ func _init_shared_terrain_material() -> void:
 	_shared_terrain_material.set_shader_parameter("pixel_size", TERRAIN_PIXEL_SIZE)
 	_shared_terrain_material.set_shader_parameter("use_vertex_dirt", false)
 	_shared_terrain_material.set_shader_parameter("use_procedural_biomes", true)
+	_shared_terrain_material.set_shader_parameter("grass_g1", Color(0.10, 0.24, 0.08, 1.0))
+	_shared_terrain_material.set_shader_parameter("grass_g2", Color(0.14, 0.32, 0.11, 1.0))
+	_shared_terrain_material.set_shader_parameter("grass_g3", Color(0.19, 0.42, 0.14, 1.0))
+	_shared_terrain_material.set_shader_parameter("grass_g4", Color(0.25, 0.52, 0.18, 1.0))
+	_shared_terrain_material.set_shader_parameter("grass_g5", Color(0.32, 0.62, 0.22, 1.0))
+	_shared_terrain_material.set_shader_parameter("dirt_d1", Color(0.15, 0.10, 0.06, 1.0))
+	_shared_terrain_material.set_shader_parameter("dirt_d2", Color(0.22, 0.15, 0.09, 1.0))
+	_shared_terrain_material.set_shader_parameter("dirt_d3", Color(0.30, 0.21, 0.13, 1.0))
+	_shared_terrain_material.set_shader_parameter("dirt_d4", Color(0.38, 0.28, 0.17, 1.0))
+	_shared_terrain_material.set_shader_parameter("dirt_d5", Color(0.47, 0.35, 0.22, 1.0))
+	_shared_terrain_material.set_shader_parameter("slope_cliff_threshold", 0.65)
+	_shared_terrain_material.set_shader_parameter("use_psx_color_depth", true)
 
 
 ## Pre-genera un catalogo fijo de variaciones procedurales por cada especie al iniciar el mundo.

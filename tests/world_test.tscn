@@ -54,6 +54,7 @@ chunk_manager_path = NodePath("../ChunkManager")
 script = ExtResource("8_construction")
 
 [node name="DitherLayer" type="CanvasLayer" parent="."]
+visible = false
 
 [node name="DitherOverlay" type="ColorRect" parent="DitherLayer"]
 material = SubResource("SM_1")
