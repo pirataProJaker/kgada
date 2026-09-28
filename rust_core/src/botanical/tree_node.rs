@@ -106,6 +106,12 @@ impl BotanicalTree {
         self.species_id.clone()
     }
 
+    /// Retorna la distancia de inicio de bough (en metros) de la especie actual.
+    #[func]
+    pub fn get_bough_start_offset(&self) -> f32 {
+        self.species_cached.as_ref().map(|s| s.bough_start_offset).unwrap_or(0.0)
+    }
+
     /// Poda una rama específica por su índice de nodo.
     /// Retorna la cantidad de nodos cortados.
     #[func]

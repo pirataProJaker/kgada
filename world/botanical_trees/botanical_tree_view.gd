@@ -39,13 +39,19 @@ signal tree_updated(height: float, total_triangles: int, branch_count: int)
 		forced_lod = v
 		refresh()
 
-## Modo de Follaje: 0 = BranchTriangles, 1 = RadialCross20, 2 = LushBranchBoughs (Ramas frondosas cruzadas en 3D)
-@export_enum("BranchTriangles", "RadialCross20", "LushBranchBoughs") var foliage_mode: int = 2:
+## Modo de Follaje:
+## 0 = BranchTriangles
+## 1 = RadialCross20
+## 2 = LushBranchBoughs (Ramas frondosas cuadradas en 3D con alnus_bough_atlas)
+## 3 = HybridBoughs (Híbrido: procedural + boughs + ramas fotográficas completas con alnus_unified_atlas)
+## 4 = FullLimbPhotos (Puras fotos de 15m-20m desde el tronco con alnus_full_bough_atlas)
+@export_enum("BranchTriangles", "RadialCross20", "LushBranchBoughs", "HybridBoughs", "FullLimbPhotos") var foliage_mode: int = 2:
 	set(v):
 		foliage_mode = v
 		if _rust_tree:
 			_rust_tree.set_foliage_mode(v)
-			refresh()
+		_update_bough_texture()
+		refresh()
 
 ## Transición estacional: 0.0 = Verde verano montañés, 1.0 = Ámbar dorado otoñal
 @export_range(0.0, 1.0, 0.01) var autumn_factor: float = 0.0:
@@ -154,16 +160,26 @@ func _init_materials() -> void:
 	_mat_lod3_leaves.billboard_keep_scale = true
 	
 	# 4. Material de Ramas Frondosas (LushBranchBoughs) con Shader estacional y detección madera/hoja
-	var shader_res = load("res://world/botanical_trees/alnus_bough.gdshader")
-	if shader_res is Shader:
-		_mat_bough_shader = ShaderMaterial.new()
-		_mat_bough_shader.shader = shader_res
-		var bough_tex := _load_texture("res://assets/vegetation/alnus/alnus_bough_atlas.png")
+	_update_bough_texture()
+	_update_foliage_color()
+
+func _update_bough_texture() -> void:
+	if not _mat_bough_shader:
+		var shader_res = load("res://world/botanical_trees/alnus_bough.gdshader")
+		if shader_res is Shader:
+			_mat_bough_shader = ShaderMaterial.new()
+			_mat_bough_shader.shader = shader_res
+
+	if _mat_bough_shader:
+		var tex_path := "res://assets/vegetation/alnus/alnus_bough_atlas.png"
+		if foliage_mode == 4:
+			tex_path = "res://assets/vegetation/alnus/alnus_full_bough_atlas.png"
+		elif foliage_mode == 3:
+			tex_path = "res://assets/vegetation/alnus/alnus_unified_atlas.png"
+		var bough_tex := _load_texture(tex_path)
 		if bough_tex:
 			_mat_bough_shader.set_shader_parameter("texture_albedo", bough_tex)
 		_mat_bough_shader.set_shader_parameter("autumn_factor", autumn_factor)
-	
-	_update_foliage_color()
 
 func _update_foliage_color() -> void:
 	# Modulación estacional de color sobre la textura en escala de grises:
@@ -248,7 +264,7 @@ func _apply_lod(lod: int) -> void:
 		_mesh_instance.set_surface_override_material(0, _mat_wood)
 		if mesh.get_surface_count() > 1:
 			var mat_to_use: Material = _mat_leaves
-			if foliage_mode == 2:
+			if foliage_mode >= 2:
 				var tree_age: float = _rust_tree.get_age() if _rust_tree else 1.0
 				if tree_age >= 0.38 and _mat_bough_shader:
 					mat_to_use = _mat_bough_shader

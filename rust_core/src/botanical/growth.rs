@@ -185,12 +185,18 @@ pub fn generate_tree_growth(
                     (1.0 - 0.45 * u.powf(1.3)).max(0.55)
                 };
 
+                // Variabilidad botánica natural de cada rama (vigor, longitud y grosor diferenciados):
+                let branch_vigor = (1.0 + rng.range_f32(-species.branch_length_variance, species.branch_length_variance)).clamp(0.60, 1.45);
+
                 let total_branch_len = current_trunk_height
                     * species.branch_length_ratio
                     * canopy_profile
+                    * branch_vigor
                     * (t.clamp(0.25, 1.0));
 
-                let branch_base_r = (trunk_r_at_t * 0.35).max(0.016);
+                // Grosor alométrico correlacionado con el vigor y longitud de la rama
+                let radius_var = branch_vigor.powf(0.85) * (1.0 + rng.range_f32(-species.branch_radius_variance * 0.5, species.branch_radius_variance * 0.5));
+                let branch_base_r = (trunk_r_at_t * 0.35 * radius_var).max(0.016);
                 let collar_r = branch_base_r * species.branch_collar_factor;
                 // Ramas bajas tienen más segmentos para curvarse suavemente bajo gravedad
                 let branch_segs = if height_frac < 0.55 {
@@ -200,7 +206,7 @@ pub fn generate_tree_growth(
                 };
                 let b_seg_len = total_branch_len / (branch_segs as f32);
 
-                // Ángulo de inserción botánico de Alnus acuminata:
+                // Ángulo de inserción botánico:
                 // Base: ~68°-76° respecto a la vertical (se extienden ampliamente hacia los lados).
                 // Medio: ~56°-64°. Copa alta: ~45°-52°.
                 let base_elev_deg = 48.0 + 26.0 * (1.0 - height_frac).powf(1.1);
@@ -227,8 +233,9 @@ pub fn generate_tree_growth(
                     // Arco suave y continuo donde la rama se sostiene con vigor,
                     // con una leve flexión por peso y elevación suave en la punta hacia el sol.
                     let u = (bs as f32 + 0.5) / (branch_segs as f32);
-                    let sag = (u * std::f32::consts::PI).sin() * (0.12 * (1.0 - height_frac * 0.5));
-                    let phototropism = u * 0.10;
+                    let sag_strength = 0.12 * branch_vigor.clamp(0.75, 1.35);
+                    let sag = (u * std::f32::consts::PI).sin() * (sag_strength * (1.0 - height_frac * 0.5));
+                    let phototropism = u * (0.08 + species.branch_curvature_up);
                     let side_axis = initial_b_dir.cross(Vector3::UP).normalized();
                     let lateral_sway = ((bs as f32 * 1.3 + branch_counter as f32 * 0.9 + seed_f * 0.1).sin()) * 0.08;
                     current_b_dir = (initial_b_dir - Vector3::UP * sag + Vector3::UP * phototropism + side_axis * lateral_sway).normalized();

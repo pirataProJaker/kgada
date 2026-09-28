@@ -266,6 +266,20 @@ pub const ALNUS_VARIANTS: [AlnusLeafVariant; 4] = [
     },
 ];
 
+/// Información botánica de una rama primaria para sincronizar la madera 3D y la tarjeta 2D.
+#[derive(Clone)]
+pub struct PrimaryBranchData {
+    pub root_id: usize,
+    pub var_idx: usize,
+    pub segments: Vec<NodeSegment>,
+    pub total_arc_len: f32,
+    pub actual_offset: f32,
+    pub p_wood: Vector3,
+    pub branch_tangent: Vector3,
+    pub forward: Vector3,
+    pub card_len: f32,
+}
+
 /// Generador de geometría Low-Poly con sincronización de LODs.
 pub struct BotanicalMeshBuilder;
 
@@ -375,11 +389,140 @@ impl BotanicalMeshBuilder {
     ///   con la punta de la rama (U_max, V_min).
     /// - single_card = false (LOD 0): 2 quads cruzados ("X" volumétrica).
     /// - single_card = true (LOD 1 / 2): 1 quad principal de máxima cobertura.
+    /// Recopila todas las ramas primarias del árbol, ordenando sus segmentos desde el cuello del tronco
+    /// hasta la punta, y calculando con precisión de arco métrico la posición exacta de corte p_wood
+    /// y el vector director para la sincronización con las tarjetas de bough.
+    pub fn collect_primary_branches(
+        graph: &BotanicalGraph,
+        species: &SpeciesProfile,
+    ) -> Vec<PrimaryBranchData> {
+        let branch_roots: Vec<&NodeSegment> = graph
+            .active_segments()
+            .filter(|s| s.depth == 1 && s.order_index == 0)
+            .collect();
+
+        let mut branches = Vec::with_capacity(branch_roots.len());
+
+        for (b_idx, root) in branch_roots.iter().enumerate() {
+            let mut segs: Vec<NodeSegment> = vec![(*root).clone()];
+            let mut curr_id = root.id;
+
+            loop {
+                let mut next_child: Option<NodeSegment> = None;
+                if curr_id < graph.nodes.len() {
+                    for &cid in &graph.nodes[curr_id].children_ids {
+                        if cid < graph.nodes.len() {
+                            let child = &graph.nodes[cid];
+                            if !child.is_pruned && child.depth == 1 {
+                                next_child = Some((*child).clone());
+                                break;
+                            }
+                        }
+                    }
+                }
+                if let Some(child) = next_child {
+                    curr_id = child.id;
+                    segs.push(child);
+                } else {
+                    break;
+                }
+            }
+
+            if segs.is_empty() {
+                continue;
+            }
+
+            let mut total_arc_len = 0.0f32;
+            for s in &segs {
+                total_arc_len += (s.end_pos - s.start_pos).length();
+            }
+
+            let branch_diff = segs.last().unwrap().end_pos - segs[0].start_pos;
+            let branch_dist = branch_diff.length();
+            if branch_dist < 0.20 {
+                continue;
+            }
+
+            let offset_mult = if species.bough_offset_variance > 0.0 {
+                let h = (((root.id * 1664525 + b_idx * 1013904223 + 1013904223) >> 16) & 0xFFFF) as f32 / 65535.0;
+                1.0 + (h * 2.0 - 1.0) * species.bough_offset_variance
+            } else {
+                1.0
+            };
+
+            let target_offset = species.bough_start_offset * offset_mult;
+            let actual_offset = if species.bough_start_offset > 0.0 {
+                target_offset.min(total_arc_len * 0.45).max(0.60)
+            } else {
+                0.0
+            };
+
+            let mut accumulated = 0.0;
+            let mut p_wood = segs[0].start_pos;
+            let mut branch_tangent = (segs[0].end_pos - segs[0].start_pos).normalized();
+
+            if actual_offset > 0.001 {
+                for s in &segs {
+                    let seg_vec = s.end_pos - s.start_pos;
+                    let seg_l = seg_vec.length();
+                    if accumulated + seg_l >= actual_offset {
+                        let frac = (actual_offset - accumulated) / seg_l.max(0.001);
+                        p_wood = s.start_pos.lerp(s.end_pos, frac);
+                        branch_tangent = seg_vec.normalized();
+                        break;
+                    }
+                    accumulated += seg_l;
+                    p_wood = s.end_pos;
+                    branch_tangent = seg_vec.normalized();
+                }
+            }
+
+            let to_tip = segs.last().unwrap().end_pos - p_wood;
+            let forward = if to_tip.length() > 0.2 {
+                // Fuerte sesgo a la tangente en el cuello de corte para que la madera 3D y la rama pintada nazcan colineales
+                (branch_tangent * 0.75 + to_tip.normalized() * 0.25).normalized()
+            } else {
+                branch_tangent
+            };
+
+            let card_len = (branch_dist * 1.25).max(5.8);
+            let var_idx = (root.id + b_idx) % 4;
+
+            branches.push(PrimaryBranchData {
+                root_id: root.id,
+                var_idx,
+                segments: segs,
+                total_arc_len,
+                actual_offset,
+                p_wood,
+                branch_tangent,
+                forward,
+                card_len,
+            });
+        }
+
+        branches
+    }
+
+    /// Construye ramas frondosas tridimensionales utilizando el atlas 2x2
+    /// de boughs botánicos provisto por el usuario (alnus_bough_atlas.png).
     pub fn build_lush_branch_boughs(
         surface: &mut RawSurfaceData,
         graph: &BotanicalGraph,
+        species: &SpeciesProfile,
         canopy_center: Vector3,
         single_card: bool,
+    ) {
+        Self::build_lush_branch_boughs_internal(surface, graph, species, canopy_center, single_card, false);
+    }
+
+    pub fn build_lush_branch_boughs_internal(
+        surface: &mut RawSurfaceData,
+        graph: &BotanicalGraph,
+        species: &SpeciesProfile,
+        canopy_center: Vector3,
+        single_card: bool,
+        use_unified_atlas: bool,
     ) {
         // 1. Árboles que apenas van creciendo (saplings / brotes):
         // Tal como pidió el usuario: las imágenes anteriores (alnus_leaf_atlas.png con pocas hojas)
@@ -402,150 +545,256 @@ impl BotanicalMeshBuilder {
         }
 
         // 2. Árboles maduros (age >= 0.38):
+        let branches = Self::collect_primary_branches(graph, species);
+        for branch in &branches {
+            Self::build_single_lush_bough(surface, branch, species, canopy_center, single_card, use_unified_atlas);
+        }
+    }
+
+    /// Construye una rama frondosa individual a partir de boughs botánicos cuadrados.
+    pub fn build_single_lush_bough(
+        surface: &mut RawSurfaceData,
+        branch: &PrimaryBranchData,
+        _species: &SpeciesProfile,
+        canopy_center: Vector3,
+        single_card: bool,
+        use_unified_atlas: bool,
+    ) {
         let uv_insets = 6.0 / 1024.0;
-        let get_quadrant_uvs = |var_idx: usize| -> (Vector2, Vector2, Vector2, Vector2) {
-            let col = (var_idx % 2) as f32;
-            let row = (var_idx / 2) as f32;
-            let u0 = col * 0.5 + uv_insets;
-            let u1 = (col + 1.0) * 0.5 - uv_insets;
-            let v0 = row * 0.5 + uv_insets;
-            let v1 = (row + 1.0) * 0.5 - uv_insets;
+        let col = (branch.var_idx % 2) as f32;
+        let row = (branch.var_idx / 2) as f32;
+        let mut u0 = col * 0.5 + uv_insets;
+        let mut u1 = (col + 1.0) * 0.5 - uv_insets;
+        let v0 = row * 0.5 + uv_insets;
+        let v1 = (row + 1.0) * 0.5 - uv_insets;
 
-            // v0 (tallo en la madera): bottom-left
-            // v1: bottom-right
-            // v2 (punta de la rama): top-right
-            // v3: top-left
-            (
-                Vector2::new(u0, v1),
-                Vector2::new(u1, v1),
-                Vector2::new(u1, v0),
-                Vector2::new(u0, v0),
-            )
-        };
-
-        let _maturity = ((graph.current_age - 0.38) / 0.62).clamp(0.0, 1.0);
-        let mut branches_to_render: Vec<(Vector3, Vector3, usize, f32)> = Vec::new();
-
-        // A) Ramas Primarias del Árbol (Pegar las imágenes de 5m a las ramas procedurales):
-        // Cada rama procedural lleva en cruz 2 imágenes (4 triángulos en LOD 0, 2 triángulos en LOD 1)
-        // que siguen exactamente la trayectoria botánica de la rama procedural de 5 metros.
-        let branch_roots: Vec<&NodeSegment> = graph
-            .active_segments()
-            .filter(|s| s.depth == 1 && s.order_index == 0)
-            .collect();
-
-        for (b_idx, root) in branch_roots.iter().enumerate() {
-            // 1. Reconstruir la cadena completa de la rama procedural desde el tronco hasta su punta
-            let mut chain: Vec<Vector3> = vec![root.start_pos, root.end_pos];
-            let mut curr_id = root.id;
-            loop {
-                let mut next_child: Option<&NodeSegment> = None;
-                if curr_id < graph.nodes.len() {
-                    for &cid in &graph.nodes[curr_id].children_ids {
-                        if cid < graph.nodes.len() {
-                            let child = &graph.nodes[cid];
-                            if !child.is_pruned && child.depth == 1 {
-                                next_child = Some(child);
-                                break;
-                            }
-                        }
-                    }
-                }
-                if let Some(child) = next_child {
-                    chain.push(child.end_pos);
-                    curr_id = child.id;
-                } else {
-                    break;
-                }
-            }
-
-            if chain.len() < 2 {
-                continue;
-            }
-
-            let chain_last = *chain.last().unwrap();
-            
-            // Punto de inserción en la rama procedural:
-            // La base de la imagen nace en la rama procedural (primer segmento root.start_pos o root.end_pos)
-            let p_base = root.start_pos;
-
-            // Dirección real de la rama procedural en el espacio 3D
-            let branch_diff = chain_last - p_base;
-            let branch_dist = branch_diff.length();
-            if branch_dist < 0.20 {
-                continue;
-            }
-            let forward = branch_diff / branch_dist;
-
-            // Longitud de la tarjeta de 5 metros: cubre exactamente la rama procedural
-            // y se extiende un 12% adicional para que el follaje envuelva completamente la punta
-            let card_len = (branch_dist * 1.15).max(3.8);
-            let p_tip = p_base + forward * card_len;
-            let var_idx = (root.id + b_idx) % 4;
-
-            branches_to_render.push((p_base, p_tip, var_idx, card_len));
+        if use_unified_atlas {
+            u0 *= 0.5;
+            u1 *= 0.5;
         }
 
+        let (uv0, uv1, uv2, uv3) = (
+            Vector2::new(u0, v1),
+            Vector2::new(u1, v1),
+            Vector2::new(u1, v0),
+            Vector2::new(u0, v0),
+        );
 
+        let stem_coords = [
+            (0.0267f32, 0.9507f32),
+            (0.0210f32, 0.9397f32),
+            (0.0196f32, 0.9487f32),
+            (0.0217f32, 0.9496f32),
+        ];
 
-        // Generación de Geometría en 3D:
-        // - Cada bough genera una tarjeta cuadrada de diagonal L (~5m) mapeada perfectamente sin deformación.
-        // - single_card = false (LOD 0): 2 planos cruzados en "X" (4 triángulos por rama).
-        // - single_card = true (LOD 1 / 2): 1 plano principal a ~18° (2 triángulos por rama).
-        for (p_start, p_end, var_idx, _card_len) in branches_to_render {
-            let diff = p_end - p_start;
-            let len = diff.length();
-            if len < 0.20 {
-                continue;
-            }
-            let forward = diff / len;
+        let mut side = branch.forward.cross(Vector3::UP);
+        if side.length_squared() < 0.001 {
+            side = branch.forward.cross(Vector3::RIGHT);
+        }
+        let side = side.normalized();
+        let up_perp = side.cross(branch.forward).normalized();
 
-            let mut side = forward.cross(Vector3::UP);
-            if side.length_squared() < 0.001 {
-                side = forward.cross(Vector3::RIGHT);
-            }
-            let side = side.normalized();
-            let up_perp = side.cross(forward).normalized();
+        let (u_stem, v_stem) = stem_coords[branch.var_idx % 4];
 
-            let (uv0, uv1, uv2, uv3) = get_quadrant_uvs(var_idx);
+        let k_fwd = (u_stem + (1.0 - v_stem)) * 0.5;
+        let k_perp = (u_stem - (1.0 - v_stem)) * 0.5;
 
-            // Plano 1: Orientación horizontal / extendida (~18° de inclinación) para captar luz cenital y sombra
-            // Plano 2: Cruzado vertical (~-72°) para volumen y grosor desde el suelo y laterales ("cruz" en X)
-            let angles = if single_card {
-                vec![0.30f32] // 1 plano principal = 2 triángulos
-            } else {
-                vec![0.30f32, -1.25f32] // 2 planos en cruz = 4 triángulos
-            };
+        let angles = if single_card {
+            vec![0.25f32]
+        } else {
+            vec![0.25f32, -1.30f32]
+        };
 
+        let half_diag = branch.card_len * 0.5;
+
+        for angle in angles {
+            let n_card = (side * angle.cos() + up_perp * angle.sin()).normalized();
+
+            let p_start = branch.p_wood
+                - branch.forward * (branch.card_len * k_fwd)
+                - n_card * (branch.card_len * k_perp);
+            let p_end = p_start + branch.forward * branch.card_len;
             let p_mid = (p_start + p_end) * 0.5;
-            let half_diag = len * 0.5;
 
-            for angle in angles {
-                let n_card = (side * angle.cos() + up_perp * angle.sin()).normalized();
+            let v0 = p_start;
+            let v1 = p_mid + n_card * half_diag;
+            let v2 = p_end;
+            let v3 = p_mid - n_card * half_diag;
 
-                // Cuadrilátero cuadrado perfecto rotado 45° a lo largo de su diagonal:
-                // Diagonal 1 (v0 a v2): desde el tallo en la rama procedural (p_start) hasta la punta exterior (p_end)
-                // Diagonal 2 (v3 a v1): perpendicular en el plano de la tarjeta, de longitud idéntica len
-                let v0 = p_start;
-                let v1 = p_mid + n_card * half_diag;
-                let v2 = p_end;
-                let v3 = p_mid - n_card * half_diag;
+            let n0 = ((v0 - canopy_center).normalized() * 0.70 + Vector3::UP * 0.45).normalized();
+            let n1 = ((v1 - canopy_center).normalized() * 0.70 + Vector3::UP * 0.45).normalized();
+            let n2 = ((v2 - canopy_center).normalized() * 0.70 + Vector3::UP * 0.45).normalized();
+            let n3 = ((v3 - canopy_center).normalized() * 0.70 + Vector3::UP * 0.45).normalized();
 
-                // Normales esféricas de copa con sesgo cenital para sombreado volumétrico suave
-                let n0 = ((v0 - canopy_center).normalized() * 0.70 + Vector3::UP * 0.45).normalized();
-                let n1 = ((v1 - canopy_center).normalized() * 0.70 + Vector3::UP * 0.45).normalized();
-                let n2 = ((v2 - canopy_center).normalized() * 0.70 + Vector3::UP * 0.45).normalized();
-                let n3 = ((v3 - canopy_center).normalized() * 0.70 + Vector3::UP * 0.45).normalized();
+            surface.add_quad_with_normals(v0, v1, v2, v3, n0, n1, n2, n3, uv0, uv1, uv2, uv3);
+        }
+    }
 
-                surface.add_quad_with_normals(v0, v1, v2, v3, n0, n1, n2, n3, uv0, uv1, uv2, uv3);
+    /// Construye ramas fotográficas completas de 15m-20m (Full-Limb Photo Boughs).
+    ///
+    /// Estas ramas contienen su propio fuste/tronco de corteza fotorealista integrado en la textura,
+    /// por lo que nacen directamente en la superficie del tronco principal (`collar_origin`),
+    /// sin requerir extrusión de rama procedural en 3D.
+    pub fn build_full_limb_boughs(
+        surface: &mut RawSurfaceData,
+        graph: &BotanicalGraph,
+        species: &SpeciesProfile,
+        canopy_center: Vector3,
+        single_card: bool,
+        use_unified_atlas: bool,
+    ) {
+        if graph.current_age < 0.38 {
+            for cluster in &graph.leaf_clusters {
+                if cluster.is_active {
+                    Self::build_leaf_cluster(
+                        surface,
+                        cluster.position,
+                        cluster.direction,
+                        cluster.scale,
+                        1,
+                        cluster.variant_idx,
+                        canopy_center,
+                    );
+                }
+            }
+            return;
+        }
+
+        let branches = Self::collect_primary_branches(graph, species);
+        for branch in &branches {
+            Self::build_single_full_limb_bough(surface, branch, species, canopy_center, single_card, use_unified_atlas);
+        }
+    }
+
+    /// Construye una rama fotográfica individual de 15m-20m anclada directamente en el collar del tronco.
+    pub fn build_single_full_limb_bough(
+        surface: &mut RawSurfaceData,
+        branch: &PrimaryBranchData,
+        _species: &SpeciesProfile,
+        canopy_center: Vector3,
+        single_card: bool,
+        use_unified_atlas: bool,
+    ) {
+        struct FullLimbVariant {
+            v_top: f32,
+            v_bot: f32,
+            t_stem: f32,
+            u_left: f32,
+            u_right: f32,
+        }
+
+        let variants = [
+            FullLimbVariant {
+                v_top: 0.005,
+                v_bot: 341.0 / 1024.0,
+                t_stem: (341.0 - 299.09) / 341.0,
+                u_left: 7.0 / 1024.0,
+                u_right: 1016.0 / 1024.0,
+            },
+            FullLimbVariant {
+                v_top: 512.0 / 1024.0,
+                v_bot: 853.0 / 1024.0,
+                t_stem: (853.0 - 804.31) / 341.0,
+                u_left: 6.0 / 1024.0,
+                u_right: 1017.0 / 1024.0,
+            },
+        ];
+
+        let p_collar = branch.segments[0].start_pos;
+
+        let mut side = branch.forward.cross(Vector3::UP);
+        if side.length_squared() < 0.001 {
+            side = branch.forward.cross(Vector3::RIGHT);
+        }
+        let side = side.normalized();
+        let up_perp = side.cross(branch.forward).normalized();
+
+        let limb_len = (branch.card_len * 1.85).clamp(14.5, 19.5);
+        let limb_h = limb_len / 3.0;
+
+        let var_idx = branch.var_idx % 2;
+        let v_info = &variants[var_idx];
+
+        let angles = if single_card {
+            vec![0.20f32]
+        } else {
+            vec![0.20f32, -1.25f32]
+        };
+
+        for angle in angles {
+            let _n_card = (side * angle.cos() + up_perp * angle.sin()).normalized();
+            let u_plane = (side * (-angle.sin()) + up_perp * angle.cos()).normalized();
+
+            let v_bl = p_collar - u_plane * (limb_h * v_info.t_stem);
+            let v_br = p_collar + branch.forward * limb_len - u_plane * (limb_h * v_info.t_stem);
+            let v_tr = p_collar + branch.forward * limb_len + u_plane * (limb_h * (1.0 - v_info.t_stem));
+            let v_tl = p_collar + u_plane * (limb_h * (1.0 - v_info.t_stem));
+
+            let n_bl = ((v_bl - canopy_center).normalized() * 0.70 + Vector3::UP * 0.45).normalized();
+            let n_br = ((v_br - canopy_center).normalized() * 0.70 + Vector3::UP * 0.45).normalized();
+            let n_tr = ((v_tr - canopy_center).normalized() * 0.70 + Vector3::UP * 0.45).normalized();
+            let n_tl = ((v_tl - canopy_center).normalized() * 0.70 + Vector3::UP * 0.45).normalized();
+
+            let mut uv_bl = Vector2::new(v_info.u_left, v_info.v_bot);
+            let mut uv_br = Vector2::new(v_info.u_right, v_info.v_bot);
+            let mut uv_tr = Vector2::new(v_info.u_right, v_info.v_top);
+            let mut uv_tl = Vector2::new(v_info.u_left, v_info.v_top);
+
+            if use_unified_atlas {
+                uv_bl.x = 0.5 + 0.5 * uv_bl.x;
+                uv_br.x = 0.5 + 0.5 * uv_br.x;
+                uv_tr.x = 0.5 + 0.5 * uv_tr.x;
+                uv_tl.x = 0.5 + 0.5 * uv_tl.x;
+            }
+
+            surface.add_quad_with_normals(v_bl, v_br, v_tr, v_tl, n_bl, n_br, n_tr, n_tl, uv_bl, uv_br, uv_tr, uv_tl);
+        }
+    }
+
+    /// Construye ramas híbridas: ramas procedurales continuas con boughs cuadrados (50%)
+    /// intercaladas orgánicamente con ramas fotográficas completas de 15m-20m desde el tronco (50%).
+    pub fn build_hybrid_boughs(
+        surface: &mut RawSurfaceData,
+        graph: &BotanicalGraph,
+        species: &SpeciesProfile,
+        canopy_center: Vector3,
+        single_card: bool,
+    ) {
+        if graph.current_age < 0.38 {
+            for cluster in &graph.leaf_clusters {
+                if cluster.is_active {
+                    Self::build_leaf_cluster(
+                        surface,
+                        cluster.position,
+                        cluster.direction,
+                        cluster.scale,
+                        1,
+                        cluster.variant_idx,
+                        canopy_center,
+                    );
+                }
+            }
+            return;
+        }
+
+        let branches = Self::collect_primary_branches(graph, species);
+        for (b_idx, branch) in branches.iter().enumerate() {
+            if b_idx % 2 == 1 {
+                // Rama procedural con bough cuadrado (mitad izquierda del atlas unificado)
+                Self::build_single_lush_bough(surface, branch, species, canopy_center, single_card, true);
+            } else {
+                // Rama fotográfica completa de 15m-20m desde el tronco (mitad derecha del atlas unificado)
+                Self::build_single_full_limb_bough(surface, branch, species, canopy_center, single_card, true);
             }
         }
     }
 
     /// Genera la malla en LOD 0:
-    /// - Tronco: Prisma continuo de 3 lados (sección triangular).
-    /// - Ramas primarias y secundarias: Prismas y pirámides de 3 caras.
+    /// - Tronco: Prisma continuo de 6 lados (sección hexagonal).
+    /// - Ramas primarias: Brazo limpio 3D de 3 caras hasta el inicio del bough (con traslape de 18cm en la corteza de la tarjeta).
     /// - Hojas:
+    ///   - foliage_mode == 4: Puras fotos de 15-20m desde el tronco.
+    ///   - foliage_mode == 3: Híbrido (50% fotos completas + 50% ramas procedurales con boughs).
     ///   - foliage_mode == 2: Ramas frondosas cruzadas en 3D (LushBranchBoughs, 4 tris/rama).
     ///   - foliage_mode == 1: 10 planos radiales en estrella (RadialCross20, 20 tris).
     ///   - foliage_mode == 0: Triángulos inteligentes a lo largo de cada rama + racimos.
@@ -560,20 +809,54 @@ impl BotanicalMeshBuilder {
         trunk_segments.sort_by_key(|s| s.order_index);
         Self::extrude_continuous_trunk(&mut mesh.wood, &trunk_segments, 6);
 
-        // 2. Ramas Primarias Procedurales
-        for seg in graph.active_segments().filter(|s| s.depth > 0) {
-            if foliage_mode == 2 && seg.depth > 1 {
-                // Las ramillas secundarias finas ya están representadas en la imagen de 5m
-                continue;
+        // 2. Ramas Primarias Procedurales Continuas (sin quiebres ni grietas al cambiar de ángulo)
+        if foliage_mode == 4 {
+            // Modo 4: Fotos Puras - NO se extruye madera para ramas primarias. Solo el tronco continuo.
+            // Las fotos de 15-20m ya traen su propio tronco/rama fotorrealista pintada.
+        } else if foliage_mode == 3 {
+            // Modo 3: Híbrido - Solo extruye madera procedural para las ramas que usan boughs cuadrados (b_idx % 2 == 1)
+            let branches = Self::collect_primary_branches(graph, species);
+            for (b_idx, branch) in branches.iter().enumerate() {
+                if b_idx % 2 == 1 {
+                    let wood_cutoff = if species.bough_start_offset > 0.0 {
+                        (branch.actual_offset + 0.18).min(branch.total_arc_len)
+                    } else {
+                        branch.total_arc_len
+                    };
+                    Self::extrude_continuous_branch(&mut mesh.wood, branch, wood_cutoff, 4);
+                }
             }
-            Self::extrude_prism_3sides(&mut mesh.wood, seg);
+        } else if foliage_mode == 2 {
+            let branches = Self::collect_primary_branches(graph, species);
+            for branch in &branches {
+                let wood_cutoff = if species.bough_start_offset > 0.0 {
+                    (branch.actual_offset + 0.18).min(branch.total_arc_len)
+                } else {
+                    branch.total_arc_len
+                };
+                Self::extrude_continuous_branch(&mut mesh.wood, branch, wood_cutoff, 4);
+            }
+
+            if species.bough_start_offset == 0.0 {
+                for seg in graph.active_segments().filter(|s| s.depth > 1) {
+                    Self::extrude_prism_3sides(&mut mesh.wood, seg);
+                }
+            }
+        } else {
+            for seg in graph.active_segments().filter(|s| s.depth > 0) {
+                Self::extrude_prism_3sides(&mut mesh.wood, seg);
+            }
         }
 
-        // 2. Geometría de Follaje (solo si la especie produce hojas)
+        // 3. Geometría de Follaje (solo si la especie produce hojas)
         if species.cards_per_cluster > 0 {
             let canopy_center = Vector3::new(0.0, graph.current_height() * 0.55, 0.0);
-            if foliage_mode == 2 {
-                Self::build_lush_branch_boughs(&mut mesh.leaves, graph, canopy_center, false);
+            if foliage_mode == 4 {
+                Self::build_full_limb_boughs(&mut mesh.leaves, graph, species, canopy_center, false, false);
+            } else if foliage_mode == 3 {
+                Self::build_hybrid_boughs(&mut mesh.leaves, graph, species, canopy_center, false);
+            } else if foliage_mode == 2 {
+                Self::build_lush_branch_boughs(&mut mesh.leaves, graph, species, canopy_center, false);
             } else if foliage_mode == 1 {
                 Self::build_radial_cross_20(&mut mesh.leaves, graph);
             } else {
@@ -599,8 +882,8 @@ impl BotanicalMeshBuilder {
     }
 
     /// Genera la malla en LOD 1 (Sincronizado):
-    /// - Tronco: Mantiene el prisma de 3 caras.
-    /// - Ramas: Colapsan de prismas 3D a **Aletas 2D (quads)** exactamente alineadas con la normal de la rama.
+    /// - Tronco: Mantiene el prisma de 4 caras.
+    /// - Ramas: Colapsan de prismas 3D a Aletas 2D (quads continuos).
     /// - Hojas: Sincronizadas según foliage_mode (1 quad por bough en modo 2).
     pub fn build_lod1(graph: &BotanicalGraph, species: &SpeciesProfile, foliage_mode: i32) -> TreeMeshData {
         let mut mesh = TreeMeshData::default();
@@ -612,17 +895,50 @@ impl BotanicalMeshBuilder {
         trunk_segments.sort_by_key(|s| s.order_index);
         Self::extrude_continuous_trunk(&mut mesh.wood, &trunk_segments, 4);
 
-        for seg in graph.active_segments().filter(|s| s.depth > 0) {
-            if foliage_mode == 2 && seg.depth > 1 {
-                continue;
+        if foliage_mode == 4 {
+            // Modo 4: Fotos Puras - Sin aletas de rama. Solo tronco continuo.
+        } else if foliage_mode == 3 {
+            let branches = Self::collect_primary_branches(graph, species);
+            for (b_idx, branch) in branches.iter().enumerate() {
+                if b_idx % 2 == 1 {
+                    let wood_cutoff = if species.bough_start_offset > 0.0 {
+                        (branch.actual_offset + 0.18).min(branch.total_arc_len)
+                    } else {
+                        branch.total_arc_len
+                    };
+                    Self::extrude_continuous_branch_fin_2d(&mut mesh.wood, branch, wood_cutoff);
+                }
             }
-            Self::build_branch_fin_2d(&mut mesh.wood, seg);
+        } else if foliage_mode == 2 {
+            let branches = Self::collect_primary_branches(graph, species);
+            for branch in &branches {
+                let wood_cutoff = if species.bough_start_offset > 0.0 {
+                    (branch.actual_offset + 0.18).min(branch.total_arc_len)
+                } else {
+                    branch.total_arc_len
+                };
+                Self::extrude_continuous_branch_fin_2d(&mut mesh.wood, branch, wood_cutoff);
+            }
+
+            if species.bough_start_offset == 0.0 {
+                for seg in graph.active_segments().filter(|s| s.depth > 1) {
+                    Self::build_branch_fin_2d(&mut mesh.wood, seg);
+                }
+            }
+        } else {
+            for seg in graph.active_segments().filter(|s| s.depth > 0) {
+                Self::build_branch_fin_2d(&mut mesh.wood, seg);
+            }
         }
 
         if species.cards_per_cluster > 0 {
             let canopy_center = Vector3::new(0.0, graph.current_height() * 0.55, 0.0);
-            if foliage_mode == 2 {
-                Self::build_lush_branch_boughs(&mut mesh.leaves, graph, canopy_center, true);
+            if foliage_mode == 4 {
+                Self::build_full_limb_boughs(&mut mesh.leaves, graph, species, canopy_center, true, false);
+            } else if foliage_mode == 3 {
+                Self::build_hybrid_boughs(&mut mesh.leaves, graph, species, canopy_center, true);
+            } else if foliage_mode == 2 {
+                Self::build_lush_branch_boughs(&mut mesh.leaves, graph, species, canopy_center, true);
             } else if foliage_mode == 1 {
                 Self::build_radial_cross_20(&mut mesh.leaves, graph);
             } else {
@@ -681,8 +997,12 @@ impl BotanicalMeshBuilder {
 
         if species.cards_per_cluster > 0 {
             let canopy_center = Vector3::new(0.0, graph.current_height() * 0.55, 0.0);
-            if foliage_mode == 2 {
-                Self::build_lush_branch_boughs(&mut mesh.leaves, graph, canopy_center, true);
+            if foliage_mode == 4 {
+                Self::build_full_limb_boughs(&mut mesh.leaves, graph, species, canopy_center, true, false);
+            } else if foliage_mode == 3 {
+                Self::build_hybrid_boughs(&mut mesh.leaves, graph, species, canopy_center, true);
+            } else if foliage_mode == 2 {
+                Self::build_lush_branch_boughs(&mut mesh.leaves, graph, species, canopy_center, true);
             } else if foliage_mode == 1 {
                 Self::build_radial_cross_20(&mut mesh.leaves, graph);
             } else {
@@ -1091,6 +1411,237 @@ impl BotanicalMeshBuilder {
                     Vector2::new(u0, v_tip),
                 );
             }
+        }
+    }
+
+    /// Extruye una rama primaria completa como un tubo poligonal continuo (LOD 0):
+    /// - Anillos de vértices compartidos en cada nodo (bisectores / miter joints perfectos).
+    /// - Cero grietas, despegues o quiebres cuando la rama cambia de ángulo por gravedad o curvatura.
+    /// - Parallel transport para una base ortonormal suave y sin torsión.
+    /// - Tapa sólida al final del socket para ensamblar limpiamente en la corteza del bough.
+    pub fn extrude_continuous_branch(
+        surface: &mut RawSurfaceData,
+        branch: &PrimaryBranchData,
+        wood_cutoff: f32,
+        sides: usize,
+    ) {
+        if branch.segments.is_empty() {
+            return;
+        }
+
+        let mut points: Vec<Vector3> = Vec::new();
+        let mut radii: Vec<f32> = Vec::new();
+        let mut arc_lens: Vec<f32> = Vec::new();
+
+        points.push(branch.segments[0].start_pos);
+        radii.push(branch.segments[0].base_radius);
+        arc_lens.push(0.0);
+
+        let mut accum = 0.0;
+        let mut was_clipped = false;
+
+        for seg in &branch.segments {
+            let seg_l = (seg.end_pos - seg.start_pos).length();
+            if accum >= wood_cutoff {
+                was_clipped = true;
+                break;
+            }
+            if accum + seg_l <= wood_cutoff + 0.001 {
+                accum += seg_l;
+                points.push(seg.end_pos);
+                radii.push(seg.tip_radius);
+                arc_lens.push(accum);
+            } else {
+                let frac = (wood_cutoff - accum) / seg_l.max(0.001);
+                let clipped_pos = seg.start_pos.lerp(seg.end_pos, frac);
+                let clipped_r = seg.base_radius * (1.0 - frac) + seg.tip_radius * frac;
+                accum = wood_cutoff;
+                points.push(clipped_pos);
+                radii.push(clipped_r);
+                arc_lens.push(accum);
+                was_clipped = true;
+                break;
+            }
+        }
+
+        let num_nodes = points.len();
+        if num_nodes < 2 {
+            return;
+        }
+
+        let tau = std::f32::consts::TAU;
+        let mut rings: Vec<Vec<(Vector3, Vector3)>> = Vec::with_capacity(num_nodes);
+        let mut prev_u = Vector3::ZERO;
+
+        for k in 0..num_nodes {
+            let tangent = if k == 0 {
+                (points[1] - points[0]).normalized()
+            } else if k == num_nodes - 1 {
+                (points[k] - points[k - 1]).normalized()
+            } else {
+                let d_prev = (points[k] - points[k - 1]).normalized();
+                let d_next = (points[k + 1] - points[k]).normalized();
+                let bisector = (d_prev + d_next).normalized();
+                if bisector.length_squared() < 0.001 { d_next } else { bisector }
+            };
+
+            let (u, v) = if k == 0 {
+                let (u0, v0) = get_orthonormal_basis(tangent);
+                prev_u = u0;
+                (u0, v0)
+            } else {
+                let proj = prev_u - tangent * prev_u.dot(tangent);
+                let u = if proj.length_squared() > 0.001 {
+                    proj.normalized()
+                } else {
+                    let (u_fb, _) = get_orthonormal_basis(tangent);
+                    u_fb
+                };
+                let v = tangent.cross(u).normalized();
+                prev_u = u;
+                (u, v)
+            };
+
+            let mut ring = Vec::with_capacity(sides);
+            for s in 0..sides {
+                let angle = (s as f32) * (tau / sides as f32);
+                let norm = (u * angle.cos() + v * angle.sin()).normalized();
+                let pt = points[k] + norm * radii[k];
+                ring.push((pt, norm));
+            }
+            rings.push(ring);
+        }
+
+        for k in 0..(num_nodes - 1) {
+            let v_base = arc_lens[k] * 0.40;
+            let v_tip = arc_lens[k + 1] * 0.40;
+
+            for s in 0..sides {
+                let next = (s + 1) % sides;
+                let u0 = s as f32 / sides as f32;
+                let u1 = (s + 1) as f32 / sides as f32;
+
+                let (v0, n0) = rings[k][s];
+                let (v1, n1) = rings[k][next];
+                let (v2, n2) = rings[k + 1][next];
+                let (v3, n3) = rings[k + 1][s];
+
+                surface.add_quad_with_normals(
+                    v0, v1, v2, v3,
+                    n0, n1, n2, n3,
+                    Vector2::new(u0, v_base),
+                    Vector2::new(u1, v_base),
+                    Vector2::new(u1, v_tip),
+                    Vector2::new(u0, v_tip),
+                );
+            }
+        }
+
+        if was_clipped && num_nodes >= 2 {
+            let tip_idx = num_nodes - 1;
+            let tip_center = points[tip_idx];
+            for s in 0..sides {
+                let next = (s + 1) % sides;
+                let (v_s, _) = rings[tip_idx][s];
+                let (v_next, _) = rings[tip_idx][next];
+                surface.add_triangle(
+                    tip_center,
+                    v_s,
+                    v_next,
+                    Vector2::new(0.5, 0.5),
+                    Vector2::new(0.0, 0.0),
+                    Vector2::new(1.0, 0.0),
+                );
+            }
+        }
+    }
+
+    /// Extruye una rama primaria completa como una aleta 2D continua (LOD 1):
+    /// - Quads continuos compartiendo vértices en cada nodo para evitar roturas.
+    pub fn extrude_continuous_branch_fin_2d(
+        surface: &mut RawSurfaceData,
+        branch: &PrimaryBranchData,
+        wood_cutoff: f32,
+    ) {
+        if branch.segments.is_empty() {
+            return;
+        }
+
+        let mut points: Vec<Vector3> = Vec::new();
+        let mut radii: Vec<f32> = Vec::new();
+        let mut arc_lens: Vec<f32> = Vec::new();
+
+        points.push(branch.segments[0].start_pos);
+        radii.push(branch.segments[0].base_radius);
+        arc_lens.push(0.0);
+
+        let mut accum = 0.0;
+        for seg in &branch.segments {
+            let seg_l = (seg.end_pos - seg.start_pos).length();
+            if accum >= wood_cutoff {
+                break;
+            }
+            if accum + seg_l <= wood_cutoff + 0.001 {
+                accum += seg_l;
+                points.push(seg.end_pos);
+                radii.push(seg.tip_radius);
+                arc_lens.push(accum);
+            } else {
+                let frac = (wood_cutoff - accum) / seg_l.max(0.001);
+                let clipped_pos = seg.start_pos.lerp(seg.end_pos, frac);
+                let clipped_r = seg.base_radius * (1.0 - frac) + seg.tip_radius * frac;
+                accum = wood_cutoff;
+                points.push(clipped_pos);
+                radii.push(clipped_r);
+                arc_lens.push(accum);
+                break;
+            }
+        }
+
+        let num_nodes = points.len();
+        if num_nodes < 2 {
+            return;
+        }
+
+        let mut left_pts: Vec<Vector3> = Vec::with_capacity(num_nodes);
+        let mut right_pts: Vec<Vector3> = Vec::with_capacity(num_nodes);
+
+        for k in 0..num_nodes {
+            let tangent = if k == 0 {
+                (points[1] - points[0]).normalized()
+            } else if k == num_nodes - 1 {
+                (points[k] - points[k - 1]).normalized()
+            } else {
+                let d_prev = (points[k] - points[k - 1]).normalized();
+                let d_next = (points[k + 1] - points[k]).normalized();
+                let bisector = (d_prev + d_next).normalized();
+                if bisector.length_squared() < 0.001 { d_next } else { bisector }
+            };
+
+            let mut side = tangent.cross(Vector3::UP);
+            if side.length_squared() < 0.001 {
+                side = tangent.cross(Vector3::RIGHT);
+            }
+            let side = side.normalized();
+            let hw = radii[k] * 1.1;
+            left_pts.push(points[k] - side * hw);
+            right_pts.push(points[k] + side * hw);
+        }
+
+        for k in 0..(num_nodes - 1) {
+            let v_base = arc_lens[k] * 0.40;
+            let v_tip = arc_lens[k + 1] * 0.40;
+
+            surface.add_quad(
+                left_pts[k],
+                right_pts[k],
+                right_pts[k + 1],
+                left_pts[k + 1],
+                Vector2::new(0.0, v_base),
+                Vector2::new(1.0, v_base),
+                Vector2::new(1.0, v_tip),
+                Vector2::new(0.0, v_tip),
+            );
         }
     }
 

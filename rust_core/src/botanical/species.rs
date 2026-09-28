@@ -61,6 +61,12 @@ pub struct SpeciesProfile {
     pub branch_curvature_up: f32,
     /// Cantidad típica de ramas primarias por piso/verticilo en el tronco.
     pub branches_per_whorl: usize,
+    /// Variación de longitud entre ramas primarias (0.0 a 0.50, e.g. 0.22 = +/-22%).
+    pub branch_length_variance: f32,
+    /// Variación de grosor/radio entre ramas primarias (0.0 a 0.50, e.g. 0.25 = +/-25%).
+    pub branch_radius_variance: f32,
+    /// Variación aleatoria del offset de bough en metros (e.g. 0.20 = +/-20%).
+    pub bough_offset_variance: f32,
 
     // --- Follaje y Racimos de Hojas ---
     pub foliage_type: FoliageType,
@@ -68,10 +74,21 @@ pub struct SpeciesProfile {
     pub leaf_cluster_size: f32,
     /// Cantidad de planos/tarjetas por cada racimo.
     pub cards_per_cluster: usize,
+    /// Distancia de separación (en metros) desde el inicio de la rama en el fuste/tronco
+    /// hasta donde brotan las tarjetas de follaje (boughs).
+    ///
+    /// - En árboles como el *Alnus acuminata*, las ramas primarias emergen despejadas
+    ///   mostrando su cuello leñoso (Branch Collar) y fuste despejado (1.2m a 1.8m),
+    ///   por lo que se calibra en 1.5m.
+    /// - En árboles más frondosos o arbustivos con follaje abundante desde el tronco,
+    ///   este valor se calibra en 0.0m (o valores menores según la especie).
+    pub bough_start_offset: f32,
 
     // --- Texturas y Colores PSX ---
     pub bark_texture_path: String,
     pub leaf_texture_path: String,
+    pub full_limb_texture_path: String,
+    pub unified_atlas_texture_path: String,
     pub bark_color: Color,
     pub leaf_color_tint: Color,
 }
@@ -109,13 +126,19 @@ impl SpeciesProfile {
             branch_collar_factor: 1.45,
             branch_curvature_up: 0.0, // Sag gravitacional gobierna la trayectoria
             branches_per_whorl: 3,
+            branch_length_variance: 0.22,
+            branch_radius_variance: 0.25,
+            bough_offset_variance: 0.20,
 
             foliage_type: FoliageType::DeciduousClusters,
             leaf_cluster_size: 0.95,
             cards_per_cluster: 2,
+            bough_start_offset: 1.5, // 1.5 metros despejados en la base de la rama (1.2 a 1.8m solicitado para Alnus)
 
             bark_texture_path: "res://assets/vegetation/alnus/alnus_bark.png".to_string(),
             leaf_texture_path: "res://assets/vegetation/alnus/alnus_bough_atlas.png".to_string(),
+            full_limb_texture_path: "res://assets/vegetation/alnus/alnus_full_bough_atlas.png".to_string(),
+            unified_atlas_texture_path: "res://assets/vegetation/alnus/alnus_unified_atlas.png".to_string(),
             bark_color: Color::from_rgb(0.38, 0.35, 0.30),
             leaf_color_tint: Color::from_rgb(0.38, 0.58, 0.22),
         }
@@ -147,13 +170,19 @@ impl SpeciesProfile {
             branch_collar_factor: 1.55,
             branch_curvature_up: 0.04,
             branches_per_whorl: 4,
+            branch_length_variance: 0.25,
+            branch_radius_variance: 0.30,
+            bough_offset_variance: 0.0,
 
             foliage_type: FoliageType::DeciduousClusters,
             leaf_cluster_size: 1.05,
             cards_per_cluster: 2,
+            bough_start_offset: 0.0, // Roble frondoso desde el tronco
 
             bark_texture_path: "res://assets/vegetation/alnus/alnus_bark.png".to_string(),
             leaf_texture_path: "res://assets/vegetation/alnus/alnus_bough_atlas.png".to_string(),
+            full_limb_texture_path: String::new(),
+            unified_atlas_texture_path: String::new(),
             bark_color: Color::from_rgb(0.34, 0.28, 0.22),
             leaf_color_tint: Color::from_rgb(0.35, 0.55, 0.20),
         }
@@ -185,13 +214,19 @@ impl SpeciesProfile {
             branch_collar_factor: 1.35,
             branch_curvature_up: 0.08,
             branches_per_whorl: 3,
+            branch_length_variance: 0.18,
+            branch_radius_variance: 0.18,
+            bough_offset_variance: 0.0,
 
             foliage_type: FoliageType::DeciduousClusters,
             leaf_cluster_size: 0.90,
             cards_per_cluster: 2,
+            bough_start_offset: 0.0,
 
             bark_texture_path: "res://assets/vegetation/alnus/alnus_bark.png".to_string(),
             leaf_texture_path: "res://assets/vegetation/alnus/alnus_bough_atlas.png".to_string(),
+            full_limb_texture_path: String::new(),
+            unified_atlas_texture_path: String::new(),
             bark_color: Color::from_rgb(0.72, 0.70, 0.65), // Corteza clara
             leaf_color_tint: Color::from_rgb(0.38, 0.58, 0.22),
         }
@@ -223,13 +258,19 @@ impl SpeciesProfile {
             branch_collar_factor: 1.40,
             branch_curvature_up: -0.15, // Sag gravitacional acentuado
             branches_per_whorl: 4,
+            branch_length_variance: 0.24,
+            branch_radius_variance: 0.22,
+            bough_offset_variance: 0.0,
 
             foliage_type: FoliageType::PendulousWillow,
             leaf_cluster_size: 1.10,
             cards_per_cluster: 2,
+            bough_start_offset: 0.0,
 
             bark_texture_path: "res://assets/vegetation/alnus/alnus_bark.png".to_string(),
             leaf_texture_path: "res://assets/vegetation/alnus/alnus_bough_atlas.png".to_string(),
+            full_limb_texture_path: String::new(),
+            unified_atlas_texture_path: String::new(),
             bark_color: Color::from_rgb(0.32, 0.28, 0.22),
             leaf_color_tint: Color::from_rgb(0.34, 0.54, 0.20),
         }
@@ -261,13 +302,19 @@ impl SpeciesProfile {
             branch_collar_factor: 1.45,
             branch_curvature_up: 0.0,
             branches_per_whorl: 3,
+            branch_length_variance: 0.30,
+            branch_radius_variance: 0.30,
+            bough_offset_variance: 0.0,
 
             foliage_type: FoliageType::DeciduousClusters,
             leaf_cluster_size: 0.0,
             cards_per_cluster: 0, // Cero hojas
+            bough_start_offset: 0.0,
 
             bark_texture_path: "res://assets/vegetation/alnus/alnus_bark.png".to_string(),
             leaf_texture_path: String::new(),
+            full_limb_texture_path: String::new(),
+            unified_atlas_texture_path: String::new(),
             bark_color: Color::from_rgb(0.24, 0.20, 0.17),
             leaf_color_tint: Color::from_rgb(0.0, 0.0, 0.0),
         }
