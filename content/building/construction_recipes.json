@@ -1,0 +1,74 @@
+{
+  "recipes": [
+    {
+      "id": "floor_wood",
+      "name": "Piso de Madera (1x1m)",
+      "element_type": 0,
+      "material_type": 0,
+      "base_cost": { "wood": 4 },
+      "requires_book": null,
+      "category": "floor",
+      "description": "Losa de entablado de madera modular de 1x1m."
+    },
+    {
+      "id": "floor_stone",
+      "name": "Piso de Piedra (1x1m)",
+      "element_type": 0,
+      "material_type": 1,
+      "base_cost": { "stone": 6 },
+      "requires_book": "book_masonry_volume_1",
+      "category": "floor",
+      "description": "Losa de piedra labrada sólida."
+    },
+    {
+      "id": "wall_wood",
+      "name": "Pared de Madera (1x1m)",
+      "element_type": 1,
+      "material_type": 0,
+      "base_cost": { "wood": 5 },
+      "requires_book": null,
+      "category": "wall",
+      "description": "Panel de pared de madera estándar."
+    },
+    {
+      "id": "wall_brick",
+      "name": "Pared de Ladrillo (1x1m)",
+      "element_type": 1,
+      "material_type": 2,
+      "base_cost": { "brick": 8, "mortar": 2 },
+      "requires_book": "book_architecture_brickwork",
+      "category": "wall",
+      "description": "Muro sólido de ladrillo y argamasa."
+    },
+    {
+      "id": "door_frame_wood",
+      "name": "Marco de Puerta (1x2.1m)",
+      "element_type": 3,
+      "material_type": 0,
+      "base_cost": { "wood": 3 },
+      "requires_book": null,
+      "category": "opening",
+      "description": "Marco para puerta estandarizada de 1x2.1m."
+    },
+    {
+      "id": "window_frame_wood",
+      "name": "Marco de Ventana (1x1m)",
+      "element_type": 4,
+      "material_type": 0,
+      "base_cost": { "wood": 3, "glass": 1 },
+      "requires_book": "book_carpentry_advanced",
+      "category": "opening",
+      "description": "Vano con marco de ventana y vidrio."
+    },
+    {
+      "id": "ceiling_wood",
+      "name": "Techo de Madera (1x1m)",
+      "element_type": 2,
+      "material_type": 0,
+      "base_cost": { "wood": 4 },
+      "requires_book": null,
+      "category": "ceiling",
+      "description": "Viga y cubierta superior para techumbre."
+    }
+  ]
+}

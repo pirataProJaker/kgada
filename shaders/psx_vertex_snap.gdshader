@@ -144,16 +144,20 @@ void fragment() {
 		if (use_vertex_dirt) {
 			dirt_amount = clamp(vertex_color.r, 0.0, 1.0);
 		} else if (use_procedural_biomes) {
-			float b1 = sin(snapped_pos.x * 0.018 + sin(snapped_pos.z * 0.014) * 1.2);
-			float b2 = sin(snapped_pos.z * 0.016 + sin(snapped_pos.x * 0.012) * 1.2);
+			// Escala macro regional (~2,000m por bioma extenso)
+			float b1 = sin(snapped_pos.x * 0.0031 + sin(snapped_pos.z * 0.0023) * 1.25);
+			float b2 = sin(snapped_pos.z * 0.0028 + sin(snapped_pos.x * 0.0021) * 1.25);
 			float biome_n = (b1 + b2) * 0.5;
-			dirt_amount = smoothstep(0.12, 0.40, biome_n);
+			dirt_amount = smoothstep(-0.05, 0.25, biome_n);
 		}
 
+		// El suelo es verde vivo y pastoso por defecto en todos los biomas.
+		// La tierra marrón aparece con muy baja probabilidad (solo pequeñas calvas y parches orgánicos sutiles).
 		vec3 ground_color = pixel_green;
 		if (dirt_amount > 0.001) {
-			float dither_thresh = dirt_amount + (h - 0.5) * 0.40;
-			if (dither_thresh > 0.50) {
+			float patch_noise = sin(snapped_pos.x * 0.07 + sin(snapped_pos.z * 0.05) * 1.5) * 0.5 + 0.5;
+			float dirt_chance = dirt_amount * 0.08 * patch_noise;
+			if (h < dirt_chance) {
 				ground_color = pixel_dirt;
 			}
 		}

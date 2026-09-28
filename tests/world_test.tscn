@@ -1,39 +1,57 @@
-[gd_scene load_steps=8 format=3]
+[gd_scene load_steps=15 format=3]
 
 [ext_resource type="Script" path="res://tests/world_test.gd" id="1_scr"]
 [ext_resource type="Shader" path="res://shaders/psx_dither.gdshader" id="2_dshdr"]
 [ext_resource type="Script" path="res://world/chunk_manager.gd" id="3_chunkmgr"]
-[ext_resource type="PackedScene" path="res://net/network_ui.tscn" id="4_netui"]
 [ext_resource type="Script" path="res://world/dog_spawner.gd" id="5_dogspawner"]
 [ext_resource type="Script" path="res://world/city/city_world_spawner.gd" id="6_cityspawner"]
 [ext_resource type="Script" path="res://world/zombie_population_manager.gd" id="7_zombiemanager"]
 [ext_resource type="Script" path="res://map_editor/modular_construction_manager.gd" id="8_construction"]
+[ext_resource type="Shader" path="res://shaders/procedural_math_sky.gdshader" id="9_mathsky"]
+[ext_resource type="Script" path="res://world/day_night_cycle.gd" id="10_daynight"]
+[ext_resource type="PackedScene" path="res://ui/pause_menu.tscn" id="11_pause"]
 
 [sub_resource type="ShaderMaterial" id="SM_1"]
 shader = ExtResource("2_dshdr")
 
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_sky"]
+shader = ExtResource("9_mathsky")
+
+[sub_resource type="Sky" id="Sky_day"]
+sky_material = SubResource("ShaderMaterial_sky")
+
 [sub_resource type="Environment" id="Environment_world"]
-background_mode = 1
-background_color = Color(0.22, 0.28, 0.3, 1)
-ambient_light_source = 2
-ambient_light_color = Color(0.58, 0.64, 0.68, 1)
-ambient_light_energy = 0.75
-fog_enabled = true
-fog_light_color = Color(0.32, 0.4, 0.43, 1)
-fog_light_energy = 0.85
-fog_density = 0.01
+background_mode = 2
+sky = SubResource("Sky_day")
+ambient_light_source = 3
+ambient_light_color = Color(0.68, 0.76, 0.85, 1)
+ambient_light_sky_contribution = 0.6
+ambient_light_energy = 0.95
+tonemap_mode = 2
+glow_enabled = true
+glow_intensity = 0.2
+glow_bloom = 0.08
+fog_enabled = false
 
 [node name="WorldTest" type="Node3D"]
 script = ExtResource("1_scr")
 
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
 transform = Transform3D(0.707, -0.5, 0.5, 0, 0.707, 0.707, -0.707, -0.5, 0.5, 0, 3, 0)
+light_color = Color(1, 0.96, 0.88, 1)
+light_energy = 1.35
 shadow_enabled = true
 directional_shadow_max_distance = 75.0
 directional_shadow_blend_splits = true
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
 environment = SubResource("Environment_world")
+
+[node name="DayNightCycle" type="Node3D" parent="."]
+script = ExtResource("10_daynight")
+cycle_duration = 30.0
+sun_path = NodePath("../DirectionalLight3D")
+world_env_path = NodePath("../WorldEnvironment")
 
 [node name="ChunkManager" type="Node3D" parent="."]
 script = ExtResource("3_chunkmgr")
@@ -65,4 +83,4 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
-[node name="NetworkUI" parent="." instance=ExtResource("4_netui")]
+[node name="PauseMenu" parent="." instance=ExtResource("11_pause")]

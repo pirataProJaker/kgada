@@ -17,6 +17,21 @@ const TYPES := {
 		"scene": "res://world/mobs/dog.tscn",
 		"visual_scene": "res://world/mobs/dog_visual.tscn",
 	},
+	"gato": {
+		"display_name": "Gato",
+		"scene": "res://world/mobs/cat.tscn",
+		"visual_scene": "res://world/mobs/cat_visual.tscn",
+	},
+	"zombi": {
+		"display_name": "Zombi",
+		"scene": "res://world/mobs/zombie.tscn",
+		"visual_scene": "res://world/mobs/zombie_visual.tscn",
+	},
+	"zombie": {
+		"display_name": "Zombi",
+		"scene": "res://world/mobs/zombie.tscn",
+		"visual_scene": "res://world/mobs/zombie_visual.tscn",
+	},
 }
 
 

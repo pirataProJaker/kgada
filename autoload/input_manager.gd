@@ -67,6 +67,10 @@ func get_movement_vector() -> Vector2:
 		var offset := _movement_touch_current - _movement_touch_origin
 		return offset.limit_length(TOUCH_JOYSTICK_MAX_RADIUS) / TOUCH_JOYSTICK_MAX_RADIUS
 
+	# Si el ratón no está capturado (chat abierto, menú de pausa, inventario), no mover con teclado
+	if Input.mouse_mode != Input.MOUSE_MODE_CAPTURED:
+		return Vector2.ZERO
+
 	var vec := Vector2.ZERO
 	vec.x = float(Input.is_physical_key_pressed(KEY_D) or Input.is_action_pressed("ui_right")) \
 		- float(Input.is_physical_key_pressed(KEY_A) or Input.is_action_pressed("ui_left"))
@@ -83,6 +87,6 @@ func get_movement_vector() -> Vector2:
 ## deltas. Mobile look deltas arrive via the `look_input` signal instead
 ## (right half of the screen, drag-to-look).
 func get_mouse_look_delta(event: InputEvent) -> Vector2:
-	if not is_touch_mode and event is InputEventMouseMotion:
+	if not is_touch_mode and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED and event is InputEventMouseMotion:
 		return event.relative * MOUSE_LOOK_SENSITIVITY
 	return Vector2.ZERO

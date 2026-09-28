@@ -122,14 +122,29 @@ var _flower_material: ShaderMaterial = null
 var _shared_terrain_material: ShaderMaterial = null
 
 
-## Ruido determinístico de biomas (idéntico al shader psx_vertex_snap.gdshader):
-## < 0.12 = Pradera / Meadow abierta (césped denso, flores abundantes, pocos árboles)
-## 0.12 a 0.40 = Transición / Arboleda (copses de árboles agrupados, césped medio)
-## >= 0.40 = Bosque denso (masa forestal continua de 10-14 árboles, mantillo de tierra)
+## Sistema de Biomas procedurales (determinístico y sincronizado con el shader de terreno):
+enum BiomeType {
+	MEADOW = 0,               ## Pradera abierta soleada: abundante césped, margaritas, lavandas, amapolas y rosales
+	FOREST_TALL_PINES = 1,    ## Bosque de Pinos Altos (Taiga Boreal): 100% coníferas gigantes (32-45m), mantillo de tierra oscura
+	FOREST_TRANSITION = 2,    ## Linde de transición entre pradera y bosque
+}
+
 static func get_biome_noise(wx: float, wz: float) -> float:
-	var b1 = sin(wx * 0.018 + sin(wz * 0.014) * 1.2)
-	var b2 = sin(wz * 0.016 + sin(wx * 0.012) * 1.2)
+	# Escala macro regional (~2,000m por bioma extenso):
+	var b1 = sin(wx * 0.0031 + sin(wz * 0.0023) * 1.25)
+	var b2 = sin(wz * 0.0028 + sin(wx * 0.0021) * 1.25)
 	return (b1 + b2) * 0.5
+
+
+## Devuelve el bioma clasificado para unas coordenadas de mundo dadas.
+static func get_biome_type(wx: float, wz: float) -> int:
+	var n := get_biome_noise(wx, wz)
+	if n < -0.05:
+		return BiomeType.MEADOW
+	elif n >= 0.15:
+		return BiomeType.FOREST_TALL_PINES
+	else:
+		return BiomeType.FOREST_TRANSITION
 
 
 func _get_grass_mesh() -> Mesh:
@@ -789,10 +804,12 @@ func _generate_chunk_data_threaded(
 		city_center.x, city_center.y, city_inner_radius, city_outer_radius, city_flat_height
 	)
 
-	# Determinar ecología del chunk según ruido de biomas (idéntico al shader de terreno)
+	# Determinar ecología del chunk según sistema de biomas (sincronizado con shader de terreno)
 	var chunk_center_x := origin_x + CHUNK_WORLD_SIZE * 0.5
 	var chunk_center_z := origin_z + CHUNK_WORLD_SIZE * 0.5
 	var center_biome := get_biome_noise(chunk_center_x, chunk_center_z)
+	var biome_type := get_biome_type(chunk_center_x, chunk_center_z)
+	data["biome_type"] = biome_type
 
 	# Precalcular posicion, altura y orientacion de arboles en este MISMO hilo de fondo
 	var rng := RandomNumberGenerator.new()
@@ -801,68 +818,36 @@ func _generate_chunk_data_threaded(
 	var tree_requests: Array[Dictionary] = []
 	if enable_trees:
 		var target_tree_count := 0
-		var cluster_centers: Array[Vector2] = []
-		var cluster_radii: Array[float] = []
+		var min_spacing_sq: float = 20.25 # 4.5m separación mínima por defecto en bosques
 
-		if center_biome >= 0.40:
-			# BOSQUE DENSO: 10 a 14 árboles agrupados formando masa forestal continua
-			target_tree_count = rng.randi_range(10, 14)
-			var c1 := Vector2(
-				origin_x + rng.randf_range(VEGETATION_MARGIN + 6.0, CHUNK_WORLD_SIZE - VEGETATION_MARGIN - 6.0),
-				origin_z + rng.randf_range(VEGETATION_MARGIN + 6.0, CHUNK_WORLD_SIZE - VEGETATION_MARGIN - 6.0)
-			)
-			cluster_centers.append(c1)
-			cluster_radii.append(rng.randf_range(7.0, 9.5))
-			if target_tree_count > 11:
-				var c2 := Vector2(
-					origin_x + rng.randf_range(VEGETATION_MARGIN + 5.0, CHUNK_WORLD_SIZE - VEGETATION_MARGIN - 5.0),
-					origin_z + rng.randf_range(VEGETATION_MARGIN + 5.0, CHUNK_WORLD_SIZE - VEGETATION_MARGIN - 5.0)
-				)
-				cluster_centers.append(c2)
-				cluster_radii.append(rng.randf_range(6.0, 8.5))
-		elif center_biome >= 0.12:
-			# ARBOLEDA / TRANSICIÓN: 3 a 5 árboles agrupados en un bosquecillo pequeño
-			target_tree_count = rng.randi_range(3, 5)
-			var c := Vector2(
-				origin_x + rng.randf_range(VEGETATION_MARGIN + 5.0, CHUNK_WORLD_SIZE - VEGETATION_MARGIN - 5.0),
-				origin_z + rng.randf_range(VEGETATION_MARGIN + 5.0, CHUNK_WORLD_SIZE - VEGETATION_MARGIN - 5.0)
-			)
-			cluster_centers.append(c)
-			cluster_radii.append(rng.randf_range(4.0, 6.5))
-		else:
-			# PRADERA / MEADOW ABIERTO: claros limpios, casi sin árboles.
-			# Ocasionalmente 1 árbol solitario majestuoso en loma alta (probabilidad 35%)
-			if rng.randf() < 0.35:
-				target_tree_count = 1
-				var c := Vector2(
-					origin_x + rng.randf_range(VEGETATION_MARGIN + 8.0, CHUNK_WORLD_SIZE - VEGETATION_MARGIN - 8.0),
-					origin_z + rng.randf_range(VEGETATION_MARGIN + 8.0, CHUNK_WORLD_SIZE - VEGETATION_MARGIN - 8.0)
-				)
-				cluster_centers.append(c)
-				cluster_radii.append(2.0)
-			else:
-				target_tree_count = 0
+		match biome_type:
+			BiomeType.FOREST_TALL_PINES:
+				# BIOMA BOSQUE DE PINOS ALTOS (Taiga Boreal):
+				# Masa forestal colosal y natural distribuida orgánicamente por todo el terreno
+				target_tree_count = rng.randi_range(15, 20)
+				min_spacing_sq = 20.25 # 4.5m entre troncos para arboleda transitable y sin solapamiento
+
+			BiomeType.FOREST_TRANSITION:
+				# LINDE / BORDE DE BOSQUE: transición gradual de 6 a 10 árboles
+				target_tree_count = rng.randi_range(6, 10)
+				min_spacing_sq = 16.0 # 4.0m
+
+			BiomeType.MEADOW:
+				# PRADERA / MEADOW ABIERTO: valles verdes limpios y soleados (0 árboles el 75% de las veces)
+				# 25% de probabilidad de 1 árbol solitario majestuoso en loma
+				if rng.randf() < 0.25:
+					target_tree_count = 1
+					min_spacing_sq = 9.0
+				else:
+					target_tree_count = 0
 
 		var attempts := 0
-		var max_attempts := target_tree_count * 5 + 10
+		var max_attempts := target_tree_count * 15 + 35
 		while tree_requests.size() < target_tree_count and attempts < max_attempts:
 			attempts += 1
-			var wx: float
-			var wz: float
-			if not cluster_centers.is_empty():
-				var c_idx := rng.randi_range(0, cluster_centers.size() - 1)
-				var center_pt: Vector2 = cluster_centers[c_idx]
-				var rad: float = cluster_radii[c_idx]
-				var angle := rng.randf() * TAU
-				var dist := sqrt(rng.randf()) * rad
-				wx = center_pt.x + cos(angle) * dist
-				wz = center_pt.y + sin(angle) * dist
-			else:
-				wx = origin_x + rng.randf_range(VEGETATION_MARGIN, CHUNK_WORLD_SIZE - VEGETATION_MARGIN)
-				wz = origin_z + rng.randf_range(VEGETATION_MARGIN, CHUNK_WORLD_SIZE - VEGETATION_MARGIN)
-
-			wx = clampf(wx, origin_x + VEGETATION_MARGIN, origin_x + CHUNK_WORLD_SIZE - VEGETATION_MARGIN)
-			wz = clampf(wz, origin_z + VEGETATION_MARGIN, origin_z + CHUNK_WORLD_SIZE - VEGETATION_MARGIN)
+			# Distribución orgánica uniforme en todo el chunk (sin forzar en círculos artificiales)
+			var wx := origin_x + rng.randf_range(VEGETATION_MARGIN, CHUNK_WORLD_SIZE - VEGETATION_MARGIN)
+			var wz := origin_z + rng.randf_range(VEGETATION_MARGIN, CHUNK_WORLD_SIZE - VEGETATION_MARGIN)
 
 			if city_inner_radius > 0.0:
 				var cdx := wx - city_center.x
@@ -870,13 +855,13 @@ func _generate_chunk_data_threaded(
 				if cdx * cdx + cdz * cdz <= city_inner_radius * city_inner_radius:
 					continue
 
-			# Evitar solapamiento de troncos (mínimo 2.2m)
+			# Evitar solapamiento de troncos (distribución tipo disco Poisson orgánica)
 			var too_close := false
 			for req in tree_requests:
 				var epos: Vector3 = req["pos"]
 				var tdx := wx - epos.x
 				var tdz := wz - epos.z
-				if tdx * tdx + tdz * tdz < 4.84:
+				if tdx * tdx + tdz * tdz < min_spacing_sq:
 					too_close = true
 					break
 			if too_close:
@@ -895,43 +880,48 @@ func _generate_chunk_data_threaded(
 			if normal.dot(Vector3.UP) < VEGETATION_MIN_SLOPE_DOT:
 				continue
 
-			var selected_profile_id := "classic_oak"
-			if center_biome < 0.12:
-				selected_profile_id = "pine_boreal" if rng.randf() < 0.55 else "alnus_acuminata"
-			elif center_biome >= 0.40:
-				var roll := rng.randf()
-				if roll < 0.35:
-					selected_profile_id = "pine_boreal"
-				elif roll < 0.60:
-					selected_profile_id = "classic_oak"
-				elif roll < 0.80:
-					selected_profile_id = "alnus_acuminata"
-				elif roll < 0.92:
-					selected_profile_id = "autumn_birch"
-				else:
-					selected_profile_id = "dead_tree"
-			else:
-				var roll := rng.randf()
-				if roll < 0.30:
-					selected_profile_id = "classic_oak"
-				elif roll < 0.60:
-					selected_profile_id = "alnus_acuminata"
-				elif roll < 0.80:
-					selected_profile_id = "autumn_birch"
-				elif roll < 0.92:
-					selected_profile_id = "weeping_willow"
-				else:
-					selected_profile_id = "pine_boreal"
+			var selected_profile_id := "pine_boreal"
+			var height_scale := 1.0
+			var canopy_spread := 1.0
 
-			var height_scale := rng.randf_range(0.85, 1.25)
-			var canopy_spread := rng.randf_range(0.85, 1.20)
-			if center_biome < 0.12 and target_tree_count == 1:
-				height_scale *= 1.25
-				canopy_spread *= 1.20
+			match biome_type:
+				BiomeType.FOREST_TALL_PINES:
+					# 100% Pinos Altos Boreales con variabilidad natural de alturas multi-estrato
+					selected_profile_id = "pine_boreal"
+					var tier_roll := rng.randf()
+					if tier_roll < 0.60:
+						# 60% Pinos colosales maduros dominantes (33m a 43m)
+						height_scale = rng.randf_range(0.95, 1.25)
+						canopy_spread = rng.randf_range(0.90, 1.10)
+					elif tier_roll < 0.85:
+						# 25% Pinos medianos en desarrollo (26m a 32m)
+						height_scale = rng.randf_range(0.75, 0.90)
+						canopy_spread = rng.randf_range(0.75, 0.90)
+					else:
+						# 15% Pinos jóvenes de sotobosque (19m a 25m)
+						height_scale = rng.randf_range(0.55, 0.70)
+						canopy_spread = rng.randf_range(0.60, 0.80)
+
+				BiomeType.FOREST_TRANSITION:
+					# En la linde: 80% pinos de borde, 20% aliso o roble
+					if rng.randf() < 0.80:
+						selected_profile_id = "pine_boreal"
+						height_scale = rng.randf_range(0.75, 1.05)
+						canopy_spread = rng.randf_range(0.80, 1.05)
+					else:
+						selected_profile_id = "alnus_acuminata" if rng.randf() < 0.5 else "classic_oak"
+						height_scale = rng.randf_range(0.90, 1.15)
+						canopy_spread = rng.randf_range(0.90, 1.15)
+
+				BiomeType.MEADOW:
+					# Árbol solitario en pradera abierta: roble o aliso majestuoso
+					selected_profile_id = "classic_oak" if rng.randf() < 0.60 else "alnus_acuminata"
+					height_scale = rng.randf_range(1.10, 1.30)
+					canopy_spread = rng.randf_range(1.10, 1.25)
 
 			var scale_vec := Vector3(canopy_spread, height_scale, canopy_spread)
-			var tilt_x := rng.randf_range(-0.055, 0.055)
-			var tilt_z := rng.randf_range(-0.055, 0.055)
+			var tilt_x := rng.randf_range(-0.045, 0.045)
+			var tilt_z := rng.randf_range(-0.045, 0.045)
 
 			tree_requests.append({
 				"profile_id": selected_profile_id,
@@ -949,12 +939,13 @@ func _generate_chunk_data_threaded(
 	var grass_requests: Array[Dictionary] = []
 	if enable_grass and _generator != null:
 		var target_grass_count := 0
-		if center_biome < 0.12:
-			target_grass_count = rng.randi_range(110, 150)
-		elif center_biome < 0.40:
-			target_grass_count = rng.randi_range(40, 65)
-		else:
-			target_grass_count = rng.randi_range(10, 18)
+		match biome_type:
+			BiomeType.MEADOW:
+				target_grass_count = rng.randi_range(110, 150)
+			BiomeType.FOREST_TRANSITION:
+				target_grass_count = rng.randi_range(50, 75)
+			BiomeType.FOREST_TALL_PINES:
+				target_grass_count = rng.randi_range(55, 80) # Abundante césped alpino verde en el suelo del bosque
 
 		for i in target_grass_count:
 			if _generator == null:
@@ -999,12 +990,13 @@ func _generate_chunk_data_threaded(
 	var flower_requests: Array[Dictionary] = []
 	if enable_wildflowers and _generator != null:
 		var target_flower_count := 0
-		if center_biome < 0.12:
-			target_flower_count = rng.randi_range(40, 65)
-		elif center_biome < 0.40:
-			target_flower_count = rng.randi_range(10, 18)
-		else:
-			target_flower_count = 0
+		match biome_type:
+			BiomeType.MEADOW:
+				target_flower_count = rng.randi_range(40, 65)
+			BiomeType.FOREST_TRANSITION:
+				target_flower_count = rng.randi_range(8, 16)
+			BiomeType.FOREST_TALL_PINES:
+				target_flower_count = 0 # Sin flores de pradera en la espesura del bosque de pinos altos
 
 		for i in target_flower_count:
 			if _generator == null:
@@ -1066,12 +1058,13 @@ func _generate_chunk_data_threaded(
 	var rose_requests: Array[Dictionary] = []
 	if enable_roses and _generator != null:
 		var target_rose_count := 0
-		if center_biome < 0.12:
-			target_rose_count = rng.randi_range(2, 4)
-		elif center_biome < 0.40:
-			target_rose_count = rng.randi_range(1, 2)
-		else:
-			target_rose_count = 0
+		match biome_type:
+			BiomeType.MEADOW:
+				target_rose_count = rng.randi_range(2, 4)
+			BiomeType.FOREST_TRANSITION:
+				target_rose_count = rng.randi_range(0, 1)
+			BiomeType.FOREST_TALL_PINES:
+				target_rose_count = 0 # Sin rosales dentro del pinar denso
 
 		for i in target_rose_count:
 			if _generator == null:

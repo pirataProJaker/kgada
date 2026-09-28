@@ -109,5 +109,10 @@ func _on_vsync_changed(enabled: bool) -> void:
 	SettingsManager.apply_graphics()
 
 
+signal back_requested
+
 func _on_back_pressed() -> void:
-	get_tree().change_scene_to_file("res://ui/main_menu.tscn")
+	if back_requested.get_connections().size() > 0:
+		back_requested.emit()
+	else:
+		get_tree().change_scene_to_file("res://ui/main_menu.tscn")

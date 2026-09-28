@@ -1,0 +1,155 @@
+[gd_scene format=3 uid="uid://b2krdofrvpuo7"]
+
+[ext_resource type="Script" path="res://tests/test_building_system_node.gd" id="1_test"]
+[ext_resource type="Script" uid="uid://d0xxwge3wq7ir" path="res://ui/building/building_radial_menu.gd" id="2_radial"]
+[ext_resource type="Script" uid="uid://dyvqril4yamjv" path="res://ui/building/building_catalog_menu.gd" id="3_catalog"]
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_1"]
+sky_top_color = Color(0.2, 0.45, 0.8, 1)
+sky_horizon_color = Color(0.65, 0.75, 0.85, 1)
+ground_bottom_color = Color(0.12, 0.15, 0.18, 1)
+ground_horizon_color = Color(0.65, 0.75, 0.85, 1)
+
+[sub_resource type="Sky" id="Sky_1"]
+sky_material = SubResource("ProceduralSkyMaterial_1")
+
+[sub_resource type="Environment" id="Environment_1"]
+background_mode = 2
+sky = SubResource("Sky_1")
+ambient_light_source = 3
+ambient_light_color = Color(0.6, 0.7, 0.85, 1)
+ambient_light_energy = 1.2
+tonemap_mode = 2
+glow_enabled = true
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ground"]
+albedo_color = Color(0.25, 0.3, 0.2, 1)
+roughness = 0.9
+
+[node name="TestBuildingSystem" type="Node3D" unique_id=505003767]
+script = ExtResource("1_test")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1931714128]
+environment = SubResource("Environment_1")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=187700240]
+transform = Transform3D(0.707107, -0.40558, 0.579228, 0, 0.819152, -0.573576, 0.707107, 0.40558, 0.579228, 0, 10, 0)
+shadow_enabled = true
+
+[node name="Ground" type="CSGBox3D" parent="." unique_id=864366003]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.1, 0)
+use_collision = true
+size = Vector3(50, 0.2, 50)
+material = SubResource("StandardMaterial3D_ground")
+
+[node name="PlacedPanelsContainer" type="Node3D" parent="." unique_id=2038016683]
+
+[node name="UI" type="CanvasLayer" parent="." unique_id=1255276684]
+
+[node name="Crosshair" type="Label" parent="UI" unique_id=1051183383]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -10.0
+offset_top = -15.0
+offset_right = 10.0
+offset_bottom = 15.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(1, 1, 1, 0.8)
+theme_override_font_sizes/font_size = 20
+text = "+"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="HUDPanel" type="PanelContainer" parent="UI" unique_id=83060736]
+offset_left = 20.0
+offset_top = 20.0
+offset_right = 460.0
+offset_bottom = 240.0
+
+[node name="MarginContainer" type="MarginContainer" parent="UI/HUDPanel" unique_id=320346210]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 12
+
+[node name="HUDLabel" type="RichTextLabel" parent="UI/HUDPanel/MarginContainer" unique_id=1210929599]
+unique_name_in_owner = true
+layout_mode = 2
+bbcode_enabled = true
+text = "[b][color=#4fc3f7]🔨 MODO PRIMERA PERSONA - CONSTRUCCIÓN PSX[/color][/b]
+[color=#e0e0e0]• [b]WASD + Ratón:[/b] Movimiento en 1ª Persona
+• [b]Clic Derecho:[/b] Rueda Selectora
+• [b]Clic Izquierdo:[/b] Puntos 1 y 2 (Trazado Cimentación)
+• [b]Mirar Trazado + [E]:[/b] Madera | [b][F]:[/b] Piedra
+• [b]Teclas 1/2/3:[/b] Palo / Libro / Plano[/color]"
+
+[node name="BuildingRadialMenu" type="Control" parent="UI" unique_id=1660866190]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 300.0
+offset_bottom = 300.0
+script = ExtResource("2_radial")
+
+[node name="BuildingCatalogMenu" type="Control" parent="UI" unique_id=112233474]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("3_catalog")
+
+[node name="Panel" type="Panel" parent="UI/BuildingCatalogMenu" unique_id=1834674726]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -250.0
+offset_top = -180.0
+offset_right = 250.0
+offset_bottom = 180.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Title" type="Label" parent="UI/BuildingCatalogMenu/Panel" unique_id=910662903]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 35.0
+grow_horizontal = 2
+text = "Catálogo Completo de Construcción"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="ScrollContainer" type="ScrollContainer" parent="UI/BuildingCatalogMenu/Panel" unique_id=1905785194]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 15.0
+offset_top = 45.0
+offset_right = -15.0
+offset_bottom = -15.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="GridContainer" type="GridContainer" parent="UI/BuildingCatalogMenu/Panel/ScrollContainer" unique_id=836425914]
+layout_mode = 2
+columns = 4
+
+[node name="CloseButton" type="Button" parent="UI/BuildingCatalogMenu/Panel" unique_id=1529681594]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -30.0
+offset_bottom = 30.0
+grow_horizontal = 0
+text = "X"

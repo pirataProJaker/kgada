@@ -303,9 +303,9 @@ func _update_hud() -> void:
 	if label_lod:
 		var lod_str := "AUTO (Distancia)"
 		match _forced_lod:
-			0: lod_str = "FORZADO: LOD 0 (Alta calidad)"
-			1: lod_str = "FORZADO: LOD 1 (Prisma 3D + Planos)"
-			2: lod_str = "FORZADO: LOD 2 (Triángulo 2D)"
+			0: lod_str = "FORZADO: LOD 0 (Alta calidad 3D)"
+			1: lod_str = "FORZADO: LOD 1 (Cross-Quad 3D Fotográfico)"
+			2: lod_str = "FORZADO: LOD 2 (Cross-Quad Ultraligero)"
 		
 		var t0: int = active_plant.get_triangle_count_lod(0)
 		var t1: int = active_plant.get_triangle_count_lod(1)

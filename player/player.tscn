@@ -1,4 +1,4 @@
-[gd_scene load_steps=9 format=3]
+[gd_scene load_steps=10 format=3]
 
 [ext_resource type="Script" path="res://player/player.gd" id="1_scr"]
 [ext_resource type="Script" path="res://player/placement_controller.gd" id="2_placement"]
@@ -8,6 +8,7 @@
 [ext_resource type="Script" path="res://player/melee_controller.gd" id="6_melee"]
 [ext_resource type="Script" path="res://player/interact_controller.gd" id="7_interact"]
 [ext_resource type="Script" path="res://player/player_stats.gd" id="8_stats"]
+[ext_resource type="Script" path="res://player/vectorial_construction_controller.gd" id="9_vectorial"]
 
 [sub_resource type="CapsuleShape3D" id="Capsule_1"]
 radius = 0.4
@@ -46,3 +47,7 @@ script = ExtResource("6_melee")
 
 [node name="InteractController" type="Node" parent="."]
 script = ExtResource("7_interact")
+
+[node name="VectorialConstructionController" type="Node" parent="."]
+script = ExtResource("9_vectorial")
+

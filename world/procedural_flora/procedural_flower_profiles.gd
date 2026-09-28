@@ -38,7 +38,7 @@ const PROFILES: Dictionary = {
 		"is_rose": true,
 		"min_height": 0.42,
 		"max_height": 0.50,
-		"stem_radius": 0.0055,
+		"stem_radius": 0.0045, # Tallo elegante y firme (~9 mm de diámetro)
 		"stem_color": Color(0.035, 0.18, 0.045),
 		"stem_woody_color": Color(0.14, 0.07, 0.04),
 		"leaf_color": Color(0.038, 0.22, 0.055),
@@ -48,7 +48,7 @@ const PROFILES: Dictionary = {
 		"thorn_color": Color(0.48, 0.12, 0.10),
 		"flower_count_min": 1,
 		"flower_count_max": 1,
-		"flower_radius": 0.068, # 13.6 cm de diámetro y 8.5 cm de altura (flor voluptuosa real)
+		"flower_radius": 0.068, # 13.6 cm de diámetro (rosa voluptuosa)
 		"petal_layers": 5,
 		"petal_count": 8,
 		"color_palettes": ROSE_PALETTES,
@@ -67,7 +67,7 @@ const PROFILES: Dictionary = {
 		"is_rose": true,
 		"min_height": 0.76,
 		"max_height": 1.00,
-		"stem_radius": 0.0075,
+		"stem_radius": 0.0065, # Caña leñosa firme y proporcionada (~1.3 cm de diámetro)
 		"stem_color": Color(0.035, 0.18, 0.045),
 		"stem_woody_color": Color(0.12, 0.06, 0.03),
 		"leaf_color": Color(0.038, 0.22, 0.055),
@@ -77,7 +77,7 @@ const PROFILES: Dictionary = {
 		"thorn_color": Color(0.44, 0.10, 0.08),
 		"flower_count_min": 10,
 		"flower_count_max": 16,
-		"flower_radius": 0.060, # 12 cm de diámetro (escala ideal para flores múltiples en arbusto)
+		"flower_radius": 0.060, # 12 cm de diámetro
 		"petal_layers": 5,
 		"petal_count": 8,
 		"color_palettes": ROSE_PALETTES,

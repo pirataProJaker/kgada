@@ -2,6 +2,7 @@ shader_type spatial;
 render_mode cull_disabled, depth_draw_opaque;
 
 uniform sampler2D texture_albedo : source_color, filter_linear_mipmap_anisotropic;
+uniform vec4 foliage_tint : source_color = vec4(1.0, 1.0, 1.0, 1.0);
 uniform float alpha_scissor_threshold : hint_range(0.0, 1.0) = 0.25;
 uniform float backlight_energy : hint_range(0.0, 2.0) = 0.45;
 
@@ -23,12 +24,13 @@ void fragment() {
 	// se dispare al 100% (Fresnel = 1.0) creando brillos plateados tipo espejo.
 	NORMAL = FRONT_FACING ? NORMAL : -NORMAL;
 
-	ALBEDO = tex.rgb;
+	vec3 base_col = tex.rgb * foliage_tint.rgb;
+	ALBEDO = base_col;
 	ROUGHNESS = 0.88;
 	SPECULAR = 0.08; // Materia orgánica vegetal, no plástico reflectante ni metal
 	METALLIC = 0.0;
 	
 	// Translúcencia botánica (sub-surface scattering) a contraluz solar:
 	// La luz solar se filtra naturalmente a través de las hojas verdes
-	BACKLIGHT = tex.rgb * backlight_energy;
+	BACKLIGHT = base_col * backlight_energy;
 }

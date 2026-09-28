@@ -9,6 +9,7 @@ extends Node3D
 const FlowerProfiles = preload("res://world/procedural_flora/procedural_flower_profiles.gd")
 const FlowerGenerator = preload("res://world/procedural_flora/procedural_flower_generator.gd")
 const FlowerShader = preload("res://world/procedural_flora/flower_shader.gdshader")
+const RoseAtlasTexture = preload("res://world/procedural_flora/rose_atlas.png")
 
 signal stage_changed(stage_name: String)
 signal bloom_completed()
@@ -385,6 +386,8 @@ func _update_forced_lod_visibility() -> void:
 func _update_shader_params() -> void:
 	var h := maxf(_current_height, 0.1)
 	var w_str := wind_strength if wind_enabled else 0.0
+	var profile: Dictionary = FlowerProfiles.get_profile(profile_id)
+	var is_rose: bool = profile.get("is_rose", false)
 	
 	if _material_veg:
 		_material_veg.set_shader_parameter("plant_max_height", h)
@@ -393,14 +396,26 @@ func _update_shader_params() -> void:
 		_material_veg.set_shader_parameter("backlight_tint", Vector3(0.06, 0.28, 0.04))
 		_material_veg.set_shader_parameter("roughness", 0.82)
 		_material_veg.set_shader_parameter("specular", 0.03)
+		if is_rose:
+			_material_veg.set_shader_parameter("use_texture", true)
+			_material_veg.set_shader_parameter("albedo_texture", RoseAtlasTexture)
+			_material_veg.set_shader_parameter("alpha_scissor_threshold", 0.45)
+		else:
+			_material_veg.set_shader_parameter("use_texture", false)
 	
 	if _material_flower:
 		_material_flower.set_shader_parameter("plant_max_height", h)
 		_material_flower.set_shader_parameter("wind_strength", w_str)
 		_material_flower.set_shader_parameter("wind_speed", 2.2)
-		_material_flower.set_shader_parameter("backlight_tint", Vector3(0.48, 0.18, 0.18))
+		_material_flower.set_shader_parameter("backlight_tint", Vector3(0.35, 0.35, 0.35))
 		_material_flower.set_shader_parameter("roughness", 0.48)
 		_material_flower.set_shader_parameter("specular", 0.18)
+		if is_rose:
+			_material_flower.set_shader_parameter("use_texture", true)
+			_material_flower.set_shader_parameter("albedo_texture", RoseAtlasTexture)
+			_material_flower.set_shader_parameter("alpha_scissor_threshold", 0.45)
+		else:
+			_material_flower.set_shader_parameter("use_texture", false)
 
 func _update_collision() -> void:
 	# Limpiar colisión existente

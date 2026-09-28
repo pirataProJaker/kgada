@@ -1,0 +1,52 @@
+{
+  "tools": {
+    "stick_tool": {
+      "id": "stick_tool",
+      "name": "Palo de Trazado",
+      "description": "Un simple palo para raspar la tierra y marcar las líneas de obra.",
+      "craft_cost": {
+        "wood": 1
+      },
+      "material_savings": 0.0,
+      "marker_type": "dirt_scrape",
+      "marker_config": {
+        "color": "#4a3525",
+        "mound_height": 0.12,
+        "width": 0.14
+      }
+    },
+    "stake_rope_tool": {
+      "id": "stake_rope_tool",
+      "name": "Cuaderno y Estacas",
+      "description": "Estacas de madera y cuerda tensada para medir con mayor precisión geométrica.",
+      "craft_cost": {
+        "wood": 4,
+        "rope": 2,
+        "paper": 1
+      },
+      "material_savings": 0.08,
+      "marker_type": "stake_rope",
+      "marker_config": {
+        "stake_height": 0.45,
+        "rope_color": "#d9b382",
+        "rope_thickness": 0.02
+      }
+    },
+    "blueprint_tool": {
+      "id": "blueprint_tool",
+      "name": "Plano de Arquitecto",
+      "description": "Planos técnicos y líneas maestras de cal blanca en polvo para máxima optimización y ahorro.",
+      "craft_cost": {
+        "paper": 2,
+        "cal_powder": 2
+      },
+      "material_savings": 0.15,
+      "marker_type": "cal_line",
+      "marker_config": {
+        "color": "#f8f9fa",
+        "line_width": 0.08,
+        "opacity": 0.95
+      }
+    }
+  }
+}

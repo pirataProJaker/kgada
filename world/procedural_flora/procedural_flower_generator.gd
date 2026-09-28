@@ -7,6 +7,24 @@ extends RefCounted
 
 const FlowerProfiles = preload("res://world/procedural_flora/procedural_flower_profiles.gd")
 
+# Coordenadas UV del Atlas Fotográfico de Rosas (world/procedural_flora/rose_atlas.png)
+const ROSE_UV_PETAL_0 := Rect2(0.00488, 0.05389, 0.08398, 0.52695)      # Pétalo exterior grande
+const ROSE_UV_PETAL_1 := Rect2(0.09766, 0.10180, 0.06250, 0.47305)      # Pétalo medio arqueado
+const ROSE_UV_PETAL_2 := Rect2(0.16699, 0.16168, 0.06543, 0.40719)      # Pétalo copa interior
+const ROSE_UV_PETAL_3 := Rect2(0.24219, 0.16766, 0.05371, 0.41317)      # Pétalo lateral enrollado
+const ROSE_UV_PETAL_4 := Rect2(0.30566, 0.26347, 0.02930, 0.28743)      # Pétalo pequeño corazón/capullo
+const ROSE_UV_LEAF_BRANCH_5 := Rect2(0.34570, 0.02395, 0.09082, 0.93413) # Rama compuesta 5 foliolos
+const ROSE_UV_LEAF_BRANCH_3 := Rect2(0.44824, 0.13772, 0.07129, 0.83832) # Rama compuesta 3 foliolos
+const ROSE_UV_LEAF_SINGLE := Rect2(0.53125, 0.12575, 0.06250, 0.75449)   # Hoja individual serrada
+const ROSE_UV_STEM_THIN := Rect2(0.60840, 0.21557, 0.01074, 0.60479)     # Tallo fino / pecíolo
+const ROSE_UV_STEM_MED := Rect2(0.63770, 0.21557, 0.02734, 0.60479)      # Tallo mediano
+const ROSE_UV_STEM_THICK := Rect2(0.68262, 0.15569, 0.02539, 0.69461)    # Tallo grueso con espinas
+const ROSE_UV_BLOOM_TOP := Rect2(0.72070, 0.09581, 0.11914, 0.71257)     # Rosa completa cenital (top-down)
+const ROSE_UV_BLOOM_SIDE := Rect2(0.84961, 0.04790, 0.12500, 0.73054)    # Rosa completa perfil (side 3/4)
+
+static func _map_uv(rect: Rect2, u: float, v: float) -> Vector2:
+	return Vector2(rect.position.x + rect.size.x * clampf(u, 0.0, 1.0), rect.position.y + rect.size.y * clampf(v, 0.0, 1.0))
+
 class GenerationResult:
 	var mesh: ArrayMesh
 	var height: float
@@ -187,14 +205,13 @@ static func _generate_solitary_rose(st_veg: SurfaceTool, st_flower: SurfaceTool,
 		_build_billboard_stem(st_veg, stem_pts, profile["stem_radius"] * 1.1, profile["stem_woody_color"], profile["stem_color"])
 		# Hojas en triángulos 2D billboard
 		_build_rose_compound_foliage_lod(st_veg, p0, p3, profile, growth, 1)
-		# Flor terminal como Prisma Pentagonal 3D con sombreado de rosa rico o Capullo cerrado
+		# Flor terminal como Cross-Quad 3D fotorrealista con textura real de rosa
 		if growth > stages["veg_end"]:
 			if growth <= stages["bud_end"]:
-				_build_bud_billboard_quad(st_flower, p3, profile["flower_radius"] * 0.55, flower_color)
+				_build_rose_bud_lod1_cross_quad(st_flower, p3, up_dir, profile["flower_radius"] * 0.55, flower_color)
 			else:
-				var r: float = profile["flower_radius"] * 1.28 * clampf(growth, 0.5, 1.0)
-				var h: float = profile["flower_radius"] * 1.55 * clampf(growth, 0.5, 1.0)
-				_build_pentagon_prism_flower(st_flower, p3, up_dir, r, h, flower_color)
+				var r: float = profile["flower_radius"] * 1.15 * clampf(growth, 0.5, 1.0)
+				_build_rose_lod1_cross_quad(st_flower, p3, up_dir, r, flower_color)
 			result.flower_count = 1
 			result.flower_positions.append(p3)
 	else: # lod_level >= 2
@@ -202,13 +219,13 @@ static func _generate_solitary_rose(st_veg: SurfaceTool, st_flower: SurfaceTool,
 		_build_billboard_stem(st_veg, [p0, p2, p3], profile["stem_radius"] * 1.2, profile["stem_woody_color"], profile["stem_color"])
 		# Hojas en triángulo 2D billboard
 		_build_rose_compound_foliage_lod(st_veg, p0, p3, profile, growth, 2)
-		# Flor terminal como 1 solo triángulo 2D billboard con resalte y terciopelo
+		# Flor terminal como Cross-Quad ultraligero de 2 quads con textura real de rosa (4 tris)
 		if growth > stages["veg_end"]:
 			if growth <= stages["bud_end"]:
-				_build_bud_billboard_triangle(st_flower, p3, profile["flower_radius"] * 0.55, flower_color)
+				_build_rose_bud_lod2_billboard(st_flower, p3, up_dir, profile["flower_radius"] * 0.55, flower_color)
 			else:
-				var r: float = profile["flower_radius"] * 1.25 * clampf(growth, 0.5, 1.0)
-				_build_triangle_billboard_flower(st_flower, p3, r, flower_color)
+				var r: float = profile["flower_radius"] * 1.15 * clampf(growth, 0.5, 1.0)
+				_build_rose_lod2_cross_quad(st_flower, p3, up_dir, r, flower_color)
 			result.flower_count = 1
 			result.flower_positions.append(p3)
 
@@ -359,17 +376,16 @@ static func _generate_shrub_rose(st_veg: SurfaceTool, st_flower: SurfaceTool, pr
 							_build_rose_bloom(st_flower, branch_tip, b_up, profile, rng, growth, stages, flower_color, scale_f)
 					elif lod_level == 1:
 						if is_lat_bud:
-							_build_bud_billboard_quad(st_flower, branch_tip, profile["flower_radius"] * 0.50, flower_color)
+							_build_rose_bud_lod1_cross_quad(st_flower, branch_tip, b_up, profile["flower_radius"] * 0.50, flower_color)
 						else:
 							var r_lat: float = profile["flower_radius"] * 1.15 * clampf(growth, 0.5, 1.0)
-							var h_lat: float = profile["flower_radius"] * 1.40 * clampf(growth, 0.5, 1.0)
-							_build_pentagon_prism_flower(st_flower, branch_tip, b_up, r_lat, h_lat, flower_color)
+							_build_rose_lod1_cross_quad(st_flower, branch_tip, b_up, r_lat, flower_color)
 					else: # lod_level >= 2
 						if is_lat_bud:
-							_build_bud_billboard_triangle(st_flower, branch_tip, profile["flower_radius"] * 0.50, flower_color)
+							_build_rose_bud_lod2_billboard(st_flower, branch_tip, b_up, profile["flower_radius"] * 0.50, flower_color)
 						else:
 							var r_lat: float = profile["flower_radius"] * 1.15 * clampf(growth, 0.5, 1.0)
-							_build_triangle_billboard_flower(st_flower, branch_tip, r_lat, flower_color)
+							_build_rose_lod2_cross_quad(st_flower, branch_tip, b_up, r_lat, flower_color)
 		
 		# Flor terminal en la punta de la caña
 		if growth > float(stages["veg_end"]):
@@ -391,17 +407,16 @@ static func _generate_shrub_rose(st_veg: SurfaceTool, st_flower: SurfaceTool, pr
 						_build_rose_bloom(st_flower, tip_pos, bloom_up, profile, rng, growth, stages, flower_color, scale_f)
 				elif lod_level == 1:
 					if is_term_bud:
-						_build_bud_billboard_quad(st_flower, tip_pos, profile["flower_radius"] * 0.55, flower_color)
+						_build_rose_bud_lod1_cross_quad(st_flower, tip_pos, bloom_up, profile["flower_radius"] * 0.55, flower_color)
 					else:
-						var r_c: float = profile["flower_radius"] * 1.28 * clampf(growth, 0.5, 1.0)
-						var h_c: float = profile["flower_radius"] * 1.55 * clampf(growth, 0.5, 1.0)
-						_build_pentagon_prism_flower(st_flower, tip_pos, bloom_up, r_c, h_c, flower_color)
+						var r_c: float = profile["flower_radius"] * 1.15 * clampf(growth, 0.5, 1.0)
+						_build_rose_lod1_cross_quad(st_flower, tip_pos, bloom_up, r_c, flower_color)
 				else: # lod_level >= 2
 					if is_term_bud:
-						_build_bud_billboard_triangle(st_flower, tip_pos, profile["flower_radius"] * 0.55, flower_color)
+						_build_rose_bud_lod2_billboard(st_flower, tip_pos, bloom_up, profile["flower_radius"] * 0.55, flower_color)
 					else:
-						var r_c: float = profile["flower_radius"] * 1.25 * clampf(growth, 0.5, 1.0)
-						_build_triangle_billboard_flower(st_flower, tip_pos, r_c, flower_color)
+						var r_c: float = profile["flower_radius"] * 1.15 * clampf(growth, 0.5, 1.0)
+						_build_rose_lod2_cross_quad(st_flower, tip_pos, bloom_up, r_c, flower_color)
 	
 	result.flower_count = total_flowers
 
@@ -620,7 +635,7 @@ static func _build_curved_stem(st: SurfaceTool, points: Array, radius: float, ba
 	for p_idx in range(points.size()):
 		var pt: Vector3 = points[p_idx]
 		var t: float = float(p_idx) / float(points.size() - 1)
-		var current_r: float = radius * lerpf(1.0, 0.65, t)
+		var current_r: float = radius * lerpf(1.0, 0.72, t)
 		var seg_color: Color = base_color.lerp(tip_color, t)
 		
 		# Orientación del anillo perpendicular a la dirección
@@ -641,6 +656,9 @@ static func _build_curved_stem(st: SurfaceTool, points: Array, radius: float, ba
 			current_ring.append(pt + offset)
 		
 		if prev_ring.size() > 0:
+			var v_0: float = lerpf(ROSE_UV_STEM_MED.position.y, ROSE_UV_STEM_MED.end.y, fposmod(float(p_idx - 1) / float(points.size() - 1) * 2.0, 1.0))
+			var v_1: float = lerpf(ROSE_UV_STEM_MED.position.y, ROSE_UV_STEM_MED.end.y, fposmod(float(p_idx) / float(points.size() - 1) * 2.0, 1.0))
+			
 			for s in range(sides):
 				var next_s: int = (s + 1) % sides
 				var v00: Vector3 = prev_ring[s]
@@ -648,14 +666,22 @@ static func _build_curved_stem(st: SurfaceTool, points: Array, radius: float, ba
 				var v10: Vector3 = current_ring[s]
 				var v11: Vector3 = current_ring[next_s]
 				
+				var u_a: float = lerpf(ROSE_UV_STEM_MED.position.x, ROSE_UV_STEM_MED.end.x, float(s) / float(sides))
+				var u_b: float = lerpf(ROSE_UV_STEM_MED.position.x, ROSE_UV_STEM_MED.end.x, float(next_s) / float(sides))
+				
 				st.set_color(seg_color)
-				st.set_uv(Vector2(float(s) / float(sides), t - 0.2))
+				st.set_uv(Vector2(u_a, v_0))
 				st.add_vertex(v00)
+				st.set_uv(Vector2(u_a, v_1))
 				st.add_vertex(v10)
+				st.set_uv(Vector2(u_b, v_1))
 				st.add_vertex(v11)
 				
+				st.set_uv(Vector2(u_a, v_0))
 				st.add_vertex(v00)
+				st.set_uv(Vector2(u_b, v_1))
 				st.add_vertex(v11)
+				st.set_uv(Vector2(u_b, v_0))
 				st.add_vertex(v01)
 		
 		prev_ring = current_ring
@@ -667,14 +693,19 @@ static func _build_petiole_quad(st: SurfaceTool, p_start: Vector3, p_end: Vector
 	if right.length_squared() < 0.0001:
 		right = fwd.cross(Vector3.RIGHT).normalized() * (width * 0.5)
 	
-	st.set_color(color)
-	st.add_vertex(p_start - right)
-	st.add_vertex(p_end - right)
-	st.add_vertex(p_end + right)
+	var uv_bl := _map_uv(ROSE_UV_STEM_THIN, 0.0, 0.95)
+	var uv_tl := _map_uv(ROSE_UV_STEM_THIN, 0.0, 0.05)
+	var uv_tr := _map_uv(ROSE_UV_STEM_THIN, 1.0, 0.05)
+	var uv_br := _map_uv(ROSE_UV_STEM_THIN, 1.0, 0.95)
 	
-	st.add_vertex(p_start - right)
-	st.add_vertex(p_end + right)
-	st.add_vertex(p_start + right)
+	st.set_color(color)
+	st.set_uv(uv_bl); st.add_vertex(p_start - right)
+	st.set_uv(uv_tl); st.add_vertex(p_end - right)
+	st.set_uv(uv_tr); st.add_vertex(p_end + right)
+	
+	st.set_uv(uv_bl); st.add_vertex(p_start - right)
+	st.set_uv(uv_tr); st.add_vertex(p_end + right)
+	st.set_uv(uv_br); st.add_vertex(p_start + right)
 
 ## Hoja con silueta elíptica anatómica, nervio central en V y sombreado de foliolo
 static func _build_creased_leaf(st: SurfaceTool, base_pos: Vector3, direction: Vector3, length: float, width: float, color: Color) -> void:
@@ -702,67 +733,53 @@ static func _build_creased_leaf(st: SurfaceTool, base_pos: Vector3, direction: V
 	var v_sh_l: Vector3 = v_sh_vein - right * (width * 0.38) + normal_up * (fold_lift * 0.8)
 	var v_sh_r: Vector3 = v_sh_vein + right * (width * 0.38) + normal_up * (fold_lift * 0.8)
 	
-	var c_vein: Color = color.darkened(0.28) # Nervio central oscuro
-	var c_blade: Color = color               # Limbo de la hoja
+	# Mapeo UV a la hoja individual fotográfica
+	var uv_base := _map_uv(ROSE_UV_LEAF_SINGLE, 0.50, 0.96)
+	var uv_mid_l := _map_uv(ROSE_UV_LEAF_SINGLE, 0.04, 0.52)
+	var uv_mid_vein := _map_uv(ROSE_UV_LEAF_SINGLE, 0.50, 0.52)
+	var uv_mid_r := _map_uv(ROSE_UV_LEAF_SINGLE, 0.96, 0.52)
+	var uv_sh_l := _map_uv(ROSE_UV_LEAF_SINGLE, 0.12, 0.26)
+	var uv_sh_vein := _map_uv(ROSE_UV_LEAF_SINGLE, 0.50, 0.26)
+	var uv_sh_r := _map_uv(ROSE_UV_LEAF_SINGLE, 0.88, 0.26)
+	var uv_tip := _map_uv(ROSE_UV_LEAF_SINGLE, 0.50, 0.04)
+	
+	var c_vein: Color = Color(0.92, 0.92, 0.92) # Nervio central con textura fotográfica
+	var c_blade: Color = Color.WHITE            # Limbo con textura fotográfica nítida
 	
 	# 1. Base a vientre medio (ala izquierda y derecha)
-	st.set_color(c_vein)
-	st.add_vertex(v_base)
-	st.set_color(c_blade)
-	st.add_vertex(v_mid_l)
-	st.set_color(c_vein)
-	st.add_vertex(v_mid_vein)
+	st.set_color(c_vein); st.set_uv(uv_base); st.add_vertex(v_base)
+	st.set_color(c_blade); st.set_uv(uv_mid_l); st.add_vertex(v_mid_l)
+	st.set_color(c_vein); st.set_uv(uv_mid_vein); st.add_vertex(v_mid_vein)
 	
-	st.set_color(c_vein)
-	st.add_vertex(v_base)
-	st.set_color(c_vein)
-	st.add_vertex(v_mid_vein)
-	st.set_color(c_blade)
-	st.add_vertex(v_mid_r)
+	st.set_color(c_vein); st.set_uv(uv_base); st.add_vertex(v_base)
+	st.set_color(c_vein); st.set_uv(uv_mid_vein); st.add_vertex(v_mid_vein)
+	st.set_color(c_blade); st.set_uv(uv_mid_r); st.add_vertex(v_mid_r)
 	
 	# 2. Vientre medio a hombros
-	st.set_color(c_blade)
-	st.add_vertex(v_mid_l)
-	st.set_color(c_blade)
-	st.add_vertex(v_sh_l)
-	st.set_color(c_vein)
-	st.add_vertex(v_sh_vein)
+	st.set_color(c_blade); st.set_uv(uv_mid_l); st.add_vertex(v_mid_l)
+	st.set_color(c_blade); st.set_uv(uv_sh_l); st.add_vertex(v_sh_l)
+	st.set_color(c_vein); st.set_uv(uv_sh_vein); st.add_vertex(v_sh_vein)
 	
-	st.set_color(c_blade)
-	st.add_vertex(v_mid_l)
-	st.set_color(c_vein)
-	st.add_vertex(v_sh_vein)
-	st.set_color(c_vein)
-	st.add_vertex(v_mid_vein)
+	st.set_color(c_blade); st.set_uv(uv_mid_l); st.add_vertex(v_mid_l)
+	st.set_color(c_vein); st.set_uv(uv_sh_vein); st.add_vertex(v_sh_vein)
+	st.set_color(c_vein); st.set_uv(uv_mid_vein); st.add_vertex(v_mid_vein)
 	
-	st.set_color(c_vein)
-	st.add_vertex(v_mid_vein)
-	st.set_color(c_vein)
-	st.add_vertex(v_sh_vein)
-	st.set_color(c_blade)
-	st.add_vertex(v_sh_r)
+	st.set_color(c_vein); st.set_uv(uv_mid_vein); st.add_vertex(v_mid_vein)
+	st.set_color(c_vein); st.set_uv(uv_sh_vein); st.add_vertex(v_sh_vein)
+	st.set_color(c_blade); st.set_uv(uv_sh_r); st.add_vertex(v_sh_r)
 	
-	st.set_color(c_vein)
-	st.add_vertex(v_mid_vein)
-	st.set_color(c_blade)
-	st.add_vertex(v_sh_r)
-	st.set_color(c_blade)
-	st.add_vertex(v_mid_r)
+	st.set_color(c_vein); st.set_uv(uv_mid_vein); st.add_vertex(v_mid_vein)
+	st.set_color(c_blade); st.set_uv(uv_sh_r); st.add_vertex(v_sh_r)
+	st.set_color(c_blade); st.set_uv(uv_mid_r); st.add_vertex(v_mid_r)
 	
 	# 3. Hombros a punta lanceolada
-	st.set_color(c_blade)
-	st.add_vertex(v_sh_l)
-	st.set_color(c_blade)
-	st.add_vertex(v_tip)
-	st.set_color(c_vein)
-	st.add_vertex(v_sh_vein)
+	st.set_color(c_blade); st.set_uv(uv_sh_l); st.add_vertex(v_sh_l)
+	st.set_color(c_blade); st.set_uv(uv_tip); st.add_vertex(v_tip)
+	st.set_color(c_vein); st.set_uv(uv_sh_vein); st.add_vertex(v_sh_vein)
 	
-	st.set_color(c_vein)
-	st.add_vertex(v_sh_vein)
-	st.set_color(c_blade)
-	st.add_vertex(v_tip)
-	st.set_color(c_blade)
-	st.add_vertex(v_sh_r)
+	st.set_color(c_vein); st.set_uv(uv_sh_vein); st.add_vertex(v_sh_vein)
+	st.set_color(c_blade); st.set_uv(uv_tip); st.add_vertex(v_tip)
+	st.set_color(c_blade); st.set_uv(uv_sh_r); st.add_vertex(v_sh_r)
 
 ## Distribuye hojas a lo largo de una curva de tallo
 static func _build_leaves_along_curve(st: SurfaceTool, points: Array, leaf_sz: Vector2, color: Color, rng: RandomNumberGenerator, count: int, growth: float, profile: Dictionary = {}) -> void:
@@ -1057,14 +1074,18 @@ static func _build_rose_bloom(st: SurfaceTool, pos: Vector3, up_dir: Vector3, pr
 	# Capa 0: Corazón espiral cónico cerrado (6 pétalos muy apretados y esbeltos)
 	# Capa 1: Cono interior (7 pétalos envolviendo el corazón)
 	# Capa 2: Copa media (8 pétalos voluptuosos que dan cuerpo)
-	# Capa 3: Copa exterior (8 pétalos anchos que forman la copa principal)
-	# Capa 4: Pétalos de guarda reflexed (9 pétalos exteriores con cresta enrollada hacia afuera)
+	# Capa 3: Copa exterior (8 pétalos anchos que	# Arquitectura Botánica de Rosa Híbrida de Té (Copa Esférica con Corazón en Espiral):
+	# Capa 0: Corazón en espiral cónico cerrado (6 pétalos apretados)
+	# Capa 1: Cono interior (7 pétalos envolviendo el corazón)
+	# Capa 2: Copa media cóncava (8 pétalos con vientre esférico)
+	# Capa 3: Copa exterior (9 pétalos de copa principal)
+	# Capa 4: Pétalos de guarda reflexed (10 pétalos de gran envergadura arqueados hacia abajo)
 	var layers_config = [
-		{"count": 6, "rb": 0.003, "hb": 0.015, "rm": 0.010, "hm": 0.048, "rt": 0.008, "ht": 0.076, "wm": 0.018, "wt": 0.016, "darken": 0.60, "curl": 0.0},
-		{"count": 7, "rb": 0.008, "hb": 0.010, "rm": 0.020, "hm": 0.054, "rt": 0.022, "ht": 0.082, "wm": 0.028, "wt": 0.026, "darken": 0.40, "curl": 0.0},
-		{"count": 8, "rb": 0.014, "hb": 0.006, "rm": 0.032, "hm": 0.056, "rt": 0.038, "ht": 0.084, "wm": 0.042, "wt": 0.038, "darken": 0.18, "curl": 0.0},
-		{"count": 8, "rb": 0.020, "hb": 0.003, "rm": 0.044, "hm": 0.050, "rt": 0.052, "ht": 0.080, "wm": 0.056, "wt": 0.052, "darken": 0.00, "curl": 0.25},
-		{"count": 9, "rb": 0.026, "hb": 0.000, "rm": 0.052, "hm": 0.040, "rt": 0.062, "ht": 0.068, "wm": 0.065, "wt": 0.062, "darken": -0.08, "curl": 0.85}
+		{"count": 6, "rb": 0.003, "hb": 0.010, "rm": 0.012, "hm": 0.032, "rt": 0.006, "ht": 0.050, "wm": 0.018, "wt": 0.014, "darken": 0.45, "curl": -0.60},
+		{"count": 7, "rb": 0.006, "hb": 0.008, "rm": 0.020, "hm": 0.036, "rt": 0.014, "ht": 0.054, "wm": 0.026, "wt": 0.022, "darken": 0.30, "curl": -0.40},
+		{"count": 8, "rb": 0.010, "hb": 0.005, "rm": 0.030, "hm": 0.038, "rt": 0.026, "ht": 0.056, "wm": 0.038, "wt": 0.032, "darken": 0.12, "curl": -0.15},
+		{"count": 9, "rb": 0.015, "hb": 0.002, "rm": 0.040, "hm": 0.034, "rt": 0.038, "ht": 0.050, "wm": 0.050, "wt": 0.044, "darken": -0.02, "curl": 0.25},
+		{"count": 10, "rb": 0.020, "hb": 0.000, "rm": 0.048, "hm": 0.024, "rt": 0.054, "ht": 0.032, "wm": 0.060, "wt": 0.052, "darken": -0.10, "curl": 0.85}
 	]
 	
 	for l_idx in range(layers_config.size()):
@@ -1073,6 +1094,16 @@ static func _build_rose_bloom(st: SurfaceTool, pos: Vector3, up_dir: Vector3, pr
 		var angle_offset: float = float(l_idx) * 2.39996 + 0.12 # Desfasamiento espiral áureo (Phyllotaxis)
 		var l_darken: float = float(cfg["darken"])
 		var curl_factor: float = float(cfg["curl"]) * bloom_t
+		
+		# Coordenada del pétalo en el atlas fotográfico según la profundidad de la capa
+		var petal_uv_rect: Rect2 = ROSE_UV_PETAL_0
+		match l_idx:
+			0: petal_uv_rect = ROSE_UV_PETAL_4
+			1: petal_uv_rect = ROSE_UV_PETAL_3
+			2: petal_uv_rect = ROSE_UV_PETAL_2
+			3: petal_uv_rect = ROSE_UV_PETAL_1
+			4: petal_uv_rect = ROSE_UV_PETAL_0
+			_: petal_uv_rect = ROSE_UV_PETAL_0
 		
 		# Gradación de color aterciopelado: sombras botánicas ricas y resalte natural preservando la paleta exacta
 		var col_mid: Color = flower_color.darkened(l_darken) if l_darken > 0.0 else flower_color.lightened(0.08)
@@ -1093,85 +1124,81 @@ static func _build_rose_bloom(st: SurfaceTool, pos: Vector3, up_dir: Vector3, pr
 			var p_dir: Vector3 = (right * cos(a) + fwd * sin(a)).normalized()
 			var side: Vector3 = p_dir.cross(up_dir).normalized() # Tangente lateral
 			
+			# Jitter orgánico único por pétalo basado en su índice para evitar simetría rígida de máquina
+			var jitter_a: float = sin(float(l_idx * 13 + p * 7)) * 0.05
+			var jitter_h: float = cos(float(l_idx * 9 + p * 11)) * 0.002 * h_scale
+			var eff_p_dir := (p_dir + side * jitter_a).normalized()
+			var eff_side := eff_p_dir.cross(up_dir).normalized()
+			
 			# 1. Base del pétalo en el receptáculo
-			var v_base: Vector3 = pos + p_dir * rb + up_dir * hb
+			var v_base: Vector3 = pos + eff_p_dir * rb + up_dir * hb
 			
-			# 2. Cintura media (Ahuecado hacia adentro: las alas laterales abrazan el centro)
-			var v_mid_c: Vector3 = pos + p_dir * rm + up_dir * hm
-			var cup_hug: float = wm * 0.18
-			var v_mid_l: Vector3 = v_mid_c - side * (wm * 0.50) - p_dir * cup_hug
-			var v_mid_r: Vector3 = v_mid_c + side * (wm * 0.50) - p_dir * cup_hug
+			# 2. Vientre medio (Curvatura esférica cóncava natural)
+			var v_mid_c: Vector3 = pos + eff_p_dir * rm + up_dir * (hm + jitter_h)
+			# Para capas interiores, el vientre abomba hacia afuera y las alas se curvan abrazando el eje central
+			var cup_hug: float = wm * 0.15 if curl_factor <= 0.0 else -wm * 0.10 * curl_factor
+			var v_mid_l: Vector3 = v_mid_c - eff_side * (wm * 0.52) - eff_p_dir * cup_hug
+			var v_mid_r: Vector3 = v_mid_c + eff_side * (wm * 0.52) - eff_p_dir * cup_hug
 			
-			# 3. Cresta superior redondeada (4 puntos para formar un arco suave, NO pico)
+			# 3. Cresta superior en forma de corazón redondeado curvada hacia adentro (interior) o reflexed (exterior)
 			var eff_rt: float = rt
-			var eff_ht: float = ht
+			var eff_ht: float = ht + jitter_h
 			if curl_factor > 0.0:
-				eff_rt += 0.008 * curl_factor
-				eff_ht -= 0.006 * curl_factor
+				eff_rt += 0.010 * curl_factor
+				eff_ht -= 0.008 * curl_factor
 			
-			var v_top_c: Vector3 = pos + p_dir * eff_rt + up_dir * eff_ht
-			var shoulder_dip: float = wt * 0.12
-			var shoulder_curl: Vector3 = -p_dir * (wm * 0.15) if curl_factor <= 0.0 else p_dir * (wm * 0.08)
+			var v_top_c: Vector3 = pos + eff_p_dir * eff_rt + up_dir * eff_ht
+			var shoulder_dip: float = wt * 0.14
+			var shoulder_curl: Vector3 = -eff_p_dir * (wm * 0.10) if curl_factor <= 0.0 else eff_p_dir * (wm * 0.14 * curl_factor) - up_dir * (wm * 0.10 * curl_factor)
 			
-			var v_top_l: Vector3 = v_top_c - side * (wt * 0.46) - up_dir * shoulder_dip + shoulder_curl
-			var v_top_cl: Vector3 = v_top_c - side * (wt * 0.18) + up_dir * (wt * 0.03)
-			var v_top_cr: Vector3 = v_top_c + side * (wt * 0.18) + up_dir * (wt * 0.03)
-			var v_top_r: Vector3 = v_top_c + side * (wt * 0.46) - up_dir * shoulder_dip + shoulder_curl
+			var v_top_l: Vector3 = v_top_c - eff_side * (wt * 0.48) - up_dir * shoulder_dip + shoulder_curl
+			var v_top_cl: Vector3 = v_top_c - eff_side * (wt * 0.20) + up_dir * (wt * 0.04) + shoulder_curl * 0.5
+			var v_top_cr: Vector3 = v_top_c + eff_side * (wt * 0.20) + up_dir * (wt * 0.04) + shoulder_curl * 0.5
+			var v_top_r: Vector3 = v_top_c + eff_side * (wt * 0.48) - up_dir * shoulder_dip + shoulder_curl
+			
+			# Mapeo UV a la textura fotográfica del pétalo correspondiente
+			var uv_base := _map_uv(petal_uv_rect, 0.50, 0.95)
+			var uv_mid_l := _map_uv(petal_uv_rect, 0.08, 0.50)
+			var uv_mid_c := _map_uv(petal_uv_rect, 0.50, 0.50)
+			var uv_mid_r := _map_uv(petal_uv_rect, 0.92, 0.50)
+			var uv_top_l := _map_uv(petal_uv_rect, 0.12, 0.15)
+			var uv_top_cl := _map_uv(petal_uv_rect, 0.38, 0.04)
+			var uv_top_cr := _map_uv(petal_uv_rect, 0.62, 0.04)
+			var uv_top_r := _map_uv(petal_uv_rect, 0.88, 0.15)
 			
 			# Triangulación limpia de 7 triángulos formando pétalo arqueado suave:
 			# Cuadrante inferior (de la base a la cintura):
-			st.set_color(col_base)
-			st.add_vertex(v_base)
-			st.set_color(col_mid)
-			st.add_vertex(v_mid_l)
-			st.set_color(col_mid)
-			st.add_vertex(v_mid_c)
+			st.set_color(col_base); st.set_uv(uv_base); st.add_vertex(v_base)
+			st.set_color(col_mid); st.set_uv(uv_mid_l); st.add_vertex(v_mid_l)
+			st.set_color(col_mid); st.set_uv(uv_mid_c); st.add_vertex(v_mid_c)
 			
-			st.set_color(col_base)
-			st.add_vertex(v_base)
-			st.set_color(col_mid)
-			st.add_vertex(v_mid_c)
-			st.set_color(col_mid)
-			st.add_vertex(v_mid_r)
+			st.set_color(col_base); st.set_uv(uv_base); st.add_vertex(v_base)
+			st.set_color(col_mid); st.set_uv(uv_mid_c); st.add_vertex(v_mid_c)
+			st.set_color(col_mid); st.set_uv(uv_mid_r); st.add_vertex(v_mid_r)
 			
 			# Cuadrante superior (de la cintura a la cresta redondeada):
 			# Ala izquierda:
-			st.set_color(col_mid)
-			st.add_vertex(v_mid_l)
-			st.set_color(col_rim)
-			st.add_vertex(v_top_l)
-			st.set_color(col_rim)
-			st.add_vertex(v_top_cl)
+			st.set_color(col_mid); st.set_uv(uv_mid_l); st.add_vertex(v_mid_l)
+			st.set_color(col_rim); st.set_uv(uv_top_l); st.add_vertex(v_top_l)
+			st.set_color(col_rim); st.set_uv(uv_top_cl); st.add_vertex(v_top_cl)
 			
-			st.set_color(col_mid)
-			st.add_vertex(v_mid_l)
-			st.set_color(col_rim)
-			st.add_vertex(v_top_cl)
-			st.set_color(col_mid)
-			st.add_vertex(v_mid_c)
+			st.set_color(col_mid); st.set_uv(uv_mid_l); st.add_vertex(v_mid_l)
+			st.set_color(col_rim); st.set_uv(uv_top_cl); st.add_vertex(v_top_cl)
+			st.set_color(col_mid); st.set_uv(uv_mid_c); st.add_vertex(v_mid_c)
 			
 			# Centro de la cresta (suavemente arqueado):
-			st.set_color(col_mid)
-			st.add_vertex(v_mid_c)
-			st.set_color(col_rim)
-			st.add_vertex(v_top_cl)
-			st.set_color(col_rim)
-			st.add_vertex(v_top_cr)
+			st.set_color(col_mid); st.set_uv(uv_mid_c); st.add_vertex(v_mid_c)
+			st.set_color(col_rim); st.set_uv(uv_top_cl); st.add_vertex(v_top_cl)
+			st.set_color(col_rim); st.set_uv(uv_top_cr); st.add_vertex(v_top_cr)
 			
 			# Ala derecha:
-			st.set_color(col_mid)
-			st.add_vertex(v_mid_c)
-			st.set_color(col_rim)
-			st.add_vertex(v_top_cr)
-			st.set_color(col_mid)
-			st.add_vertex(v_mid_r)
+			st.set_color(col_mid); st.set_uv(uv_mid_c); st.add_vertex(v_mid_c)
+			st.set_color(col_rim); st.set_uv(uv_top_cr); st.add_vertex(v_top_cr)
+			st.set_color(col_mid); st.set_uv(uv_mid_r); st.add_vertex(v_mid_r)
 			
-			st.set_color(col_mid)
-			st.add_vertex(v_mid_r)
-			st.set_color(col_rim)
-			st.add_vertex(v_top_cr)
-			st.set_color(col_rim)
-			st.add_vertex(v_top_r)
+			st.set_color(col_mid); st.set_uv(uv_mid_r); st.add_vertex(v_mid_r)
+			st.set_color(col_rim); st.set_uv(uv_top_cr); st.add_vertex(v_top_cr)
+			st.set_color(col_rim); st.set_uv(uv_top_r); st.add_vertex(v_top_r)
 
 ## Capullo cónico cerrado de rosa con pétalos espiralados
 static func _build_rose_bud(st_flower: SurfaceTool, pos: Vector3, up_dir: Vector3, size: float, petal_color: Color) -> void:
@@ -1196,26 +1223,24 @@ static func _build_rose_bud(st_flower: SurfaceTool, pos: Vector3, up_dir: Vector
 		var v_mid1: Vector3 = pos + d1 * (r * 1.05) + up_dir * mid_h
 		var v_mid2: Vector3 = pos + d2 * (r * 1.05) + up_dir * mid_h
 		
+		var uv_v1 := _map_uv(ROSE_UV_PETAL_4, 0.20, 0.90)
+		var uv_v2 := _map_uv(ROSE_UV_PETAL_4, 0.80, 0.90)
+		var uv_m1 := _map_uv(ROSE_UV_PETAL_4, 0.10, 0.45)
+		var uv_m2 := _map_uv(ROSE_UV_PETAL_4, 0.90, 0.45)
+		var uv_tip := _map_uv(ROSE_UV_PETAL_4, 0.50, 0.05)
+		
 		var c_dark := petal_color.darkened(0.35)
-		st_flower.set_color(c_dark)
-		st_flower.add_vertex(v1)
-		st_flower.set_color(petal_color)
-		st_flower.add_vertex(v_mid1)
-		st_flower.add_vertex(v_mid2)
+		st_flower.set_color(c_dark); st_flower.set_uv(uv_v1); st_flower.add_vertex(v1)
+		st_flower.set_color(petal_color); st_flower.set_uv(uv_m1); st_flower.add_vertex(v_mid1)
+		st_flower.set_color(petal_color); st_flower.set_uv(uv_m2); st_flower.add_vertex(v_mid2)
 		
-		st_flower.set_color(c_dark)
-		st_flower.add_vertex(v1)
-		st_flower.set_color(petal_color)
-		st_flower.add_vertex(v_mid2)
-		st_flower.set_color(c_dark)
-		st_flower.add_vertex(v2)
+		st_flower.set_color(c_dark); st_flower.set_uv(uv_v1); st_flower.add_vertex(v1)
+		st_flower.set_color(petal_color); st_flower.set_uv(uv_m2); st_flower.add_vertex(v_mid2)
+		st_flower.set_color(c_dark); st_flower.set_uv(uv_v2); st_flower.add_vertex(v2)
 		
-		st_flower.set_color(petal_color)
-		st_flower.add_vertex(v_mid1)
-		st_flower.set_color(petal_color.lightened(0.10))
-		st_flower.add_vertex(bud_tip)
-		st_flower.set_color(petal_color)
-		st_flower.add_vertex(v_mid2)
+		st_flower.set_color(petal_color); st_flower.set_uv(uv_m1); st_flower.add_vertex(v_mid1)
+		st_flower.set_color(petal_color.lightened(0.10)); st_flower.set_uv(uv_tip); st_flower.add_vertex(bud_tip)
+		st_flower.set_color(petal_color); st_flower.set_uv(uv_m2); st_flower.add_vertex(v_mid2)
 
 ## Receptáculo verde (Hip) y los 5 Sépalos lanceolados bajo los pétalos
 static func _build_rose_calyx(st_veg: SurfaceTool, pos: Vector3, up_dir: Vector3, profile: Dictionary, growth: float, stages: Dictionary) -> void:
@@ -1227,13 +1252,17 @@ static func _build_rose_calyx(st_veg: SurfaceTool, pos: Vector3, up_dir: Vector3
 	var sepal_color: Color = Color(0.14, 0.35, 0.10)
 	var calyx_color: Color = profile["stem_color"]
 	
-	# 1. Receptáculo / Hip (urna o bulbo verde: prisma triangular de 3 lados con Gouraud suave)
-	var hip_h: float = 0.022
-	var hip_r: float = 0.015
+	# 1. Receptáculo / Hip (urna o bulbo verde elegante)
+	var hip_h: float = 0.024
+	var hip_r: float = 0.014
 	var sides := 3
 	var p_top := pos - up_dir * 0.001
 	var p_mid := pos - up_dir * (hip_h * 0.45)
 	var p_bot := pos - up_dir * hip_h
+	
+	var uv_top := _map_uv(ROSE_UV_LEAF_SINGLE, 0.50, 0.60)
+	var uv_mid := _map_uv(ROSE_UV_LEAF_SINGLE, 0.50, 0.72)
+	var uv_bot := _map_uv(ROSE_UV_STEM_MED, 0.50, 0.50)
 	
 	for i in range(sides):
 		var a1: float = (TAU / float(sides)) * float(i)
@@ -1245,28 +1274,28 @@ static func _build_rose_calyx(st_veg: SurfaceTool, pos: Vector3, up_dir: Vector3
 		var v_top2: Vector3 = p_top + d2 * (hip_r * 0.95)
 		var v_mid1: Vector3 = p_mid + d1 * hip_r
 		var v_mid2: Vector3 = p_mid + d2 * hip_r
-		var v_bot1: Vector3 = p_bot + d1 * (profile["stem_radius"] * 1.1)
-		var v_bot2: Vector3 = p_bot + d2 * (profile["stem_radius"] * 1.1)
+		var v_bot1: Vector3 = p_bot + d1 * (profile["stem_radius"] * 1.05)
+		var v_bot2: Vector3 = p_bot + d2 * (profile["stem_radius"] * 1.05)
 		
 		st_veg.set_color(calyx_color)
 		# Cuadrante superior
-		st_veg.add_vertex(v_top1)
-		st_veg.add_vertex(v_mid1)
-		st_veg.add_vertex(v_mid2)
-		st_veg.add_vertex(v_top1)
-		st_veg.add_vertex(v_mid2)
-		st_veg.add_vertex(v_top2)
+		st_veg.set_uv(uv_top); st_veg.add_vertex(v_top1)
+		st_veg.set_uv(uv_mid); st_veg.add_vertex(v_mid1)
+		st_veg.set_uv(uv_mid); st_veg.add_vertex(v_mid2)
+		st_veg.set_uv(uv_top); st_veg.add_vertex(v_top1)
+		st_veg.set_uv(uv_mid); st_veg.add_vertex(v_mid2)
+		st_veg.set_uv(uv_top); st_veg.add_vertex(v_top2)
 		# Cuadrante inferior
-		st_veg.add_vertex(v_mid1)
-		st_veg.add_vertex(v_bot1)
-		st_veg.add_vertex(v_bot2)
-		st_veg.add_vertex(v_mid1)
-		st_veg.add_vertex(v_bot2)
-		st_veg.add_vertex(v_mid2)
+		st_veg.set_uv(uv_mid); st_veg.add_vertex(v_mid1)
+		st_veg.set_uv(uv_bot); st_veg.add_vertex(v_bot1)
+		st_veg.set_uv(uv_bot); st_veg.add_vertex(v_bot2)
+		st_veg.set_uv(uv_mid); st_veg.add_vertex(v_mid1)
+		st_veg.set_uv(uv_bot); st_veg.add_vertex(v_bot2)
+		st_veg.set_uv(uv_mid); st_veg.add_vertex(v_mid2)
 	
-	# 2. Los 5 Sépalos lanceolados que se extienden y curvan hacia abajo (1 triángulo por sépalo)
+	# 2. Los 5 Sépalos lanceolados que se extienden y curvan hacia abajo
 	var sepal_len: float = 0.048 * clampf(growth * 1.3, 0.4, 1.0)
-	var sepal_w: float = 0.008
+	var sepal_w: float = 0.007
 	
 	for s in range(5):
 		var a: float = (TAU / 5.0) * float(s) + 0.20
@@ -1277,10 +1306,14 @@ static func _build_rose_calyx(st_veg: SurfaceTool, pos: Vector3, up_dir: Vector3
 		var s_base_r: Vector3 = p_mid + s_dir * (hip_r * 0.90) + s_side * (sepal_w * 0.5)
 		var s_tip: Vector3 = p_mid + s_dir * (sepal_len * 0.75) - up_dir * (sepal_len * 0.65)
 		
+		var uv_s_bl := _map_uv(ROSE_UV_LEAF_SINGLE, 0.35, 0.75)
+		var uv_s_br := _map_uv(ROSE_UV_LEAF_SINGLE, 0.65, 0.75)
+		var uv_s_tip := _map_uv(ROSE_UV_LEAF_SINGLE, 0.50, 0.05)
+		
 		st_veg.set_color(sepal_color)
-		st_veg.add_vertex(s_base_l)
-		st_veg.add_vertex(s_tip)
-		st_veg.add_vertex(s_base_r)
+		st_veg.set_uv(uv_s_bl); st_veg.add_vertex(s_base_l)
+		st_veg.set_uv(uv_s_tip); st_veg.add_vertex(s_tip)
+		st_veg.set_uv(uv_s_br); st_veg.add_vertex(s_base_r)
 
 ## Espinas reales con forma de gancho curvado hacia abajo y base ancha
 static func _build_rose_hooked_thorns(st_veg: SurfaceTool, p_start: Vector3, p_end: Vector3, stem_r: float, color: Color, rng: RandomNumberGenerator, growth: float) -> void:
@@ -1294,7 +1327,7 @@ static func _build_rose_hooked_thorns(st_veg: SurfaceTool, p_start: Vector3, p_e
 		var out_dir := Vector3(cos(a), 0, sin(a)).normalized()
 		var side := out_dir.cross(Vector3.UP).normalized()
 		
-		# Base de la espina alargada a lo largo del tallo (1.2 cm)
+		# Base de la espina alargada a lo largo del tallo
 		var base_h := 0.012
 		var base_top := pt + out_dir * stem_r + Vector3(0, base_h * 0.5, 0)
 		var base_bot := pt + out_dir * stem_r - Vector3(0, base_h * 0.5, 0)
@@ -1305,22 +1338,28 @@ static func _build_rose_hooked_thorns(st_veg: SurfaceTool, p_start: Vector3, p_e
 		var hook_len := 0.012
 		var tip := pt + out_dir * (stem_r + hook_len) - Vector3(0, 0.006, 0)
 		
+		var uv_th_top := _map_uv(ROSE_UV_STEM_THICK, 0.50, 0.20)
+		var uv_th_bot := _map_uv(ROSE_UV_STEM_THICK, 0.50, 0.80)
+		var uv_th_l := _map_uv(ROSE_UV_STEM_THICK, 0.15, 0.50)
+		var uv_th_r := _map_uv(ROSE_UV_STEM_THICK, 0.85, 0.50)
+		var uv_th_tip := _map_uv(ROSE_UV_STEM_THICK, 0.50, 0.50)
+		
 		st_veg.set_color(color)
-		st_veg.add_vertex(base_top)
-		st_veg.add_vertex(tip)
-		st_veg.add_vertex(base_l)
+		st_veg.set_uv(uv_th_top); st_veg.add_vertex(base_top)
+		st_veg.set_uv(uv_th_tip); st_veg.add_vertex(tip)
+		st_veg.set_uv(uv_th_l); st_veg.add_vertex(base_l)
 		
-		st_veg.add_vertex(base_top)
-		st_veg.add_vertex(base_r)
-		st_veg.add_vertex(tip)
+		st_veg.set_uv(uv_th_top); st_veg.add_vertex(base_top)
+		st_veg.set_uv(uv_th_r); st_veg.add_vertex(base_r)
+		st_veg.set_uv(uv_th_tip); st_veg.add_vertex(tip)
 		
-		st_veg.add_vertex(base_bot)
-		st_veg.add_vertex(base_l)
-		st_veg.add_vertex(tip)
+		st_veg.set_uv(uv_th_bot); st_veg.add_vertex(base_bot)
+		st_veg.set_uv(uv_th_l); st_veg.add_vertex(base_l)
+		st_veg.set_uv(uv_th_tip); st_veg.add_vertex(tip)
 		
-		st_veg.add_vertex(base_bot)
-		st_veg.add_vertex(tip)
-		st_veg.add_vertex(base_r)
+		st_veg.set_uv(uv_th_bot); st_veg.add_vertex(base_bot)
+		st_veg.set_uv(uv_th_tip); st_veg.add_vertex(tip)
+		st_veg.set_uv(uv_th_r); st_veg.add_vertex(base_r)
 
 ## Hojas de rosal compuestas con pecíolo plano y foliolos anchos plegados en V
 static func _build_rose_compound_foliage(st_veg: SurfaceTool, p_start: Vector3, p_end: Vector3, profile: Dictionary, rng: RandomNumberGenerator, growth: float) -> void:
@@ -1346,8 +1385,8 @@ static func _build_rose_compound_foliage(st_veg: SurfaceTool, p_start: Vector3, 
 		var p_mid: Vector3 = p_base + petiole_dir * (petiole_len * 0.46)
 		var p_tip: Vector3 = p_base + petiole_dir * petiole_len
 		
-		# Pecíolo plano ultraligero (2 triángulos)
-		_build_petiole_quad(st_veg, p_base, p_tip, 0.005, petiole_color)
+		# Pecíolo plano ultraligero
+		_build_petiole_quad(st_veg, p_base, p_tip, 0.004, petiole_color)
 		
 		# 1. Foliolo Terminal Grande (2 triángulos)
 		var term_l: float = leaf_sz.x * clampf(growth, 0.4, 1.0)
@@ -1414,7 +1453,7 @@ static func _build_rose_dense_shrub_foliage(st_veg: SurfaceTool, points: Array, 
 		var p_tip: Vector3 = p_base + petiole_dir * petiole_len
 		
 		# Pecíolo plano ultraligero
-		_build_petiole_quad(st_veg, p_base, p_tip, 0.005, petiole_color)
+		_build_petiole_quad(st_veg, p_base, p_tip, 0.004, petiole_color)
 		
 		# 1. Foliolo terminal prominente (tamaño generoso para follaje frondoso)
 		var term_l: float = leaf_sz.x * rng.randf_range(1.20, 1.40) * clampf(growth, 0.4, 1.0)
@@ -1525,7 +1564,7 @@ static func _generate_generic_lod2(st_veg: SurfaceTool, st_flower: SurfaceTool, 
 		result.flower_count = 1
 		result.flower_positions.append(tip)
 
-## Cinta plana 2D de tallo con rotación axial en GPU (1 quad = 2 tris por tramo)
+## Cinta plana 2D de tallo con rotación en 3D para LOD (1 quad = 2 tris por tramo)
 static func _build_billboard_stem(st: SurfaceTool, points: Array, radius: float, base_color: Color, tip_color: Color) -> void:
 	if points.size() < 2:
 		return
@@ -1540,86 +1579,229 @@ static func _build_billboard_stem(st: SurfaceTool, points: Array, radius: float,
 		var ra: float = radius * lerpf(1.0, 0.72, ta)
 		var rb: float = radius * lerpf(1.0, 0.72, tb)
 		
-		# UV.y == 2.0 activa el billboard axial de tallo en el shader
-		# UV.x almacena el radio lateral (+/-)
-		# NORMAL almacena el vector director del segmento
-		# Triángulo 1: V0 (pa, left), V1 (pa, right), V2 (pb, right)
-		st.set_normal(dir)
-		st.set_uv(Vector2(-ra, 2.0))
-		st.set_uv2(Vector2.ZERO)
-		st.set_color(col_a)
-		st.add_vertex(pa)
+		var side := dir.cross(Vector3.FORWARD).normalized()
+		if side.length_squared() < 0.01:
+			side = dir.cross(Vector3.RIGHT).normalized()
 		
-		st.set_normal(dir)
-		st.set_uv(Vector2(ra, 2.0))
-		st.set_uv2(Vector2.ZERO)
-		st.set_color(col_a)
-		st.add_vertex(pa)
+		var p_a_l := pa - side * ra
+		var p_a_r := pa + side * ra
+		var p_b_l := pb - side * rb
+		var p_b_r := pb + side * rb
 		
-		st.set_normal(dir)
-		st.set_uv(Vector2(rb, 2.0))
-		st.set_uv2(Vector2.ZERO)
-		st.set_color(col_b)
-		st.add_vertex(pb)
+		var uv_a_l := Vector2(ROSE_UV_STEM_MED.position.x, lerpf(ROSE_UV_STEM_MED.position.y, ROSE_UV_STEM_MED.end.y, ta))
+		var uv_a_r := Vector2(ROSE_UV_STEM_MED.end.x, lerpf(ROSE_UV_STEM_MED.position.y, ROSE_UV_STEM_MED.end.y, ta))
+		var uv_b_l := Vector2(ROSE_UV_STEM_MED.position.x, lerpf(ROSE_UV_STEM_MED.position.y, ROSE_UV_STEM_MED.end.y, tb))
+		var uv_b_r := Vector2(ROSE_UV_STEM_MED.end.x, lerpf(ROSE_UV_STEM_MED.position.y, ROSE_UV_STEM_MED.end.y, tb))
 		
-		# Triángulo 2: V0 (pa, left), V2 (pb, right), V3 (pb, left)
-		st.set_normal(dir)
-		st.set_uv(Vector2(-ra, 2.0))
-		st.set_uv2(Vector2.ZERO)
-		st.set_color(col_a)
-		st.add_vertex(pa)
+		st.set_color(col_a); st.set_uv(uv_a_l); st.add_vertex(p_a_l)
+		st.set_color(col_a); st.set_uv(uv_a_r); st.add_vertex(p_a_r)
+		st.set_color(col_b); st.set_uv(uv_b_r); st.add_vertex(p_b_r)
 		
-		st.set_normal(dir)
-		st.set_uv(Vector2(rb, 2.0))
-		st.set_uv2(Vector2.ZERO)
-		st.set_color(col_b)
-		st.add_vertex(pb)
-		
-		st.set_normal(dir)
-		st.set_uv(Vector2(-rb, 2.0))
-		st.set_uv2(Vector2.ZERO)
-		st.set_color(col_b)
-		st.add_vertex(pb)
+		st.set_color(col_a); st.set_uv(uv_a_l); st.add_vertex(p_a_l)
+		st.set_color(col_b); st.set_uv(uv_b_r); st.add_vertex(p_b_r)
+		st.set_color(col_b); st.set_uv(uv_b_l); st.add_vertex(p_b_l)
 
-## Hoja como 1 solo triángulo 2D billboard en GPU (1 tri por foliolo)
+## Hoja como 1 solo triángulo 2D texturizado con la foto real del atlas (1 tri por foliolo)
 static func _build_billboard_leaf_triangle(st: SurfaceTool, pos: Vector3, size: Vector2, color: Color, rot: float = 0.0) -> void:
-	var hx: float = size.x * 0.50
-	var hy: float = size.y * 0.60
-	# Color verde bosque profundo idéntico al full HD sin blanqueamiento
-	var col_base := color.darkened(0.15)
-	var col_blade := color
+	var hx: float = size.x * 0.45
+	var hy: float = size.y * 0.55
 	
-	var c := cos(rot)
-	var s := sin(rot)
+	var fwd := Vector3(cos(rot), 0.30, sin(rot)).normalized()
+	var right := fwd.cross(Vector3.UP).normalized()
 	
-	# UV.y == 1.0 activa billboard esférico en shader
-	# UV2 almacena el offset local 2D rotado
-	# V0: ápice superior de la hoja
-	var off0 := Vector2(0.0, hy)
-	var r_off0 := Vector2(off0.x * c - off0.y * s, off0.x * s + off0.y * c)
-	st.set_normal(Vector3.ZERO)
-	st.set_uv(Vector2(0.5, 1.0))
-	st.set_uv2(r_off0)
-	st.set_color(col_blade)
-	st.add_vertex(pos)
+	var v_tip := pos + fwd * hy
+	var v_left := pos - right * hx - fwd * (hy * 0.25)
+	var v_right := pos + right * hx - fwd * (hy * 0.25)
 	
-	# V1: base izquierda
-	var off1 := Vector2(-hx, -hy * 0.45)
-	var r_off1 := Vector2(off1.x * c - off1.y * s, off1.x * s + off1.y * c)
-	st.set_normal(Vector3.ZERO)
-	st.set_uv(Vector2(0.0, 1.0))
-	st.set_uv2(r_off1)
-	st.set_color(col_base)
-	st.add_vertex(pos)
+	var uv_tip := _map_uv(ROSE_UV_LEAF_SINGLE, 0.50, 0.04)
+	var uv_left := _map_uv(ROSE_UV_LEAF_SINGLE, 0.06, 0.94)
+	var uv_right := _map_uv(ROSE_UV_LEAF_SINGLE, 0.94, 0.94)
 	
-	# V2: base derecha
-	var off2 := Vector2(hx, -hy * 0.45)
-	var r_off2 := Vector2(off2.x * c - off2.y * s, off2.x * s + off2.y * c)
-	st.set_normal(Vector3.ZERO)
-	st.set_uv(Vector2(1.0, 1.0))
-	st.set_uv2(r_off2)
-	st.set_color(col_base)
-	st.add_vertex(pos)
+	st.set_color(Color.WHITE)
+	st.set_uv(uv_left); st.add_vertex(v_left)
+	st.set_uv(uv_tip); st.add_vertex(v_tip)
+	st.set_uv(uv_right); st.add_vertex(v_right)
+
+## Flor de Rosa en LOD 1: Cross-Quad tridimensional (2 quads verticales en 'X' + 1 quad horizontal superior = 6 triángulos)
+## Mapea las fotos reales de rosa completa: perfil ROSE_UV_BLOOM_SIDE y cenital ROSE_UV_BLOOM_TOP
+static func _build_rose_lod1_cross_quad(st_flower: SurfaceTool, pos: Vector3, up_dir: Vector3, radius: float, flower_color: Color) -> void:
+	var up := up_dir.normalized()
+	var right: Vector3 = up.cross(Vector3.FORWARD).normalized()
+	if right.length_squared() < 0.01:
+		right = up.cross(Vector3.RIGHT).normalized()
+	var fwd: Vector3 = right.cross(up).normalized()
+	
+	var r: float = radius * 1.15
+	var h: float = radius * 1.30
+	var base_pt := pos - up * (h * 0.15)
+	
+	# Quad vertical 1 (eje fwd)
+	var v0_a: Vector3 = base_pt - fwd * r
+	var v0_b: Vector3 = base_pt + fwd * r
+	var v0_c: Vector3 = base_pt + fwd * r + up * h
+	var v0_d: Vector3 = base_pt - fwd * r + up * h
+	
+	# Quad vertical 2 (eje right)
+	var v1_a: Vector3 = base_pt - right * r
+	var v1_b: Vector3 = base_pt + right * r
+	var v1_c: Vector3 = base_pt + right * r + up * h
+	var v1_d: Vector3 = base_pt - right * r + up * h
+	
+	# UVs para perfil (ROSE_UV_BLOOM_SIDE)
+	var uv_side_bl := _map_uv(ROSE_UV_BLOOM_SIDE, 0.02, 0.98)
+	var uv_side_br := _map_uv(ROSE_UV_BLOOM_SIDE, 0.98, 0.98)
+	var uv_side_tr := _map_uv(ROSE_UV_BLOOM_SIDE, 0.98, 0.02)
+	var uv_side_tl := _map_uv(ROSE_UV_BLOOM_SIDE, 0.02, 0.02)
+	
+	st_flower.set_color(flower_color)
+	# Quad 1
+	st_flower.set_uv(uv_side_bl); st_flower.add_vertex(v0_a)
+	st_flower.set_uv(uv_side_br); st_flower.add_vertex(v0_b)
+	st_flower.set_uv(uv_side_tr); st_flower.add_vertex(v0_c)
+	
+	st_flower.set_uv(uv_side_bl); st_flower.add_vertex(v0_a)
+	st_flower.set_uv(uv_side_tr); st_flower.add_vertex(v0_c)
+	st_flower.set_uv(uv_side_tl); st_flower.add_vertex(v0_d)
+	
+	# Quad 2
+	st_flower.set_uv(uv_side_bl); st_flower.add_vertex(v1_a)
+	st_flower.set_uv(uv_side_br); st_flower.add_vertex(v1_b)
+	st_flower.set_uv(uv_side_tr); st_flower.add_vertex(v1_c)
+	
+	st_flower.set_uv(uv_side_bl); st_flower.add_vertex(v1_a)
+	st_flower.set_uv(uv_side_tr); st_flower.add_vertex(v1_c)
+	st_flower.set_uv(uv_side_tl); st_flower.add_vertex(v1_d)
+	
+	# Quad horizontal superior (tapa cenital)
+	var top_pt: Vector3 = base_pt + up * (h * 0.88)
+	var vt_a: Vector3 = top_pt - right * (r * 0.90) - fwd * (r * 0.90)
+	var vt_b: Vector3 = top_pt + right * (r * 0.90) - fwd * (r * 0.90)
+	var vt_c: Vector3 = top_pt + right * (r * 0.90) + fwd * (r * 0.90)
+	var vt_d: Vector3 = top_pt - right * (r * 0.90) + fwd * (r * 0.90)
+	
+	var uv_top_bl := _map_uv(ROSE_UV_BLOOM_TOP, 0.02, 0.98)
+	var uv_top_br := _map_uv(ROSE_UV_BLOOM_TOP, 0.98, 0.98)
+	var uv_top_tr := _map_uv(ROSE_UV_BLOOM_TOP, 0.98, 0.02)
+	var uv_top_tl := _map_uv(ROSE_UV_BLOOM_TOP, 0.02, 0.02)
+	
+	st_flower.set_uv(uv_top_bl); st_flower.add_vertex(vt_a)
+	st_flower.set_uv(uv_top_br); st_flower.add_vertex(vt_b)
+	st_flower.set_uv(uv_top_tr); st_flower.add_vertex(vt_c)
+	
+	st_flower.set_uv(uv_top_bl); st_flower.add_vertex(vt_a)
+	st_flower.set_uv(uv_top_tr); st_flower.add_vertex(vt_c)
+	st_flower.set_uv(uv_top_tl); st_flower.add_vertex(vt_d)
+
+## Flor de Rosa en LOD 2: Cross-Quad de 2 quads verticales (4 triángulos) con foto ROSE_UV_BLOOM_SIDE
+static func _build_rose_lod2_cross_quad(st_flower: SurfaceTool, pos: Vector3, up_dir: Vector3, radius: float, flower_color: Color) -> void:
+	var up := up_dir.normalized()
+	var right: Vector3 = up.cross(Vector3.FORWARD).normalized()
+	if right.length_squared() < 0.01:
+		right = up.cross(Vector3.RIGHT).normalized()
+	var fwd: Vector3 = right.cross(up).normalized()
+	
+	var r: float = radius * 1.15
+	var h: float = radius * 1.30
+	var base_pt := pos - up * (h * 0.15)
+	
+	var v0_a: Vector3 = base_pt - fwd * r
+	var v0_b: Vector3 = base_pt + fwd * r
+	var v0_c: Vector3 = base_pt + fwd * r + up * h
+	var v0_d: Vector3 = base_pt - fwd * r + up * h
+	
+	var v1_a: Vector3 = base_pt - right * r
+	var v1_b: Vector3 = base_pt + right * r
+	var v1_c: Vector3 = base_pt + right * r + up * h
+	var v1_d: Vector3 = base_pt - right * r + up * h
+	
+	var uv_side_bl := _map_uv(ROSE_UV_BLOOM_SIDE, 0.02, 0.98)
+	var uv_side_br := _map_uv(ROSE_UV_BLOOM_SIDE, 0.98, 0.98)
+	var uv_side_tr := _map_uv(ROSE_UV_BLOOM_SIDE, 0.98, 0.02)
+	var uv_side_tl := _map_uv(ROSE_UV_BLOOM_SIDE, 0.02, 0.02)
+	
+	st_flower.set_color(flower_color)
+	st_flower.set_uv(uv_side_bl); st_flower.add_vertex(v0_a)
+	st_flower.set_uv(uv_side_br); st_flower.add_vertex(v0_b)
+	st_flower.set_uv(uv_side_tr); st_flower.add_vertex(v0_c)
+	st_flower.set_uv(uv_side_bl); st_flower.add_vertex(v0_a)
+	st_flower.set_uv(uv_side_tr); st_flower.add_vertex(v0_c)
+	st_flower.set_uv(uv_side_tl); st_flower.add_vertex(v0_d)
+	
+	st_flower.set_uv(uv_side_bl); st_flower.add_vertex(v1_a)
+	st_flower.set_uv(uv_side_br); st_flower.add_vertex(v1_b)
+	st_flower.set_uv(uv_side_tr); st_flower.add_vertex(v1_c)
+	st_flower.set_uv(uv_side_bl); st_flower.add_vertex(v1_a)
+	st_flower.set_uv(uv_side_tr); st_flower.add_vertex(v1_c)
+	st_flower.set_uv(uv_side_tl); st_flower.add_vertex(v1_d)
+
+## Capullo cerrado en LOD 1: Cross-quad de 2 quads con foto de capullo (ROSE_UV_PETAL_3)
+static func _build_rose_bud_lod1_cross_quad(st_flower: SurfaceTool, pos: Vector3, up_dir: Vector3, size: float, flower_color: Color) -> void:
+	var up := up_dir.normalized()
+	var right: Vector3 = up.cross(Vector3.FORWARD).normalized()
+	if right.length_squared() < 0.01:
+		right = up.cross(Vector3.RIGHT).normalized()
+	var fwd: Vector3 = right.cross(up).normalized()
+	
+	var r: float = size * 0.75
+	var h: float = size * 1.50
+	
+	var v0_a: Vector3 = pos - fwd * r
+	var v0_b: Vector3 = pos + fwd * r
+	var v0_c: Vector3 = pos + fwd * r + up * h
+	var v0_d: Vector3 = pos - fwd * r + up * h
+	
+	var v1_a: Vector3 = pos - right * r
+	var v1_b: Vector3 = pos + right * r
+	var v1_c: Vector3 = pos + right * r + up * h
+	var v1_d: Vector3 = pos - right * r + up * h
+	
+	var uv_bl := _map_uv(ROSE_UV_PETAL_3, 0.05, 0.95)
+	var uv_br := _map_uv(ROSE_UV_PETAL_3, 0.95, 0.95)
+	var uv_tr := _map_uv(ROSE_UV_PETAL_3, 0.95, 0.05)
+	var uv_tl := _map_uv(ROSE_UV_PETAL_3, 0.05, 0.05)
+	
+	st_flower.set_color(flower_color)
+	st_flower.set_uv(uv_bl); st_flower.add_vertex(v0_a)
+	st_flower.set_uv(uv_br); st_flower.add_vertex(v0_b)
+	st_flower.set_uv(uv_tr); st_flower.add_vertex(v0_c)
+	st_flower.set_uv(uv_bl); st_flower.add_vertex(v0_a)
+	st_flower.set_uv(uv_tr); st_flower.add_vertex(v0_c)
+	st_flower.set_uv(uv_tl); st_flower.add_vertex(v0_d)
+	
+	st_flower.set_uv(uv_bl); st_flower.add_vertex(v1_a)
+	st_flower.set_uv(uv_br); st_flower.add_vertex(v1_b)
+	st_flower.set_uv(uv_tr); st_flower.add_vertex(v1_c)
+	st_flower.set_uv(uv_bl); st_flower.add_vertex(v1_a)
+	st_flower.set_uv(uv_tr); st_flower.add_vertex(v1_c)
+	st_flower.set_uv(uv_tl); st_flower.add_vertex(v1_d)
+
+## Capullo cerrado en LOD 2: 1 solo quad vertical con foto de capullo (2 tris)
+static func _build_rose_bud_lod2_billboard(st_flower: SurfaceTool, pos: Vector3, up_dir: Vector3, size: float, flower_color: Color) -> void:
+	var up := up_dir.normalized()
+	var right: Vector3 = up.cross(Vector3.FORWARD).normalized()
+	if right.length_squared() < 0.01:
+		right = up.cross(Vector3.RIGHT).normalized()
+	
+	var r: float = size * 0.70
+	var h: float = size * 1.45
+	
+	var v_a: Vector3 = pos - right * r
+	var v_b: Vector3 = pos + right * r
+	var v_c: Vector3 = pos + right * r + up * h
+	var v_d: Vector3 = pos - right * r + up * h
+	
+	var uv_bl := _map_uv(ROSE_UV_PETAL_3, 0.05, 0.95)
+	var uv_br := _map_uv(ROSE_UV_PETAL_3, 0.95, 0.95)
+	var uv_tr := _map_uv(ROSE_UV_PETAL_3, 0.95, 0.05)
+	var uv_tl := _map_uv(ROSE_UV_PETAL_3, 0.05, 0.05)
+	
+	st_flower.set_color(flower_color)
+	st_flower.set_uv(uv_bl); st_flower.add_vertex(v_a)
+	st_flower.set_uv(uv_br); st_flower.add_vertex(v_b)
+	st_flower.set_uv(uv_tr); st_flower.add_vertex(v_c)
+	st_flower.set_uv(uv_bl); st_flower.add_vertex(v_a)
+	st_flower.set_uv(uv_tr); st_flower.add_vertex(v_c)
+	st_flower.set_uv(uv_tl); st_flower.add_vertex(v_d)
 
 ## Flor como Prisma Pentagonal 3D (LOD 1: pentágono base + pentágono copa = 15 tris con color puro fiel y estirado a escala 1:1)
 static func _build_pentagon_prism_flower(st: SurfaceTool, pos: Vector3, up_dir: Vector3, radius: float, height: float, flower_color: Color) -> void:

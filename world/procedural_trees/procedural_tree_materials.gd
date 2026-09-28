@@ -44,9 +44,13 @@ static func get_bark_material(profile_id: String, use_textures: bool = true) -> 
 		mat.albedo_texture = bark_tex
 		var base_tint := Color(0.72, 0.64, 0.54)
 		if profile_id.to_lower().begins_with("birch") or profile_id.to_lower() == "autumn_birch":
-			mat.albedo_color = Color(0.85, 0.82, 0.78)
+			mat.albedo_color = Color(0.88, 0.86, 0.82)
 		elif profile_id.to_lower() == "dead_tree":
 			mat.albedo_color = Color(0.35, 0.30, 0.26)
+		elif profile_id.to_lower() == "weeping_willow":
+			mat.albedo_color = Color(0.52, 0.45, 0.38)
+		elif profile_id.to_lower() == "classic_oak":
+			mat.albedo_color = Color(0.65, 0.55, 0.44)
 		else:
 			mat.albedo_color = base_tint
 	else:
@@ -86,6 +90,22 @@ static func get_leaf_material(profile_id: String, use_textures: bool = true) -> 
 			s_mat.set_shader_parameter("texture_albedo", bough_tex)
 		s_mat.set_shader_parameter("alpha_scissor_threshold", 0.25)
 		s_mat.set_shader_parameter("backlight_energy", 0.45)
+		
+		# Tinte botánico y cromático según especie
+		var tint := Color(1.0, 1.0, 1.0, 1.0)
+		match profile_id.to_lower():
+			"classic_oak", "oak":
+				tint = Color(0.85, 1.02, 0.75, 1.0)
+			"autumn_birch", "birch":
+				tint = Color(1.45, 0.85, 0.22, 1.0)
+			"weeping_willow", "willow":
+				tint = Color(0.92, 1.15, 0.72, 1.0)
+			"shrub_sapling", "shrub":
+				tint = Color(0.88, 1.08, 0.70, 1.0)
+			"alnus_acuminata", "alnus", _:
+				tint = Color(1.0, 1.0, 1.0, 1.0)
+		
+		s_mat.set_shader_parameter("foliage_tint", tint)
 		_leaf_materials[key] = s_mat
 		return s_mat
 	

@@ -58,6 +58,9 @@ func _unhandled_input(event: InputEvent) -> void:
 		if event.physical_keycode == SettingsManager.get_key("toggle_inventory"):
 			_toggle_inventory()
 			get_viewport().set_input_as_handled()
+		elif event.keycode == KEY_ESCAPE and _inventory_open:
+			_toggle_inventory()
+			get_viewport().set_input_as_handled()
 		elif Input.mouse_mode == Input.MOUSE_MODE_CAPTURED and event.keycode >= KEY_1 and event.keycode <= KEY_9:
 			_inventory.select_hotbar_slot(event.keycode - KEY_1)
 

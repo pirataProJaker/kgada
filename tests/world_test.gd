@@ -186,3 +186,11 @@ func _find_safe_ground_y(x: float, z: float, start_height: float) -> float:
 func _save_player_state(player: Node3D) -> void:
 	SaveManager.save_game(_world_seed, player.global_position, player.rotation.y)
 	zombie_population_manager.save_population()
+
+
+func save_world_state() -> void:
+	var player: Node3D = get_node_or_null("1")
+	if player != null:
+		_save_player_state(player)
+	else:
+		zombie_population_manager.save_population()

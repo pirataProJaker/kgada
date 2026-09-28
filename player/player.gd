@@ -50,7 +50,10 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 
 	if event is InputEventMouseButton and event.pressed and Input.mouse_mode == Input.MOUSE_MODE_VISIBLE:
-		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+		if Chat != null and Chat.is_open():
+			return # Chat abierto, no recapturar raton
+		if not get_tree().paused:
+			Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 		return
 
 	var mouse_delta := InputManager.get_mouse_look_delta(event)
@@ -75,9 +78,8 @@ func _physics_process(delta: float) -> void:
 	velocity.x = move_dir.x * MOVE_SPEED
 	velocity.z = move_dir.z * MOVE_SPEED
 
-	# Deteccion manual de flanco ("just pressed") para Space, ya que no esta
-	# mapeado a una accion en el Input Map.
-	var jump_key_pressed := Input.is_physical_key_pressed(KEY_SPACE)
+	# Deteccion manual de flanco ("just pressed") para Space, solo cuando el raton esta capturado
+	var jump_key_pressed := Input.is_physical_key_pressed(KEY_SPACE) and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED
 	var jump_just_pressed := jump_key_pressed and not _was_jump_key_pressed
 	_was_jump_key_pressed = jump_key_pressed
 
