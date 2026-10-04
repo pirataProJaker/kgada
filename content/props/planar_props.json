@@ -1,0 +1,205 @@
+{
+  "version": 1,
+  "props": {
+    "rug_00": {
+      "name": "Alfombra Yute Rústica",
+      "type": "floor",
+      "texture": "res://assets/textures/furniture/rugs/rug_00.png",
+      "size": [1.75, 1.20],
+      "roughness": 0.95,
+      "metallic": 0.0,
+      "surface_offset": 0.005,
+      "tags": ["floor", "rug", "bedroom", "living_room", "rustic"]
+    },
+    "rug_01": {
+      "name": "Alfombra Persa Granate",
+      "type": "floor",
+      "texture": "res://assets/textures/furniture/rugs/rug_01.png",
+      "size": [1.75, 1.20],
+      "roughness": 0.90,
+      "metallic": 0.0,
+      "surface_offset": 0.005,
+      "tags": ["floor", "rug", "bedroom", "living_room", "classic"]
+    },
+    "rug_02": {
+      "name": "Alfombra Carbón Ribeteada",
+      "type": "floor",
+      "texture": "res://assets/textures/furniture/rugs/rug_02.png",
+      "size": [1.75, 1.20],
+      "roughness": 0.90,
+      "metallic": 0.0,
+      "surface_offset": 0.005,
+      "tags": ["floor", "rug", "bedroom", "living_room", "modern"]
+    },
+    "rug_03": {
+      "name": "Alfombra Navajo Café",
+      "type": "floor",
+      "texture": "res://assets/textures/furniture/rugs/rug_03.png",
+      "size": [1.75, 1.20],
+      "roughness": 0.92,
+      "metallic": 0.0,
+      "surface_offset": 0.005,
+      "tags": ["floor", "rug", "bedroom", "living_room", "navajo"]
+    },
+    "rug_04": {
+      "name": "Alfombra Rayas Nórdicas",
+      "type": "floor",
+      "texture": "res://assets/textures/furniture/rugs/rug_04.png",
+      "size": [1.75, 1.20],
+      "roughness": 0.88,
+      "metallic": 0.0,
+      "surface_offset": 0.005,
+      "tags": ["floor", "rug", "bedroom", "living_room", "nordic"]
+    },
+    "rug_05": {
+      "name": "Alfombra Verde Esmeralda",
+      "type": "floor",
+      "texture": "res://assets/textures/furniture/rugs/rug_05.png",
+      "size": [1.75, 1.20],
+      "roughness": 0.90,
+      "metallic": 0.0,
+      "surface_offset": 0.005,
+      "tags": ["floor", "rug", "bedroom", "living_room", "vintage"]
+    },
+    "rug_06": {
+      "name": "Alfombra Rayas Vintage",
+      "type": "floor",
+      "texture": "res://assets/textures/furniture/rugs/rug_06.png",
+      "size": [1.75, 1.20],
+      "roughness": 0.90,
+      "metallic": 0.0,
+      "surface_offset": 0.005,
+      "tags": ["floor", "rug", "bedroom", "living_room", "vintage"]
+    },
+    "rug_07": {
+      "name": "Alfombra Rubí Medallón",
+      "type": "floor",
+      "texture": "res://assets/textures/furniture/rugs/rug_07.png",
+      "size": [1.75, 1.20],
+      "roughness": 0.90,
+      "metallic": 0.0,
+      "surface_offset": 0.005,
+      "tags": ["floor", "rug", "bedroom", "living_room", "classic"]
+    },
+    "rug_08": {
+      "name": "Alfombra Azul Real Floral",
+      "type": "floor",
+      "texture": "res://assets/textures/furniture/rugs/rug_08.png",
+      "size": [1.75, 1.20],
+      "roughness": 0.90,
+      "metallic": 0.0,
+      "surface_offset": 0.005,
+      "tags": ["floor", "rug", "bedroom", "living_room", "royal"]
+    },
+    "rug_09": {
+      "name": "Alfombra Arena Trigo",
+      "type": "floor",
+      "texture": "res://assets/textures/furniture/rugs/rug_09.png",
+      "size": [1.75, 1.20],
+      "roughness": 0.92,
+      "metallic": 0.0,
+      "surface_offset": 0.005,
+      "tags": ["floor", "rug", "bedroom", "living_room", "neutral"]
+    },
+    "rug_10": {
+      "name": "Alfombra Diamante Grafito",
+      "type": "floor",
+      "texture": "res://assets/textures/furniture/rugs/rug_10.png",
+      "size": [1.75, 1.20],
+      "roughness": 0.90,
+      "metallic": 0.0,
+      "surface_offset": 0.005,
+      "tags": ["floor", "rug", "bedroom", "living_room", "geometric"]
+    },
+    "rug_11": {
+      "name": "Alfombra Celosía Marino",
+      "type": "floor",
+      "texture": "res://assets/textures/furniture/rugs/rug_11.png",
+      "size": [1.75, 1.20],
+      "roughness": 0.90,
+      "metallic": 0.0,
+      "surface_offset": 0.005,
+      "tags": ["floor", "rug", "bedroom", "living_room", "geometric"]
+    },
+    "rug_12": {
+      "name": "Alfombra Floral Marfil",
+      "type": "floor",
+      "texture": "res://assets/textures/furniture/rugs/rug_12.png",
+      "size": [1.75, 1.20],
+      "roughness": 0.88,
+      "metallic": 0.0,
+      "surface_offset": 0.005,
+      "tags": ["floor", "rug", "bedroom", "living_room", "classic"]
+    },
+    "rug_13": {
+      "name": "Alfombra Étnica Terracota",
+      "type": "floor",
+      "texture": "res://assets/textures/furniture/rugs/rug_13.png",
+      "size": [1.75, 1.20],
+      "roughness": 0.92,
+      "metallic": 0.0,
+      "surface_offset": 0.005,
+      "tags": ["floor", "rug", "bedroom", "living_room", "ethnic"]
+    },
+    "rug_14": {
+      "name": "Alfombra Greca Ceniza",
+      "type": "floor",
+      "texture": "res://assets/textures/furniture/rugs/rug_14.png",
+      "size": [1.75, 1.20],
+      "roughness": 0.90,
+      "metallic": 0.0,
+      "surface_offset": 0.005,
+      "tags": ["floor", "rug", "bedroom", "living_room", "modern"]
+    },
+    "rug_15": {
+      "name": "Alfombra Persa Burdeos",
+      "type": "floor",
+      "texture": "res://assets/textures/furniture/rugs/rug_15.png",
+      "size": [1.75, 1.20],
+      "roughness": 0.90,
+      "metallic": 0.0,
+      "surface_offset": 0.005,
+      "tags": ["floor", "rug", "bedroom", "living_room", "classic"]
+    },
+    "rug_16": {
+      "name": "Alfombra Étnica Crema",
+      "type": "floor",
+      "texture": "res://assets/textures/furniture/rugs/rug_16.png",
+      "size": [1.75, 1.20],
+      "roughness": 0.92,
+      "metallic": 0.0,
+      "surface_offset": 0.005,
+      "tags": ["floor", "rug", "bedroom", "living_room", "ethnic"]
+    },
+    "rug_17": {
+      "name": "Alfombra Jade Clásica",
+      "type": "floor",
+      "texture": "res://assets/textures/furniture/rugs/rug_17.png",
+      "size": [1.75, 1.20],
+      "roughness": 0.90,
+      "metallic": 0.0,
+      "surface_offset": 0.005,
+      "tags": ["floor", "rug", "bedroom", "living_room", "classic"]
+    },
+    "rug_18": {
+      "name": "Alfombra Damasco Beige",
+      "type": "floor",
+      "texture": "res://assets/textures/furniture/rugs/rug_18.png",
+      "size": [1.75, 1.20],
+      "roughness": 0.90,
+      "metallic": 0.0,
+      "surface_offset": 0.005,
+      "tags": ["floor", "rug", "bedroom", "living_room", "damask"]
+    },
+    "rug_19": {
+      "name": "Alfombra Azteca Azul Noche",
+      "type": "floor",
+      "texture": "res://assets/textures/furniture/rugs/rug_19.png",
+      "size": [1.75, 1.20],
+      "roughness": 0.90,
+      "metallic": 0.0,
+      "surface_offset": 0.005,
+      "tags": ["floor", "rug", "bedroom", "living_room", "aztec"]
+    }
+  }
+}

@@ -6,6 +6,7 @@ mod zombie_population;
 pub mod botanical;
 pub mod roads;
 pub mod construction;
+pub mod houses;
 
 struct RustCoreExtension;
 

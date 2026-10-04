@@ -163,6 +163,8 @@ class BoxInstanceCollector:
 	var transforms: Array[Transform3D] = []
 	var colors: Array[Color] = []
 	var collision_boxes: Array[Dictionary] = [] # { "pos": Vector3, "size": Vector3 }
+	var door_entries: Array[Dictionary] = [] # { "pos": Vector3, "w": float, "h": float, "rot_y": float }
+	var door_style_counter: int = 0
 
 	func add_box(pos: Vector3, size: Vector3, color: Color, has_collision: bool = true) -> void:
 		if size.x <= 0.001 or size.y <= 0.001 or size.z <= 0.001:
@@ -172,6 +174,11 @@ class BoxInstanceCollector:
 		colors.append(color)
 		if has_collision:
 			collision_boxes.append({"pos": pos, "size": size})
+
+	func add_door(pos: Vector3, width: float, height: float, rotation_y: float) -> void:
+		var style_id := door_style_counter % 8
+		door_style_counter += 1
+		door_entries.append({"pos": pos, "w": width, "h": height, "rot_y": rotation_y, "style": style_id})
 
 
 func _build_single_house(
@@ -328,6 +335,19 @@ func _build_single_house(
 		col_shape.position = box["pos"]
 		body.add_child(col_shape)
 	house_root.add_child(body)
+
+	# 9. Puertas texturizadas con WoodenDoor (texturas PSX variadas, interactivas con tecla E)
+	for d_idx in collector.door_entries.size():
+		var d_entry: Dictionary = collector.door_entries[d_idx]
+		var door_node := WoodenDoor.new()
+		door_node.name = "Door_%d" % d_idx
+		door_node.door_width = d_entry["w"]
+		door_node.door_height = d_entry["h"]
+		door_node.door_thickness = 0.06
+		door_node.door_style = d_entry["style"]
+		door_node.position = d_entry["pos"]
+		door_node.rotation.y = d_entry["rot_y"]
+		house_root.add_child(door_node)
 
 	return {
 		"node": house_root,
@@ -655,6 +675,8 @@ func _add_wall_x_with_openings(
 			var lintel_h := wall_h - door_h
 			var lintel_y := door_h + lintel_h * 0.5
 			c.add_box(Vector3(op_start + op_w * 0.5, lintel_y, z_pos), Vector3(op_w, lintel_h, thick), color)
+			# Registrar puerta texturizada (rot_y = 0 para muros eje X)
+			c.add_door(Vector3(op_start + op_w * 0.5, 0.0, z_pos), op_w, door_h, 0.0)
 
 		elif op_type == "window":
 			# Ventana: antepecho inferior y dintel superior
@@ -713,6 +735,8 @@ func _add_wall_z_with_openings(
 			var lintel_h := wall_h - door_h
 			var lintel_y := door_h + lintel_h * 0.5
 			c.add_box(Vector3(x_pos, lintel_y, op_start + op_w * 0.5), Vector3(thick, lintel_h, op_w), color)
+			# Registrar puerta texturizada (rot_y = PI/2 para muros eje Z)
+			c.add_door(Vector3(x_pos, 0.0, op_start + op_w * 0.5), op_w, door_h, PI * 0.5)
 
 		elif op_type == "window":
 			var sill: float = clampf(float(op.get("sill", 0.90)), 0.0, wall_h - 0.6)

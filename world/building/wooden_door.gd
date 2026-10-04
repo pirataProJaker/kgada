@@ -10,6 +10,11 @@ class_name WoodenDoor
 @export var door_thickness: float = 0.06
 @export var open_angle_deg: float = 105.0
 @export var angular_speed: float = 220.0
+@export_range(0, 7) var door_style: int = 0:
+	set(val):
+		door_style = clampi(val, 0, 7)
+		if is_inside_tree() and door_slab != null:
+			_setup_door_geometry()
 
 var _is_open := false
 var _current_angle := 0.0
@@ -62,11 +67,14 @@ func _setup_door_geometry() -> void:
 
 	var mat := StandardMaterial3D.new()
 	var tex: Texture2D
-	if ResourceLoader.exists("res://assets/building/wood_door.png"):
-		tex = load("res://assets/building/wood_door.png")
+	var path := "res://assets/building/doors/door_%d.png" % door_style
+	if not ResourceLoader.exists(path):
+		path = "res://assets/building/wood_door.png"
+	if ResourceLoader.exists(path):
+		tex = load(path)
 	if tex == null:
 		var img := Image.new()
-		if img.load("res://assets/building/wood_door.png") == OK:
+		if img.load(path) == OK:
 			tex = ImageTexture.create_from_image(img)
 	mat.albedo_texture = tex
 	mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST

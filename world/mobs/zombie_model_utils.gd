@@ -16,12 +16,12 @@ class_name ZombieModelUtils
 ## "die"/"attack" para que Zombie.gd las pueda reproducir por nombre fijo
 ## (igual que el patron de Dog/Cat).
 
-const ZOMBIE_MODEL_PATH := "res://assets/zombie 1/AutopsyZombieItch.fbx"
+const ZOMBIE_MODEL_PATH := "res://assets/characters/psx_humanoid.glb"
 const ZOMBIE_DIFFUSE_PATH := "res://assets/zombie 1/zombie 1 original/AutopsyZombieItch.fbm/Material_Diffuse.png"
 const ZOMBIE_NORMAL_PATH := "res://assets/zombie 1/zombie 1 original/AutopsyZombieItch.fbm/Material_Normal.png"
 const ZOMBIE_TARGET_HEIGHT := 1.8 # altura aproximada de una persona, en metros
 
-# Archivo .fbx de animacion -> nombre final dentro del AnimationPlayer fusionado.
+# Archivo .fbx de animacion -> nombre final dentro del AnimationPlayer fusionado (para fallback FBX).
 const ANIM_SOURCES := {
 	"res://assets/zombie 1/zombie walk.fbx": "walk",
 	"res://assets/zombie 1/zombie run.fbx": "run",
@@ -38,8 +38,15 @@ const PROCESSED_ANIM_CACHE_META := "zombie_processed_animation"
 
 ## Carga el modelo del zombie, lo agrega como hijo de `parent` (nombrado
 ## "Model"), le aplica textura/escala, y fusiona las animaciones. Si el
-## modelo base no se puede cargar, agrega un placeholder de bloques.
+## nodo "Model" ya existe en la escena (p. ej. en zombie.tscn), solo lo configura.
 static func build_model(parent: Node3D) -> void:
+	if parent.has_node("Model"):
+		var existing_model: Node3D = parent.get_node("Model") as Node3D
+		if existing_model != null:
+			_force_visible(existing_model)
+			_merge_animations(existing_model)
+		return
+
 	var model_scene: PackedScene = load(ZOMBIE_MODEL_PATH) as PackedScene
 	if model_scene == null:
 		push_warning("[mob] No se pudo cargar %s, usando modelo de bloques de respaldo." % ZOMBIE_MODEL_PATH)
@@ -57,17 +64,16 @@ static func build_model(parent: Node3D) -> void:
 	model.name = "Model"
 	parent.add_child(model)
 
-	_apply_material(model)
+	if not ZOMBIE_MODEL_PATH.ends_with(".glb"):
+		_apply_material(model)
 	_force_visible(model)
 	_normalize_scale(model)
 	_merge_animations(model)
 
 	# El modelo mira hacia +Z (verificado via huesos: los dedos del pie
 	# quedan mas adelante que el tobillo en +Z tras la conversion de ejes
-	# FBX -> Godot - mismo caso que cat.fbx). Godot usa -Z como direccion de
-	# avance, asi que se rota 180 grados en Y (si no, el zombie camina "de
-	# espaldas": el cuerpo se mueve hacia donde apunta Zombie.gd pero el
-	# modelo visualmente mira/camina para el otro lado).
+	# FBX/GLB -> Godot). Godot usa -Z como direccion de avance, asi que se rota
+	# 180 grados en Y para que avance de frente.
 	model.rotation.y = PI
 
 
@@ -102,6 +108,20 @@ static func _merge_animations(model: Node3D) -> void:
 	# el cambio no se vea brusco - AnimationPlayer interpola solo durante
 	# este tiempo cada vez que se llama a play() con una animacion distinta.
 	anim_player.playback_default_blend_time = 0.25
+
+	# Si el modelo ya tiene todas las animaciones horneadas (psx_zombie.glb)
+	if anim_player.has_animation("walk") and anim_player.has_animation("idle"):
+		var natural_speeds := {
+			"idle": 0.0,
+			"walk": 1.2,
+			"run": 2.5,
+			"attack": 0.0,
+			"die": 0.0,
+			"death": 0.0,
+			"hit": 0.0,
+		}
+		anim_player.set_meta("mob_natural_speeds", natural_speeds)
+		return
 
 	if not anim_player.has_animation_library(""):
 		anim_player.add_animation_library("", AnimationLibrary.new())
@@ -289,11 +309,12 @@ static func _force_visible(node: Node) -> void:
 
 
 static func _combined_aabb_local(model: Node3D) -> AABB:
-	var inv := model.global_transform.affine_inverse()
+	var in_tree := model.is_inside_tree()
+	var inv := model.global_transform.affine_inverse() if in_tree else Transform3D.IDENTITY
 	var result := AABB()
 	var first := true
 	for vi in _find_visual_instances(model):
-		var xform: Transform3D = inv * vi.global_transform
+		var xform: Transform3D = (inv * vi.global_transform) if in_tree else vi.transform
 		var local_aabb: AABB = xform * vi.get_aabb()
 		if first:
 			result = local_aabb

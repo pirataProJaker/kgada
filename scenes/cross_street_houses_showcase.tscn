@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://d3m8y0yak4n7a"]
+
+[ext_resource type="Script" path="res://scenes/cross_street_houses_showcase.gd" id="1_cross_houses"]
+
+[node name="CrossStreetHousesShowcase" type="Node3D"]
+script = ExtResource("1_cross_houses")
