@@ -228,3 +228,22 @@ pub struct HousePalette {
     pub window_glass: Color,
     pub tinaco: Color,
 }
+
+/// Tipología de escalera normalizada para casas procedurales
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum StairType {
+    Straight = 0,
+    UShape = 1,
+    LShape = 2,
+}
+
+/// Datos de colocación e integración de escalera en la cuadrícula de 1m x 1m
+#[derive(Debug, Clone, Copy)]
+pub struct StairData {
+    pub stair_type: StairType,
+    pub x: usize,
+    pub z: usize,
+    pub width: usize,
+    pub length: usize,
+    pub orientation: u8, // 0: Sube hacia +Z, 1: hacia +X, 2: hacia -Z, 3: hacia -X
+}

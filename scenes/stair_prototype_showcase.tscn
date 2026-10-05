@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://ca45pt6ywcw41"]
+
+[ext_resource type="Script" path="res://scenes/stair_prototype_showcase.gd" id="1_showcase"]
+
+[node name="StairPrototypeShowcase" type="Node3D"]
+script = ExtResource("1_showcase")

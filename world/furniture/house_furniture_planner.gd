@@ -209,6 +209,19 @@ static func _get_door_reserved_cells(res: Dictionary, floor_num: int, w: int, d:
 					var dist := Vector2(cell_center_x - dp.x, cell_center_z - dp.z).length()
 					if dist < 1.15:
 						reserved[Vector2i(cgx, cgz)] = true
+
+	# Reservar huella de escalera y su área de aproximación / desembarque en ambos pisos
+	if res.has("stair"):
+		var st: Dictionary = res["stair"]
+		var sx := int(st.get("x", 0))
+		var sz := int(st.get("z", 0))
+		var sw := int(st.get("width", 1))
+		var sl := int(st.get("length", 3))
+		# Reservar huella de la escalera + 1m de buffer de circulación
+		for z in range(maxi(0, sz - 1), mini(d, sz + sl + 1)):
+			for x in range(maxi(0, sx - 1), mini(w, sx + sw + 1)):
+				reserved[Vector2i(x, z)] = true
+
 	return reserved
 
 
@@ -746,10 +759,33 @@ static func plan_bedroom_furniture(res: Dictionary, room_dict: Dictionary, house
 			if wgx >= r_xmin - 1 and wgx <= r_xmax and wgz >= r_zmin - 1 and wgz <= r_zmax:
 				room_windows.append(wp)
 
+	# Recopilar puertas de este cuarto para evitar colocar la cama frente a accesos o bloqueando el tránsito
+	var room_doors: Array[Vector3] = []
+	for dr in res.get("doors", []):
+		var dp: Vector3 = dr.get("position", Vector3.ZERO)
+		var d_floor := 1 if dp.y < 2.0 else 2
+		if d_floor != room_floor:
+			continue
+		var dgx := int(floor(dp.x + half_w))
+		var dgz := int(floor(dp.z + half_d))
+		var touches_room := false
+		for oz in range(-1, 2):
+			for ox in range(-1, 2):
+				if _is_valid_room_cell(map, iw, id, dgx + ox, dgz + oz, room_id):
+					touches_room = true
+					break
+			if touches_room:
+				break
+		if touches_room:
+			room_doors.append(dp)
+
 	# 2. Evaluar posibles ubicaciones para la cama (cabecera en celda H contra una pared, apuntando en dir)
-	var dirs: Array[Vector2i] = [Vector2i(0, 1), Vector2i(0, -1), Vector2i(1, 0), Vector2i(-1, 0)]
+	var dirs: Array[Vector2i] = [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]
 	var best_bed_candidate: Dictionary = {}
 	var best_score := -9999.0
+
+	var room_dim_x := r_xmax - r_xmin
+	var room_dim_z := r_zmax - r_zmin
 
 	for cell in room_cells:
 		for dir in dirs:
@@ -777,28 +813,102 @@ static func plan_bedroom_furniture(res: Dictionary, room_dict: Dictionary, house
 			if not safe["fits"]:
 				continue
 
-			var score := 50.0
-
 			var perp := Vector2i(-dir.y, dir.x)
 			var n1 := cell + perp
 			var n2 := cell - perp
 			var n1_valid := _is_valid_room_cell(map, iw, id, n1.x, n1.y, room_id) and not door_reserved.has(n1)
 			var n2_valid := _is_valid_room_cell(map, iw, id, n2.x, n2.y, room_id) and not door_reserved.has(n2)
 
+			var cell_center_x := float(cell.x) - half_w + 0.5
+			var cell_center_z := float(cell.y) - half_d + 0.5
+			var cell_center := Vector2(cell_center_x, cell_center_z)
+
+			# 1. Medir el espacio libre en la dirección hacia donde se proyecta la cama (dir)
+			var span_in_dir := 0
+			var test_c := cell + dir
+			while _is_valid_room_cell(map, iw, id, test_c.x, test_c.y, room_id):
+				span_in_dir += 1
+				test_c += dir
+
+			# 2. Medir el espacio perpendicular a la cama (a lo ancho de la cabecera)
+			var span_perp_neg := 0
+			var test_pn := cell - perp
+			while _is_valid_room_cell(map, iw, id, test_pn.x, test_pn.y, room_id):
+				span_perp_neg += 1
+				test_pn -= perp
+
+			var span_perp_pos := 0
+			var test_pp := cell + perp
+			while _is_valid_room_cell(map, iw, id, test_pp.x, test_pp.y, room_id):
+				span_perp_pos += 1
+				test_pp += perp
+
+			var total_span_perp := 1 + span_perp_neg + span_perp_pos
+
+			var score := 50.0
+
+			# REGLA CRÍTICA 1: Evitar que la cama atraviese la dimensión angosta de la habitación
+			# Si la habitación es más ancha perpendicularmente que hacia adelante, la cama sobresale como represa
+			if span_in_dir <= 2:
+				# Solo 2 celdas de fondo: la cama de 2.14m deja menos de 0.86m al pie contra la pared de enfrente
+				if total_span_perp >= 4:
+					score -= 130.0 # Prohibido: atraviesa el cuarto partiendo una habitación ancha en dos
+				elif total_span_perp > span_in_dir:
+					score -= 80.0
+			elif span_in_dir >= 4:
+				score += 35.0 # Mucho espacio libre al pie de la cama
+			elif span_in_dir >= 3:
+				score += 15.0
+
+			# REGLA CRÍTICA 2: Alinear con la proporción rectangular del cuarto
+			if room_dim_x >= room_dim_z + 1:
+				# Cuarto alargado en X
+				if dir.x != 0:
+					score += 35.0 # Se extiende a lo largo de X
+				else:
+					score -= 50.0 # Atraviesa a lo ancho de Z
+			elif room_dim_z >= room_dim_x + 1:
+				# Cuarto alargado en Z
+				if dir.y != 0:
+					score += 35.0 # Se extiende a lo largo de Z
+				else:
+					score -= 50.0 # Atraviesa a lo ancho de X
+
+			# REGLA CRÍTICA 3: Despeje y distancia con respecto a puertas de entrada
+			var foot_center := cell_center + Vector2(float(dir.x) * 1.5, float(dir.y) * 1.5)
+			var min_dist_to_door := 9999.0
+			for dpos in room_doors:
+				var d_door := Vector2(dpos.x, dpos.z)
+				var d_head := (cell_center - d_door).length()
+				var d_foot := (foot_center - d_door).length()
+				var d_close := minf(d_head, d_foot)
+				if d_close < min_dist_to_door:
+					min_dist_to_door = d_close
+
+			if min_dist_to_door < 1.6:
+				score -= 90.0 # Demasiado cerca de la puerta / invade el radio de acceso
+			elif min_dist_to_door >= 2.5:
+				score += 25.0 # Excelente posición retirada en la recámara (Command Position)
+
+			# REGLA 4: Ventanas (evitar cabecera bloqueando ventanas)
+			for win_p in room_windows:
+				if Vector2(cell_center_x - win_p.x, cell_center_z - win_p.z).length() < 1.3:
+					score -= 45.0
+
+			# REGLA 5: Buró lateral y esquinado
 			if n1_valid or n2_valid:
 				score += 20.0
 			if n1_valid and n2_valid:
-				score += 10.0
+				if mini(room_dim_x, room_dim_z) >= 4:
+					score += 10.0 # En cuartos amplios, paso en ambos lados
+			elif (n1_valid and not n2_valid) or (n2_valid and not n1_valid):
+				if mini(room_dim_x, room_dim_z) <= 3:
+					score += 15.0 # En cuartos compactos, cama esquinada ahorra el máximo espacio
 
+			# Pequeño bono por muro interior
 			var is_exterior: bool = (bgx < 0 or bgx >= iw or bgz < 0 or bgz >= id or map[bgz * iw + bgx] == 0)
 			if not is_exterior:
-				score += 15.0
-
-			var cell_center_x := float(cell.x) - half_w + 0.5
-			var cell_center_z := float(cell.y) - half_d + 0.5
-			for win_p in room_windows:
-				if Vector2(cell_center_x - win_p.x, cell_center_z - win_p.z).length() < 1.0:
-					score -= 25.0
+				score += 5.0
 
 			if score > best_score:
 				best_score = score
@@ -866,13 +976,30 @@ static func plan_bedroom_furniture(res: Dictionary, room_dict: Dictionary, house
 		occupied_cells[Vector2i(head_c.x + b_dir.x * 2, head_c.y + b_dir.y * 2)] = true
 
 	# Posición del Buró:
-	var ns_cell: Vector2i
-	if best_bed_candidate["n1_valid"]:
+	var ns_cell := Vector2i(-999, -999)
+	if best_bed_candidate["n1_valid"] and best_bed_candidate["n2_valid"]:
+		var n1_c: Vector2i = best_bed_candidate["n1_cell"]
+		var n2_c: Vector2i = best_bed_candidate["n2_cell"]
+		var n1_wall := not _is_valid_room_cell(map, iw, id, n1_c.x + b_perp.x, n1_c.y + b_perp.y, room_id)
+		var n2_wall := not _is_valid_room_cell(map, iw, id, n2_c.x - b_perp.x, n2_c.y - b_perp.y, room_id)
+		if n1_wall and not n2_wall:
+			ns_cell = n1_c
+		elif n2_wall and not n1_wall:
+			ns_cell = n2_c
+		else:
+			var n1_p := Vector2(float(n1_c.x) - half_w + 0.5, float(n1_c.y) - half_d + 0.5)
+			var n2_p := Vector2(float(n2_c.x) - half_w + 0.5, float(n2_c.y) - half_d + 0.5)
+			var d1 := 999.0
+			var d2 := 999.0
+			for dr_pos in room_doors:
+				var dr_2d := Vector2(dr_pos.x, dr_pos.z)
+				d1 = minf(d1, (n1_p - dr_2d).length())
+				d2 = minf(d2, (n2_p - dr_2d).length())
+			ns_cell = n1_c if d1 >= d2 else n2_c
+	elif best_bed_candidate["n1_valid"]:
 		ns_cell = best_bed_candidate["n1_cell"]
 	elif best_bed_candidate["n2_valid"]:
 		ns_cell = best_bed_candidate["n2_cell"]
-	else:
-		ns_cell = Vector2i(-999, -999)
 
 	if ns_cell.x != -999:
 		occupied_cells[ns_cell] = true

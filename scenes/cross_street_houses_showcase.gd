@@ -28,6 +28,7 @@ const ApplianceStoveScript = preload("res://world/furniture/appliance_stove.gd")
 const ApplianceMicrowaveScript = preload("res://world/furniture/appliance_microwave.gd")
 const KitchenCabinetScript = preload("res://world/furniture/kitchen_cabinet.gd")
 const HouseFurniturePlannerScript = preload("res://world/furniture/house_furniture_planner.gd")
+const StairModuleScript = preload("res://world/building/stair_module.gd")
 
 ## Texturas exteriores de fachada para paredes de afuera (archivos *_ext.png)
 const EXT_WALL_TEXTURE_PATHS: Array[String] = [
@@ -689,6 +690,59 @@ func regenerate_houses() -> void:
 			if grilles:
 				house_node.add_child(grilles)
 
+		# 5e. Módulo de Escalera Normalizada (para casas de 2 pisos con núcleo procedural)
+		if res.has("stair"):
+			var s_data: Dictionary = res["stair"]
+			var stair_node := StairModuleScript.new()
+			stair_node.name = "HouseStair"
+			var s_type: int = s_data.get("type", 0)
+			var s_ori: int = s_data.get("orientation", 0)
+			var s_x: float = float(s_data.get("x", 0.0))
+			var s_z: float = float(s_data.get("z", 0.0))
+			var s_w: float = float(s_data.get("width", 1.0))
+			var s_l: float = float(s_data.get("length", 3.0))
+
+			stair_node.stair_type = s_type
+			stair_node.orientation = s_ori
+			stair_node.stair_width = 0.88 if zone_type != 2 else 0.95
+			stair_node.straight_length = s_l
+			stair_node.target_height = 3.40 if zone_type == 2 else 2.80
+			stair_node.material_style = StairModuleScript.MaterialStyle.DARK_OAK if zone_type == 2 else StairModuleScript.MaterialStyle.WOOD
+			stair_node.railing_left = true
+			stair_node.railing_right = true
+			stair_node.add_upper_guardrails = true
+
+			# Detección de muros exteriores colindantes para aplicar retranqueo (inset) anti-z-fighting:
+			# Los muros exteriores miden 0.20m de grosor. El inset de 0.12m separa la escalera para que
+			# jamás atraviese la fachada exterior de la vivienda.
+			var b_f1: PackedByteArray = res.get("room_map_floor1", PackedByteArray())
+			var grid_w: int = int(w)
+			var grid_d: int = int(d)
+			var ix: int = int(s_x)
+			var iz: int = int(s_z)
+
+			var ext_west: bool = (ix == 0) or (not b_f1.is_empty() and ix > 0 and b_f1[iz * grid_w + (ix - 1)] == 0)
+			var ext_east: bool = (ix + int(s_w) >= grid_w) or (not b_f1.is_empty() and ix + int(s_w) < grid_w and b_f1[iz * grid_w + (ix + int(s_w))] == 0)
+			var ext_north: bool = (iz == 0) or (not b_f1.is_empty() and iz > 0 and b_f1[(iz - 1) * grid_w + ix] == 0)
+			var ext_south: bool = (iz + int(s_l) >= grid_d) or (not b_f1.is_empty() and iz + int(s_l) < grid_d and b_f1[(iz + int(s_l)) * grid_w + ix] == 0)
+
+			var inset_offset: float = 0.12
+			var inset_x: float = (inset_offset if ext_west else (-inset_offset if ext_east else 0.0))
+			var inset_z: float = (inset_offset if ext_north else (-inset_offset if ext_south else 0.0))
+
+			var sx: float = 0.0
+			var sz: float = 0.0
+			if s_type == StairModuleScript.StairType.L_SHAPE:
+				# La huella en L de 2x2m está centrada en (0, 0)
+				sx = s_x + 1.0 - float(w) * 0.5 + inset_x
+				sz = s_z + 1.0 - float(d) * 0.5 + inset_z
+			else:
+				sx = s_x + s_w * 0.5 - float(w) * 0.5 + inset_x
+				sz = s_z - float(d) * 0.5 + (inset_z if ext_north else 0.0)
+
+			stair_node.position = Vector3(sx, 0.0, sz)
+			house_node.add_child(stair_node)
+
 		# 6. Árbol en patio trasero o jardín frontal vía ProceduralTree (Regla estricta: NO FBX)
 		if zone_type == 0:
 			# Colonia Vieja: Limonero / árbol de sombra en patio trasero
@@ -740,7 +794,7 @@ func regenerate_houses() -> void:
 					var item_t := Transform3D(item_rot_basis, item_global_pos)
 					neighborhood_furniture.add_furniture_by_script(scr, item_t, item)
 
-			elif r_name == "Sala" and r_floor == 1:
+			elif r_name == "Sala":
 				var living_items: Array[Dictionary] = HouseFurniturePlannerScript.plan_living_room_furniture(res, r_dict, float(w), float(d), house_seed)
 				for item in living_items:
 					var scr = item["script"]

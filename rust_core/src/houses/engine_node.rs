@@ -123,6 +123,18 @@ impl ProceduralHouseEngine {
         result.set("built_cells", (blueprint.grid.built_ground_cells() as i32).to_variant());
         result.set("floor2_cells", (blueprint.grid.floor2_cells() as i32).to_variant());
 
+        // Metadatos de Escalera Normalizada (StairData)
+        if let Some(stair) = blueprint.stair {
+            let mut stair_dict = VarDictionary::new();
+            stair_dict.set("type", (stair.stair_type as i32).to_variant());
+            stair_dict.set("x", (stair.x as f32).to_variant());
+            stair_dict.set("z", (stair.z as f32).to_variant());
+            stair_dict.set("width", (stair.width as f32).to_variant());
+            stair_dict.set("length", (stair.length as f32).to_variant());
+            stair_dict.set("orientation", (stair.orientation as i32).to_variant());
+            result.set("stair", stair_dict.to_variant());
+        }
+
         // Jerarquía de Reclamación: Habitaciones interiores reclamadas
         let mut rooms_array = VarArray::new();
         for r in &blueprint.rooms {

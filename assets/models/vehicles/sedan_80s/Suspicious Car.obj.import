@@ -1,0 +1,25 @@
+[remap]
+
+importer="wavefront_obj"
+importer_version=1
+type="Mesh"
+uid="uid://cfwcv0j4cl2lm"
+path="res://.godot/imported/Suspicious Car.obj-3257487958bdbfc4c341107c4e8feecb.mesh"
+
+[deps]
+
+files=["res://.godot/imported/Suspicious Car.obj-3257487958bdbfc4c341107c4e8feecb.mesh"]
+
+source_file="res://assets/models/vehicles/sedan_80s/Suspicious Car.obj"
+dest_files=["res://.godot/imported/Suspicious Car.obj-3257487958bdbfc4c341107c4e8feecb.mesh", "res://.godot/imported/Suspicious Car.obj-3257487958bdbfc4c341107c4e8feecb.mesh"]
+
+[params]
+
+generate_tangents=true
+generate_lods=true
+generate_shadow_mesh=true
+generate_lightmap_uv2=false
+generate_lightmap_uv2_texel_size=0.2
+scale_mesh=Vector3(1, 1, 1)
+offset_mesh=Vector3(0, 0, 0)
+force_disable_mesh_compression=false

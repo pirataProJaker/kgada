@@ -10,4 +10,7 @@ scratch/
 tests/_*
 *.log
 .vscode/
+__pycache__/
+*.pyc
+
 

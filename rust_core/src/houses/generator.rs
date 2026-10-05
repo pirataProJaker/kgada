@@ -15,6 +15,7 @@ pub struct HouseBlueprint {
     pub room_map_floor1: Vec<u8>,
     pub room_map_floor2: Vec<u8>,
     pub palette: HousePalette,
+    pub stair: Option<StairData>,
 }
 
 pub struct HouseGeneratorCore;
@@ -78,7 +79,28 @@ impl HouseGeneratorCore {
             Self::sanitize_rooms(&mut rooms, &mut map_f2, width, depth, 2);
         }
 
-        // 4. Sincronizar cuadrícula 3D estrictamente con los mapas finales de cuartos
+        // 4. Integrar Núcleo de Escalera y Circulación (Pasillo / Sala TV en Planta Alta)
+        let stair = if total_floors >= 2 {
+            let st = Self::integrate_stairs_and_circulation(
+                &mut rooms,
+                &mut map_f1,
+                &mut map_f2,
+                &grid,
+                width,
+                depth,
+                total_floors,
+                main_door_pos,
+                &mut rng,
+            );
+            if st.is_some() {
+                Self::sanitize_rooms(&mut rooms, &mut map_f2, width, depth, 2);
+            }
+            st
+        } else {
+            None
+        };
+
+        // 5. Sincronizar cuadrícula 3D estrictamente con los mapas finales de cuartos
         for z in 0..depth {
             for x in 0..width {
                 if map_f2[z * width + x] > 0 {
@@ -91,7 +113,7 @@ impl HouseGeneratorCore {
             }
         }
 
-        // 5. Seleccionar paleta arquitectónica calibrada
+        // 6. Seleccionar paleta arquitectónica calibrada
         let palette = Self::pick_palette(zone, &mut rng);
 
         let has_terrace = grid.cells.iter().any(|c| *c == CellHeight::Floor1)
@@ -109,6 +131,7 @@ impl HouseGeneratorCore {
             room_map_floor1: map_f1,
             room_map_floor2: map_f2,
             palette,
+            stair,
         }
     }
 
@@ -296,62 +319,60 @@ impl HouseGeneratorCore {
             }
         }
 
-        // --- PLANTA ALTA EN COLONIA VIEJA (~45% de probabilidad) ---
-        let has_floor2 = rng.gen_bool(0.45);
+        // --- PLANTA ALTA EN COLONIA VIEJA (~55% de probabilidad) ---
+        let has_floor2 = rng.gen_bool(0.55);
         let total_floors = if has_floor2 { 2 } else { 1 };
 
         if has_floor2 {
-            let f2_mode = rng.gen_range(0..=2);
-            match f2_mode {
-                0 => {
-                    // MODO CRUJÍA FRONTAL COMPLETA (0..w, 0..front_d)
-                    let bed1_up = next_id; next_id += 1;
-                    rooms.push(HouseRoom {
-                        id: bed1_up,
-                        room_type: RoomType::Bedroom,
-                        floor: 2,
-                        x_min: 0,
-                        z_min: 0,
-                        x_max: split_x,
-                        z_max: front_d,
-                    });
-                    let bed2_up = next_id; next_id += 1;
-                    rooms.push(HouseRoom {
-                        id: bed2_up,
-                        room_type: RoomType::Bedroom,
-                        floor: 2,
-                        x_min: split_x,
-                        z_min: 0,
-                        x_max: w,
-                        z_max: front_d,
-                    });
-                }
-                1 => {
-                    // MODO TORRE FRONTAL IZQUIERDA (0..split_x, 0..front_d)
-                    let bed_up_id = next_id; next_id += 1;
-                    rooms.push(HouseRoom {
-                        id: bed_up_id,
-                        room_type: RoomType::Bedroom,
-                        floor: 2,
-                        x_min: 0,
-                        z_min: 0,
-                        x_max: split_x,
-                        z_max: front_d,
-                    });
-                }
-                _ => {
-                    // MODO TORRE FRONTAL DERECHA (split_x..w, 0..front_d)
-                    let bed_up_id = next_id; next_id += 1;
-                    rooms.push(HouseRoom {
-                        id: bed_up_id,
-                        room_type: RoomType::Bedroom,
-                        floor: 2,
-                        x_min: split_x,
-                        z_min: 0,
-                        x_max: w,
-                        z_max: front_d,
-                    });
-                }
+            // Planta Alta amplia (75% a 85% de la casa), deja terraza posterior sobre el patio
+            let f2_max_z = (max_d.saturating_sub(1)).max(front_d + 3);
+
+            // 1. Recámaras Frontales con ventanas hacia la calle:
+            let bed1_up = next_id; next_id += 1;
+            rooms.push(HouseRoom {
+                id: bed1_up,
+                room_type: RoomType::Bedroom,
+                floor: 2,
+                x_min: 0,
+                z_min: 0,
+                x_max: split_x,
+                z_max: front_d,
+            });
+
+            let bed2_up = next_id; next_id += 1;
+            rooms.push(HouseRoom {
+                id: bed2_up,
+                room_type: RoomType::Bedroom,
+                floor: 2,
+                x_min: split_x,
+                z_min: 0,
+                x_max: w,
+                z_max: front_d,
+            });
+
+            // 2. Crujía Intermedia y Posterior de Planta Alta:
+            if f2_max_z > front_d + 2 {
+                let bed3_up = next_id; next_id += 1;
+                rooms.push(HouseRoom {
+                    id: bed3_up,
+                    room_type: RoomType::Bedroom,
+                    floor: 2,
+                    x_min: 0,
+                    z_min: front_d,
+                    x_max: split_x,
+                    z_max: f2_max_z,
+                });
+
+                let bath_up = next_id; next_id += 1;
+                rooms.push(HouseRoom {
+                    id: bath_up,
+                    room_type: RoomType::Bathroom,
+                    floor: 2,
+                    x_min: split_x,
+                    z_min: front_d,
+                    x_max: w,
+                    z_max: (front_d + 3).min(f2_max_z),
+                });
             }
         }
 
@@ -611,92 +632,45 @@ impl HouseGeneratorCore {
         let total_floors = if has_floor2 { 2 } else { 1 };
 
         if has_floor2 {
-            let f2_mode = rng.gen_range(0..=2);
-            match f2_mode {
-                0 => {
-                    // MODO TERRAZA FRONTAL SOBRE COCHERA (~50%):
-                    let f2_start_z = front_z + 2;
-                    let bed1_up = next_id; next_id += 1;
-                    rooms.push(HouseRoom {
-                        id: bed1_up,
-                        room_type: RoomType::Bedroom,
-                        floor: 2,
-                        x_min: min_x,
-                        z_min: f2_start_z,
-                        x_max: mid_x,
-                        z_max: f2_start_z + 4,
-                    });
+            // Planta Alta amplia en Infonavit (cubre 75% a 85% de la casa desde front_z hasta max_z - 1)
+            let f2_max_z = (max_z.saturating_sub(1)).max(front_z + 6);
+            let mid_f2_z = front_z + (f2_max_z - front_z) / 2;
 
-                    let bath_up = next_id; next_id += 1;
-                    rooms.push(HouseRoom {
-                        id: bath_up,
-                        room_type: RoomType::Bathroom,
-                        floor: 2,
-                        x_min: mid_x,
-                        z_min: f2_start_z,
-                        x_max: max_x,
-                        z_max: f2_start_z + 2,
-                    });
+            // Recámara 1 (Frontal / Principal con vista a la calle):
+            let bed1_up = next_id; next_id += 1;
+            rooms.push(HouseRoom {
+                id: bed1_up,
+                room_type: RoomType::Bedroom,
+                floor: 2,
+                x_min: min_x,
+                z_min: front_z,
+                x_max: max_x,
+                z_max: mid_f2_z,
+            });
 
-                    let bed2_up = next_id; next_id += 1;
-                    rooms.push(HouseRoom {
-                        id: bed2_up,
-                        room_type: RoomType::Bedroom,
-                        floor: 2,
-                        x_min: mid_x,
-                        z_min: f2_start_z + 2,
-                        x_max: max_x,
-                        z_max: f2_start_z + 5,
-                    });
-                }
-                1 => {
-                    // MODO TORRE LATERAL EN "L" (~30%):
-                    let bed1_up = next_id; next_id += 1;
-                    rooms.push(HouseRoom {
-                        id: bed1_up,
-                        room_type: RoomType::Bedroom,
-                        floor: 2,
-                        x_min: min_x,
-                        z_min: front_z,
-                        x_max: mid_x,
-                        z_max: front_z + 4,
-                    });
+            // Baño Completo en Planta Alta:
+            let bath_up = next_id; next_id += 1;
+            rooms.push(HouseRoom {
+                id: bath_up,
+                room_type: RoomType::Bathroom,
+                floor: 2,
+                x_min: min_x,
+                z_min: mid_f2_z,
+                x_max: mid_x,
+                z_max: (mid_f2_z + 2).min(f2_max_z),
+            });
 
-                    let bed2_up = next_id; next_id += 1;
-                    rooms.push(HouseRoom {
-                        id: bed2_up,
-                        room_type: RoomType::Bedroom,
-                        floor: 2,
-                        x_min: min_x,
-                        z_min: front_z + 4,
-                        x_max: mid_x,
-                        z_max: front_z + 7,
-                    });
-                }
-                _ => {
-                    // MODO COMPLETO (~20%):
-                    let bed1_up = next_id; next_id += 1;
-                    rooms.push(HouseRoom {
-                        id: bed1_up,
-                        room_type: RoomType::Bedroom,
-                        floor: 2,
-                        x_min: min_x,
-                        z_min: front_z,
-                        x_max: mid_x,
-                        z_max: front_z + 4,
-                    });
-                    let bed2_up = next_id; next_id += 1;
-                    rooms.push(HouseRoom {
-                        id: bed2_up,
-                        room_type: RoomType::Bedroom,
-                        floor: 2,
-                        x_min: mid_x,
-                        z_min: front_z,
-                        x_max: max_x,
-                        z_max: front_z + 4,
-                    });
-                }
-            }
+            // Recámara 2 (Posterior con vista al patio):
+            let bed2_up = next_id; next_id += 1;
+            rooms.push(HouseRoom {
+                id: bed2_up,
+                room_type: RoomType::Bedroom,
+                floor: 2,
+                x_min: mid_x,
+                z_min: mid_f2_z,
+                x_max: max_x,
+                z_max: f2_max_z,
+            });
         }
 
         (rooms, total_floors, main_door_pos)
@@ -929,56 +903,58 @@ impl HouseGeneratorCore {
         let total_floors = if has_floor2 { 2 } else { 1 };
 
         if has_floor2 {
-            let f2_mode = rng.gen_range(0..=1);
-            if f2_mode == 0 {
-                // MODO ROOF GARDEN CON SUITES SUPERIORES (~60%):
-                let split_f2_x = min_x + build_w / 2;
-                let bed1_up = next_id; next_id += 1;
-                rooms.push(HouseRoom {
-                    id: bed1_up,
-                    room_type: RoomType::Bedroom,
-                    floor: 2,
-                    x_min: min_x,
-                    z_min: front_z,
-                    x_max: split_f2_x,
-                    z_max: front_z + 5,
-                });
+            // Planta Alta amplia en Zona X (cubre 75% a 85% de la mansión, dejando terraza con vista al jardín/alberca)
+            let f2_max_z = (max_z.saturating_sub(2)).max(front_z + 8);
+            let split_f2_x = min_x + build_w / 2;
+            let mid_f2_z = front_z + (f2_max_z - front_z) / 2;
 
-                let gym_up = next_id; next_id += 1;
-                rooms.push(HouseRoom {
-                    id: gym_up,
-                    room_type: RoomType::GymOrGames,
-                    floor: 2,
-                    x_min: split_f2_x,
-                    z_min: front_z,
-                    x_max: max_x,
-                    z_max: front_z + 5,
-                });
-            } else {
-                // MODO VOLADIZO ASIMÉTRICO / TORRE EN "L" SUPERIOR (~40%):
-                let wing_up_w = build_w / 2;
-                let bed1_up = next_id; next_id += 1;
-                rooms.push(HouseRoom {
-                    id: bed1_up,
-                    room_type: RoomType::Bedroom,
-                    floor: 2,
-                    x_min: min_x,
-                    z_min: front_z,
-                    x_max: min_x + wing_up_w,
-                    z_max: front_z + 4,
-                });
+            // Recámara Principal / Master Suite (Frontal Izquierda, con vista y balcón):
+            let bed1_up = next_id; next_id += 1;
+            rooms.push(HouseRoom {
+                id: bed1_up,
+                room_type: RoomType::Bedroom,
+                floor: 2,
+                x_min: min_x,
+                z_min: front_z,
+                x_max: split_f2_x,
+                z_max: mid_f2_z,
+            });
 
-                let bed2_up = next_id; next_id += 1;
-                rooms.push(HouseRoom {
-                    id: bed2_up,
-                    room_type: RoomType::Bedroom,
-                    floor: 2,
-                    x_min: min_x,
-                    z_min: front_z + 4,
-                    x_max: min_x + wing_up_w,
-                    z_max: max_z.min(front_z + 8),
-                });
-            }
+            // Junior Suite / Recámara 2 (Frontal Derecha):
+            let bed2_up = next_id; next_id += 1;
+            rooms.push(HouseRoom {
+                id: bed2_up,
+                room_type: RoomType::Bedroom,
+                floor: 2,
+                x_min: split_f2_x,
+                z_min: front_z,
+                x_max: max_x,
+                z_max: mid_f2_z,
+            });
+
+            // Gimnasio / Sala de Juegos / Estudio (Posterior Izquierda):
+            let gym_up = next_id; next_id += 1;
+            rooms.push(HouseRoom {
+                id: gym_up,
+                room_type: RoomType::GymOrGames,
+                floor: 2,
+                x_min: min_x,
+                z_min: mid_f2_z,
+                x_max: split_f2_x,
+                z_max: f2_max_z,
+            });
+
+            // Suite de Huéspedes / Recámara 3 (Posterior Derecha):
+            let bed3_up = next_id; next_id += 1;
+            rooms.push(HouseRoom {
+                id: bed3_up,
+                room_type: RoomType::Bedroom,
+                floor: 2,
+                x_min: split_f2_x,
+                z_min: mid_f2_z,
+                x_max: max_x,
+                z_max: f2_max_z,
+            });
         }
 
         (rooms, total_floors, main_door_pos)
@@ -1063,7 +1039,7 @@ impl HouseGeneratorCore {
             let floor_rooms: Vec<(usize, u8)> = rooms
                 .iter()
                 .enumerate()
-                .filter(|(_, r)| r.floor == floor)
+                .filter(|(_, r)| r.floor == floor && r.room_type != RoomType::Hallway)
                 .map(|(idx, r)| (idx, r.id))
                 .collect();
 
@@ -1147,5 +1123,411 @@ impl HouseGeneratorCore {
                 break;
             }
         }
+    }
+
+    /// Integra de forma 100% procedural el núcleo de escalera entre Planta Baja y Planta Alta.
+    /// Valida que la escalera nazca en un muro de la Sala, no tape la puerta principal,
+    /// tenga espacio libre para ingresar (sin chocar con la pared), piso 2 construido arriba,
+    /// y genere un Pasillo/Sala de TV distribuidor en Planta Alta que conecte a todas las recámaras.
+    fn integrate_stairs_and_circulation(
+        rooms: &mut Vec<HouseRoom>,
+        map_f1: &mut [u8],
+        map_f2: &mut [u8],
+        _grid: &HouseGrid,
+        width: usize,
+        depth: usize,
+        total_floors: u8,
+        main_door_pos: (usize, usize),
+        rng: &mut StdRng,
+    ) -> Option<StairData> {
+        if total_floors < 2 {
+            return None;
+        }
+
+        // 1. Encontrar la Sala en Planta Baja
+        let living_room = rooms
+            .iter()
+            .find(|r| r.floor == 1 && r.room_type == RoomType::LivingRoom)
+            .cloned()?;
+
+        let living_w = living_room.x_max.saturating_sub(living_room.x_min);
+        let living_d = living_room.z_max.saturating_sub(living_room.z_min);
+
+        #[derive(Clone)]
+        struct Candidate {
+            stair_type: StairType,
+            x: usize,
+            z: usize,
+            width: usize,
+            length: usize,
+            orientation: u8,
+        }
+        let mut l_candidates = Vec::new();
+        let mut straight_candidates = Vec::new();
+        let mut u_candidates = Vec::new();
+
+        // 2. Proponer candidatos para Escalera en "L" (2m x 2m en esquinas de muros)
+        // La escalera en L es la favorita para casas mexicanas porque abraza la esquina
+        // y deja la entrada y salida 100% libres hacia el centro del cuarto.
+        if living_w >= 3 && living_d >= 3 {
+            let corners = [
+                // (x_corner, z_corner, orientation, entry_dx, entry_dz, exit_dx, exit_dz)
+                // NW: Landing en (x, z), entrada en (x, z+1) desde Sur, salida en (x+1, z) hacia Este
+                (living_room.x_min, living_room.z_min, 0u8, 0isize, 2isize, 2isize, 0isize),
+                // NE: Landing en (x+1, z), entrada en (x+1, z+1) desde Sur, salida en (x, z) hacia Oeste
+                (living_room.x_max.saturating_sub(2), living_room.z_min, 1u8, 1isize, 2isize, -1isize, 0isize),
+                // SW: Landing en (x, z+1), entrada en (x+1, z+1) desde Este, salida en (x, z) hacia Norte
+                (living_room.x_min, living_room.z_max.saturating_sub(2), 2u8, 2isize, 1isize, 0isize, -1isize),
+                // SE: Landing en (x+1, z+1), entrada en (x, z+1) desde Oeste, salida en (x+1, z) hacia Norte
+                (living_room.x_max.saturating_sub(2), living_room.z_max.saturating_sub(2), 3u8, -1isize, 1isize, 1isize, -1isize),
+            ];
+
+            for (cx, cz, ori, en_dx, en_dz, ex_dx, ex_dz) in corners {
+                if cx + 2 > width || cz + 2 > depth {
+                    continue;
+                }
+                // Piso 2 construido en los 4 cuadrantes
+                let valid_f2 = (0..2).all(|dx| {
+                    (0..2).all(|dz| {
+                        let px = cx + dx;
+                        let pz = cz + dz;
+                        px < width && pz < depth && map_f2[pz * width + px] > 0
+                    })
+                });
+
+                // Entrada libre: la celda frente al primer escalón debe estar en la Sala de PB
+                let en_x = cx as isize + en_dx;
+                let en_z = cz as isize + en_dz;
+                let entry_clear = en_x >= 0 && (en_x as usize) < width && en_z >= 0 && (en_z as usize) < depth
+                    && map_f1[(en_z as usize) * width + (en_x as usize)] == living_room.id;
+
+                // Salida libre: la celda frente a la llegada en PA debe estar construida en Piso 2
+                let ex_x = cx as isize + ex_dx;
+                let ex_z = cz as isize + ex_dz;
+                let exit_clear = ex_x >= 0 && (ex_x as usize) < width && ex_z >= 0 && (ex_z as usize) < depth
+                    && map_f2[(ex_z as usize) * width + (ex_x as usize)] > 0;
+
+                // No bloquear puerta principal
+                let blocks_door = (0..2).any(|dx| {
+                    (0..2).any(|dz| {
+                        let px = cx + dx;
+                        let pz = cz + dz;
+                        let dist = (px as isize - main_door_pos.0 as isize).abs()
+                            + (pz as isize - main_door_pos.1 as isize).abs();
+                        dist <= 1
+                    })
+                });
+
+                if valid_f2 && entry_clear && exit_clear && !blocks_door {
+                    l_candidates.push(Candidate {
+                        stair_type: StairType::LShape,
+                        x: cx,
+                        z: cz,
+                        width: 2,
+                        length: 2,
+                        orientation: ori,
+                    });
+                }
+            }
+        }
+
+        // 3. Proponer candidatos para Escalera Recta (1m ancho x 3m largo)
+        // Regla estricta 1: La escalera DEBE estar adosada a una pared exterior del perímetro (NUNCA en medio de la sala ni en la división con el comedor).
+        // Regla estricta 2: La bajada NUNCA debe dar contra una pared; debe haber >= 1m libre al inicio.
+        if living_w >= 2 && living_d >= 4 {
+            let mut possible_xs = Vec::new();
+            // Verificar si el lado izquierdo de la sala es pared exterior perimetral
+            let left_is_ext = living_room.x_min == 0
+                || (living_room.x_min > 0 && map_f1[living_room.z_min * width + (living_room.x_min - 1)] == 0);
+            if left_is_ext {
+                possible_xs.push(living_room.x_min);
+            }
+
+            // Verificar si el lado derecho de la sala es pared exterior perimetral (NO el límite abierto con el comedor)
+            let right_is_ext = living_room.x_max >= width
+                || map_f1[living_room.z_min * width + living_room.x_max] == 0;
+            if right_is_ext {
+                possible_xs.push(living_room.x_max.saturating_sub(1));
+            }
+
+            // Si por geometría ninguna pared lateral es 0 (caso atípico), default al muro izquierdo
+            if possible_xs.is_empty() {
+                possible_xs.push(living_room.x_min);
+            }
+
+            for &x_start in &possible_xs {
+                if x_start >= width {
+                    continue;
+                }
+                // Asegurar al menos 1 celda libre antes del primer escalón (z_start > living_min)
+                let min_z = living_room.z_min + 1;
+                let max_z = living_room.z_max.saturating_sub(3);
+                if min_z <= max_z {
+                    for z_start in min_z..=max_z {
+                        // Verificar que en Planta Alta haya losa construida
+                        let valid_f2 = (0..3).all(|dz| {
+                            let cz = z_start + dz;
+                            x_start < width && cz < depth && map_f2[cz * width + x_start] > 0
+                        });
+                        // Entrada libre en PB en (x_start, z_start - 1)
+                        let entry_clear = map_f1[(z_start - 1) * width + x_start] == living_room.id;
+                        // Salida libre en PA en (x_start, z_start + 3)
+                        let exit_clear = (z_start + 3) < depth && map_f2[(z_start + 3) * width + x_start] > 0;
+
+                        // No bloquear puerta principal
+                        let blocks_door = (0..3).any(|dz| {
+                            let cz = z_start + dz;
+                            let dist = (x_start as isize - main_door_pos.0 as isize).abs()
+                                + (cz as isize - main_door_pos.1 as isize).abs();
+                            dist <= 1
+                        });
+
+                        if valid_f2 && entry_clear && exit_clear && !blocks_door {
+                            straight_candidates.push(Candidate {
+                                stair_type: StairType::Straight,
+                                x: x_start,
+                                z: z_start,
+                                width: 1,
+                                length: 3,
+                                orientation: 0,
+                            });
+                        }
+                    }
+                }
+            }
+        }
+
+        // 4. Proponer candidatos para Escalera en "U" (2m ancho x 3m largo)
+        if living_w >= 4 && living_d >= 4 {
+            let possible_xs = [living_room.x_min, living_room.x_max.saturating_sub(2)];
+            for &x_start in &possible_xs {
+                if x_start + 2 > width {
+                    continue;
+                }
+                let min_z = living_room.z_min + 1;
+                let max_z = living_room.z_max.saturating_sub(3);
+                if min_z <= max_z {
+                    for z_start in min_z..=max_z {
+                        let valid_f2 = (0..2).all(|dx| {
+                            (0..3).all(|dz| {
+                                let cx = x_start + dx;
+                                let cz = z_start + dz;
+                                cx < width && cz < depth && map_f2[cz * width + cx] > 0
+                            })
+                        });
+                        let entry_clear = (0..2).all(|dx| {
+                            map_f1[(z_start - 1) * width + (x_start + dx)] == living_room.id
+                        });
+                        let blocks_door = (0..2).any(|dx| {
+                            (0..3).any(|dz| {
+                                let cx = x_start + dx;
+                                let cz = z_start + dz;
+                                let dist = (cx as isize - main_door_pos.0 as isize).abs()
+                                    + (cz as isize - main_door_pos.1 as isize).abs();
+                                dist <= 1
+                            })
+                        });
+                        if valid_f2 && entry_clear && !blocks_door {
+                            u_candidates.push(Candidate {
+                                stair_type: StairType::UShape,
+                                x: x_start,
+                                z: z_start,
+                                width: 2,
+                                length: 3,
+                                orientation: 0,
+                            });
+                        }
+                    }
+                }
+            }
+        }
+
+        // Preferencia arquitectónica: Escalera Recta adosada a pared exterior (85% de las veces)
+        // ya que es la solución más limpia y ergonómica en residencias mexicanas
+        let choice = if !straight_candidates.is_empty() && (rng.gen_bool(0.85) || (l_candidates.is_empty() && u_candidates.is_empty())) {
+            straight_candidates[rng.gen_range(0..straight_candidates.len())].clone()
+        } else if !l_candidates.is_empty() {
+            l_candidates[rng.gen_range(0..l_candidates.len())].clone()
+        } else if !u_candidates.is_empty() {
+            u_candidates[rng.gen_range(0..u_candidates.len())].clone()
+        } else if !straight_candidates.is_empty() {
+            straight_candidates[rng.gen_range(0..straight_candidates.len())].clone()
+        } else {
+            return None;
+        };
+
+        // 5. Configurar el Gran Pasillo Distribuidor y Habitaciones en Planta Alta
+        // En lugar de mutilar cuartos preexistentes o dejar rincones inaccesibles,
+        // Planta Alta se organiza alrededor de un Gran Pasillo Distribuidor generoso y continuo.
+
+        // Encontrar los límites de construcción de Planta Alta
+        let mut f2_min_x = width;
+        let mut f2_max_x = 0;
+        let mut f2_min_z = depth;
+        let mut f2_max_z = 0;
+        for z in 0..depth {
+            for x in 0..width {
+                if map_f2[z * width + x] > 0 {
+                    f2_min_x = f2_min_x.min(x);
+                    f2_max_x = f2_max_x.max(x);
+                    f2_min_z = f2_min_z.min(z);
+                    f2_max_z = f2_max_z.max(z);
+                }
+            }
+        }
+        if f2_max_x < f2_min_x || f2_max_z < f2_min_z {
+            return None;
+        }
+        f2_max_x += 1; // Exclusivo
+        f2_max_z += 1; // Exclusivo
+
+        // Limpiar cuartos anteriores de Planta Alta para reconstruirlos sin deformaciones ni esquinas muertas
+        rooms.retain(|r| r.floor != 2);
+
+        let mut next_id = rooms.iter().map(|r| r.id).max().unwrap_or(0) + 1;
+        let hall_id = next_id; next_id += 1;
+        let bed1_id = next_id; next_id += 1; // Recámara 1 (Principal / Frontal)
+        let bed2_id = next_id; next_id += 1; // Recámara 2 (Posterior)
+        let bath_id = next_id; next_id += 1; // Baño Completo Planta Alta
+
+        // Determinar celdas del Gran Pasillo Distribuidor
+        let mut hall_cells: Vec<(usize, usize)> = Vec::new();
+
+        // 5.1 Hueco físico de la escalera
+        for dx in 0..choice.width {
+            for dz in 0..choice.length {
+                let cx = choice.x + dx;
+                let cz = choice.z + dz;
+                if cx < width && cz < depth && map_f2[cz * width + cx] > 0 {
+                    hall_cells.push((cx, cz));
+                }
+            }
+        }
+
+        // 5.2 Desembarque y Corredor Distribuidor (ancho mínimo de 1.5 a 2m, abierto al tiro de la escalera)
+        let (land_start_z, land_end_z) = match choice.stair_type {
+            StairType::Straight => {
+                let lz = choice.z + choice.length;
+                (lz, (lz + 2).min(f2_max_z))
+            }
+            StairType::LShape => {
+                let lz = match choice.orientation {
+                    0 | 2 => choice.z,
+                    1 => (choice.z + choice.length).min(f2_max_z),
+                    _ => choice.z.saturating_sub(1),
+                };
+                (lz, (lz + 2).min(f2_max_z))
+            }
+            StairType::UShape => {
+                let lz = choice.z;
+                (lz, (lz + 2).min(f2_max_z))
+            }
+        };
+
+        // Corredor a lo largo y al frente del desembarque:
+        // Si la escalera está pegada al muro izquierdo (choice.x == f2_min_x):
+        // El pasillo corre inmediatamente a su lado (choice.x + 1 .. choice.x + 3)
+        // eliminando cualquier muro divisorio entre la escalera y la circulación.
+        let is_stair_on_left = choice.x <= f2_min_x + 1;
+        let (hall_x0, hall_x1) = if is_stair_on_left {
+            let x0 = choice.x;
+            let x1 = (choice.x + choice.width + 1).min(f2_max_x).max(choice.x + 2);
+            (x0, x1)
+        } else {
+            let x1 = choice.x + choice.width;
+            let x0 = (choice.x.saturating_sub(1)).max(f2_min_x).min(x1.saturating_sub(2));
+            (x0, x1)
+        };
+
+        for cz in choice.z..land_end_z {
+            for cx in hall_x0..hall_x1 {
+                if cx < width && cz < depth && map_f2[cz * width + cx] > 0 {
+                    hall_cells.push((cx, cz));
+                }
+            }
+        }
+
+        // Marcar todas las celdas del pasillo en map_f2
+        for &(cx, cz) in &hall_cells {
+            map_f2[cz * width + cx] = hall_id;
+        }
+
+        // 5.3 Asignar el resto de Planta Alta con ergonomía limpia:
+        // Frontal: Recámara 1 (Principal)
+        // Posterior: Recámara 2 y Baño Completo
+        let mid_split_z = land_start_z.max(f2_min_z + 3);
+
+        for cz in f2_min_z..f2_max_z {
+            for cx in f2_min_x..f2_max_x {
+                if map_f2[cz * width + cx] == hall_id || map_f2[cz * width + cx] == 0 {
+                    continue;
+                }
+
+                if cz < mid_split_z {
+                    // Zona frontal: Recámara 1 (Principal) con ventanas a la calle
+                    map_f2[cz * width + cx] = bed1_id;
+                } else {
+                    // Zona posterior: Si está del lado de la escalera y tiene >= 2m de profundidad, asignar a Baño
+                    let is_bath_side = if is_stair_on_left {
+                        cx < (f2_min_x + 3).min(f2_max_x)
+                    } else {
+                        cx >= f2_max_x.saturating_sub(3)
+                    };
+
+                    if is_bath_side && cz >= land_start_z && cz < (land_start_z + 3).min(f2_max_z) {
+                        map_f2[cz * width + cx] = bath_id;
+                    } else {
+                        map_f2[cz * width + cx] = bed2_id;
+                    }
+                }
+            }
+        }
+
+        // 5.4 Reconstruir la lista de HouseRoom para Planta Alta a partir de map_f2
+        for &(r_id, r_type) in &[
+            (hall_id, RoomType::Hallway),
+            (bed1_id, RoomType::Bedroom),
+            (bed2_id, RoomType::Bedroom),
+            (bath_id, RoomType::Bathroom),
+        ] {
+            let mut min_rx = width;
+            let mut max_rx = 0;
+            let mut min_rz = depth;
+            let mut max_rz = 0;
+            let mut count = 0;
+
+            for z in 0..depth {
+                for x in 0..width {
+                    if map_f2[z * width + x] == r_id {
+                        min_rx = min_rx.min(x);
+                        max_rx = max_rx.max(x);
+                        min_rz = min_rz.min(z);
+                        max_rz = max_rz.max(z);
+                        count += 1;
+                    }
+                }
+            }
+
+            if count > 0 {
+                rooms.push(HouseRoom {
+                    id: r_id,
+                    room_type: r_type,
+                    floor: 2,
+                    x_min: min_rx,
+                    z_min: min_rz,
+                    x_max: max_rx + 1,
+                    z_max: max_rz + 1,
+                });
+            }
+        }
+
+        Some(StairData {
+            stair_type: choice.stair_type,
+            x: choice.x,
+            z: choice.z,
+            width: choice.width,
+            length: choice.length,
+            orientation: choice.orientation,
+        })
     }
 }

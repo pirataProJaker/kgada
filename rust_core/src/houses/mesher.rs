@@ -172,7 +172,12 @@ impl HouseMesher {
             let mut mask_f2 = vec![false; w * d];
             for z in 0..d {
                 for x in 0..w {
-                    mask_f2[z * w + x] = grid.get(x, z) == CellHeight::Floor2;
+                    let is_stair_hole = if let Some(stair) = blueprint.stair {
+                        x >= stair.x && x < stair.x + stair.width && z >= stair.z && z < stair.z + stair.length
+                    } else {
+                        false
+                    };
+                    mask_f2[z * w + x] = !is_stair_hole && (grid.get(x, z) == CellHeight::Floor2);
                 }
             }
             for (rx, rz, rw, rd) in Self::decompose_rectangles(w, d, &mask_f2) {
@@ -428,6 +433,7 @@ impl HouseMesher {
                             let span_len = (span_end - span_start) as f32;
                             let span_start_w = to_world_x(span_start as f32);
                             let span_end_w = to_world_x(span_end as f32);
+                            let span_open_north = Self::is_true_open_north(blueprint, span_start, span_end, z);
 
                             if is_main_door_z && door_x >= span_start && door_x < span_end {
                                 let door_w = 0.95f32;
@@ -454,40 +460,41 @@ impl HouseMesher {
                                     is_main_door: true,
                                 });
 
-                                // Ventanal de Sala con separación garantizada (NO se traslapa con la puerta)
-                                let door_left = door_center - door_w * 0.5;
-                                let door_right = door_center + door_w * 0.5;
+                                // Ventanal de Sala con separación garantizada (únicamente si da al exterior abierto)
+                                if span_open_north {
+                                    let door_left = door_center - door_w * 0.5;
+                                    let door_right = door_center + door_w * 0.5;
+                                    let space_right = (span_end_w - ext_th - min_jamb) - door_right;
+                                    let space_left = door_left - (span_start_w + ext_th + min_jamb);
 
-                                let space_left = door_left - (span_start_w + ext_th + min_jamb);
-                                let space_right = (span_end_w - ext_th - min_jamb) - door_right;
-
-                                if space_right >= 1.60 {
-                                    let win_w = space_right.min(1.60);
-                                    let win_center = (door_right + min_jamb) + win_w * 0.5;
-                                    openings.push(WallOpening {
-                                        center: win_center,
-                                        width: win_w,
-                                        y_bottom: y_bot + 0.90,
-                                        height: 1.30,
-                                        is_door: false,
-                                        door_style: 0,
-                                        is_main_door: false,
-                                    });
-                                } else if space_left >= 1.60 {
-                                    let win_w = space_left.min(1.60);
-                                    let win_center = (door_left - min_jamb) - win_w * 0.5;
-                                    openings.push(WallOpening {
-                                        center: win_center,
-                                        width: win_w,
-                                        y_bottom: y_bot + 0.90,
-                                        height: 1.30,
-                                        is_door: false,
-                                        door_style: 0,
-                                        is_main_door: false,
-                                    });
+                                    if space_right >= 1.60 {
+                                        let win_w = space_right.min(1.60);
+                                        let win_center = (door_right + min_jamb) + win_w * 0.5;
+                                        openings.push(WallOpening {
+                                            center: win_center,
+                                            width: win_w,
+                                            y_bottom: y_bot + 0.90,
+                                            height: 1.30,
+                                            is_door: false,
+                                            door_style: 0,
+                                            is_main_door: false,
+                                        });
+                                    } else if space_left >= 1.60 {
+                                        let win_w = space_left.min(1.60);
+                                        let win_center = (door_left - min_jamb) - win_w * 0.5;
+                                        openings.push(WallOpening {
+                                            center: win_center,
+                                            width: win_w,
+                                            y_bottom: y_bot + 0.90,
+                                            height: 1.30,
+                                            is_door: false,
+                                            door_style: 0,
+                                            is_main_door: false,
+                                        });
+                                    }
                                 }
-                            } else if span_len >= 2.0 {
-                                // Cuarto frontal sin puerta principal (Cocina o Recámara): ventana centrada
+                            } else if span_open_north && span_len >= 2.0 {
+                                // Cuarto frontal sin puerta principal: ventana centrada si es fachada exterior real
                                 let span_center = (span_start_w + span_end_w) * 0.5;
                                 openings.push(WallOpening {
                                     center: span_center,
@@ -501,7 +508,7 @@ impl HouseMesher {
                             }
                         }
                     } else if is_front_facade && fl == 2 {
-                        // Ventanas de planta alta por cada habitación frontal
+                        // Ventanas de planta alta por cada habitación frontal que dé a fachada abierta al exterior
                         let mut cur_sx = x_start;
                         while cur_sx < x_end {
                             let room_id = room_map[z * w + cur_sx];
@@ -511,7 +518,9 @@ impl HouseMesher {
                             }
                             let span_end = cur_sx;
                             let span_len = (span_end - span_start) as f32;
-                            if span_len >= 2.0 {
+                            let span_open_north = Self::is_true_open_north(blueprint, span_start, span_end, z);
+
+                            if span_open_north && span_len >= 2.0 {
                                 let span_start_w = to_world_x(span_start as f32);
                                 let span_end_w = to_world_x(span_end as f32);
                                 let span_center = (span_start_w + span_end_w) * 0.5;
@@ -527,7 +536,7 @@ impl HouseMesher {
                             }
                         }
                     } else if is_ext_south_outside && fl == 1 {
-                        // Fachada trasera al patio en Planta Baja: procesar cada habitación
+                        // Fachada trasera al patio en Planta Baja: procesar cada habitación que dé a patio abierto
                         let mut cur_sx = x_start;
                         while cur_sx < x_end {
                             let room_id = room_map[(z - 1) * w + cur_sx];
@@ -540,37 +549,83 @@ impl HouseMesher {
                             let span_start_w = to_world_x(span_start as f32);
                             let span_end_w = to_world_x(span_end as f32);
                             let span_center = (span_start_w + span_end_w) * 0.5;
+                            let span_open_south = Self::is_true_open_south(blueprint, span_start, span_end, z);
 
-                            let r_type = Self::get_room_type(blueprint, room_id);
-                            if r_type == RoomType::Bathroom {
-                                // Baño al patio: ventana alta de baño garantizada (NUNCA puerta)
-                                if span_len >= 1.5 {
-                                    openings.push(WallOpening {
-                                        center: span_center,
-                                        width: 0.60,
-                                        y_bottom: y_bot + 1.80,
-                                        height: 0.45,
-                                        is_door: false,
-                                        door_style: 0,
-                                        is_main_door: false,
-                                    });
+                            if span_open_south {
+                                let r_type = Self::get_room_type(blueprint, room_id);
+                                if r_type == RoomType::Bathroom {
+                                    // Baño al patio: ventana alta de baño garantizada (NUNCA puerta)
+                                    if span_len >= 1.5 {
+                                        openings.push(WallOpening {
+                                            center: span_center,
+                                            width: 0.60,
+                                            y_bottom: y_bot + 1.80,
+                                            height: 0.45,
+                                            is_door: false,
+                                            door_style: 0,
+                                            is_main_door: false,
+                                        });
+                                    }
+                                } else if r_type.is_social_or_circulation() {
+                                    // Distribuidor / Cocina al patio: puerta de patio
+                                    if span_len >= 1.4 {
+                                        openings.push(WallOpening {
+                                            center: span_center,
+                                            width: 0.90,
+                                            y_bottom: y_bot,
+                                            height: 2.15,
+                                            is_door: true,
+                                            door_style: { let s = door_style_counter % 8; door_style_counter += 1; s },
+                                            is_main_door: false,
+                                        });
+                                    }
+                                } else if r_type == RoomType::Bedroom {
+                                    // Recámara al patio: ventana residencial normal
+                                    if span_len >= 2.0 {
+                                        openings.push(WallOpening {
+                                            center: span_center,
+                                            width: 1.20,
+                                            y_bottom: y_bot + 1.00,
+                                            height: 1.15,
+                                            is_door: false,
+                                            door_style: 0,
+                                            is_main_door: false,
+                                        });
+                                    }
                                 }
-                            } else if r_type.is_social_or_circulation() {
-                                // Distribuidor / Cocina al patio: puerta de patio
-                                if span_len >= 1.4 {
-                                    openings.push(WallOpening {
-                                        center: span_center,
-                                        width: 0.90,
-                                        y_bottom: y_bot,
-                                        height: 2.15,
-                                        is_door: true,
-                                        door_style: { let s = door_style_counter % 8; door_style_counter += 1; s },
-                                        is_main_door: false,
-                                    });
-                                }
-                            } else if r_type == RoomType::Bedroom {
-                                // Recámara al patio: ventana residencial normal
-                                if span_len >= 2.0 {
+                            }
+                        }
+                    } else if is_ext_south_outside && fl == 2 {
+                        // Fachada trasera en Planta Alta únicamente si da a patio exterior real
+                        let mut cur_sx = x_start;
+                        while cur_sx < x_end {
+                            let room_id = room_map[(z - 1) * w + cur_sx];
+                            let span_start = cur_sx;
+                            while cur_sx < x_end && room_map[(z - 1) * w + cur_sx] == room_id {
+                                cur_sx += 1;
+                            }
+                            let span_end = cur_sx;
+                            let span_len = (span_end - span_start) as f32;
+                            let span_start_w = to_world_x(span_start as f32);
+                            let span_end_w = to_world_x(span_end as f32);
+                            let span_center = (span_start_w + span_end_w) * 0.5;
+                            let span_open_south = Self::is_true_open_south(blueprint, span_start, span_end, z);
+
+                            if span_open_south {
+                                let r_type = Self::get_room_type(blueprint, room_id);
+                                if r_type == RoomType::Bathroom {
+                                    if span_len >= 1.5 {
+                                        openings.push(WallOpening {
+                                            center: span_center,
+                                            width: 0.60,
+                                            y_bottom: y_bot + 1.80,
+                                            height: 0.45,
+                                            is_door: false,
+                                            door_style: 0,
+                                            is_main_door: false,
+                                        });
+                                    }
+                                } else if span_len >= 2.0 {
                                     openings.push(WallOpening {
                                         center: span_center,
                                         width: 1.20,
@@ -581,46 +636,6 @@ impl HouseMesher {
                                         is_main_door: false,
                                     });
                                 }
-                            }
-                        }
-                    } else if is_ext_south_outside && fl == 2 {
-                        // Fachada trasera en Planta Alta
-                        let mut cur_sx = x_start;
-                        while cur_sx < x_end {
-                            let room_id = room_map[(z - 1) * w + cur_sx];
-                            let span_start = cur_sx;
-                            while cur_sx < x_end && room_map[(z - 1) * w + cur_sx] == room_id {
-                                cur_sx += 1;
-                            }
-                            let span_end = cur_sx;
-                            let span_len = (span_end - span_start) as f32;
-                            let span_start_w = to_world_x(span_start as f32);
-                            let span_end_w = to_world_x(span_end as f32);
-                            let span_center = (span_start_w + span_end_w) * 0.5;
-
-                            let r_type = Self::get_room_type(blueprint, room_id);
-                            if r_type == RoomType::Bathroom {
-                                if span_len >= 1.5 {
-                                    openings.push(WallOpening {
-                                        center: span_center,
-                                        width: 0.60,
-                                        y_bottom: y_bot + 1.80,
-                                        height: 0.45,
-                                        is_door: false,
-                                        door_style: 0,
-                                        is_main_door: false,
-                                    });
-                                }
-                            } else if span_len >= 2.0 {
-                                openings.push(WallOpening {
-                                    center: span_center,
-                                    width: 1.20,
-                                    y_bottom: y_bot + 1.00,
-                                    height: 1.15,
-                                    is_door: false,
-                                    door_style: 0,
-                                    is_main_door: false,
-                                });
                             }
                         }
                     } else if !is_exterior {
@@ -634,7 +649,8 @@ impl HouseMesher {
                         if is_n_private && is_s_private {
                             let is_bath_suite = (type_n == RoomType::Bathroom && type_s == RoomType::Bedroom)
                                 || (type_s == RoomType::Bathroom && type_n == RoomType::Bedroom);
-                            let is_floor2_pass = fl == 2 && (!private_doors_placed.contains(&r_north) || !private_doors_placed.contains(&r_south));
+                            let has_f2_hall = blueprint.rooms.iter().any(|r| r.floor == 2 && (r.room_type == RoomType::Hallway || r.room_type == RoomType::LivingRoom));
+                            let is_floor2_pass = fl == 2 && !has_f2_hall && (!private_doors_placed.contains(&r_north) || !private_doors_placed.contains(&r_south));
                             if (is_bath_suite || is_floor2_pass) && seg_len >= 1.00 {
                                 let priv_id = if is_bath_suite {
                                     if type_n == RoomType::Bathroom { r_north } else { r_south }
@@ -927,29 +943,60 @@ impl HouseMesher {
                             let span_end_w = to_world_z(span_end as f32);
                             let span_center = (span_start_w + span_end_w) * 0.5;
 
+                            let span_is_open_outside = if r_west == 0 {
+                                Self::is_true_open_west(blueprint, x, span_start, span_end)
+                            } else {
+                                Self::is_true_open_east(blueprint, x, span_start, span_end)
+                            };
+
+                            let touches_stair = if let Some(stair) = blueprint.stair {
+                                let stair_wall_x = (stair.x == x && r_east > 0) || (stair.x + stair.width == x && r_west > 0);
+                                let stair_z_overlap = span_start < stair.z + stair.length && span_end > stair.z;
+                                stair_wall_x && stair_z_overlap
+                            } else {
+                                false
+                            };
+
                             let r_type = Self::get_room_type(blueprint, room_id);
-                            if r_type == RoomType::Bathroom {
-                                if span_len >= 1.5 {
+                            if touches_stair && span_is_open_outside {
+                                if fl == 1 && span_len >= 1.5 {
+                                    // Ventana de Escalera Alta y Vertical únicamente si da a fachada o pasillo exterior real
+                                    let stair_obj = blueprint.stair.unwrap();
+                                    let stair_win_center = to_world_z(stair_obj.z as f32 + stair_obj.length as f32 * 0.5);
                                     openings.push(WallOpening {
-                                        center: span_center,
-                                        width: 0.60,
-                                        y_bottom: y_bot + 1.80,
-                                        height: 0.45,
+                                        center: stair_win_center,
+                                        width: 0.65,
+                                        y_bottom: y_bot + 1.20,
+                                        height: 2.20,
                                         is_door: false,
                                         door_style: 0,
                                         is_main_door: false,
                                     });
                                 }
-                            } else if span_len >= 2.5 {
-                                openings.push(WallOpening {
-                                    center: span_center,
-                                    width: 1.10,
-                                    y_bottom: y_bot + 1.05,
-                                    height: 1.10,
-                                    is_door: false,
-                                    door_style: 0,
-                                    is_main_door: false,
-                                });
+                            } else if span_is_open_outside {
+                                if r_type == RoomType::Bathroom {
+                                    if span_len >= 1.5 {
+                                        openings.push(WallOpening {
+                                            center: span_center,
+                                            width: 0.60,
+                                            y_bottom: y_bot + 1.80,
+                                            height: 0.45,
+                                            is_door: false,
+                                            door_style: 0,
+                                            is_main_door: false,
+                                        });
+                                    }
+                                } else if span_len >= 2.5 {
+                                    openings.push(WallOpening {
+                                        center: span_center,
+                                        width: 1.10,
+                                        y_bottom: y_bot + 1.05,
+                                        height: 1.10,
+                                        is_door: false,
+                                        door_style: 0,
+                                        is_main_door: false,
+                                    });
+                                }
                             }
                         }
                     } else if !is_exterior {
@@ -963,7 +1010,8 @@ impl HouseMesher {
                         if is_w_private && is_e_private {
                             let is_bath_suite = (type_w == RoomType::Bathroom && type_e == RoomType::Bedroom)
                                 || (type_e == RoomType::Bathroom && type_w == RoomType::Bedroom);
-                            let is_floor2_pass = fl == 2 && (!private_doors_placed.contains(&r_west) || !private_doors_placed.contains(&r_east));
+                            let has_f2_hall = blueprint.rooms.iter().any(|r| r.floor == 2 && (r.room_type == RoomType::Hallway || r.room_type == RoomType::LivingRoom));
+                            let is_floor2_pass = fl == 2 && !has_f2_hall && (!private_doors_placed.contains(&r_west) || !private_doors_placed.contains(&r_east));
                             if (is_bath_suite || is_floor2_pass) && seg_len >= 1.00 {
                                 let priv_id = if is_bath_suite {
                                     if type_w == RoomType::Bathroom { r_west } else { r_east }
@@ -1156,6 +1204,57 @@ impl HouseMesher {
         }
     }
 
+
+    pub fn is_true_open_north(blueprint: &HouseBlueprint, x_start: usize, x_end: usize, z: usize) -> bool {
+        let w = blueprint.grid.width;
+        if z == 0 {
+            return true;
+        }
+        (x_start..x_end).all(|x| {
+            if x >= w { return true; }
+            blueprint.room_map_floor1[(z - 1) * w + x] == 0
+                && blueprint.room_map_floor2[(z - 1) * w + x] == 0
+        })
+    }
+
+    pub fn is_true_open_south(blueprint: &HouseBlueprint, x_start: usize, x_end: usize, z: usize) -> bool {
+        let w = blueprint.grid.width;
+        let d = blueprint.grid.depth;
+        if z >= d {
+            return true;
+        }
+        (x_start..x_end).all(|x| {
+            if x >= w { return true; }
+            blueprint.room_map_floor1[z * w + x] == 0
+                && blueprint.room_map_floor2[z * w + x] == 0
+        })
+    }
+
+    pub fn is_true_open_west(blueprint: &HouseBlueprint, x: usize, z_start: usize, z_end: usize) -> bool {
+        let w = blueprint.grid.width;
+        let d = blueprint.grid.depth;
+        if x == 0 {
+            return true;
+        }
+        (z_start..z_end).all(|z| {
+            if z >= d { return true; }
+            blueprint.room_map_floor1[z * w + (x - 1)] == 0
+                && blueprint.room_map_floor2[z * w + (x - 1)] == 0
+        })
+    }
+
+    pub fn is_true_open_east(blueprint: &HouseBlueprint, x: usize, z_start: usize, z_end: usize) -> bool {
+        let w = blueprint.grid.width;
+        let d = blueprint.grid.depth;
+        if x >= w {
+            return true;
+        }
+        (z_start..z_end).all(|z| {
+            if z >= d { return true; }
+            blueprint.room_map_floor1[z * w + x] == 0
+                && blueprint.room_map_floor2[z * w + x] == 0
+        })
+    }
 
     fn get_room_type(blueprint: &HouseBlueprint, room_id: u8) -> RoomType {
         for r in &blueprint.rooms {
