@@ -14,6 +14,11 @@ const CommercialRecipesScript = preload("res://world/object_engine/recipes/comme
 const ElectricMeterCFERecipeScript = preload("res://world/object_engine/recipes/electric_meter_cfe_recipe.gd")
 const StreetlightPoleRecipeScript = preload("res://world/object_engine/recipes/streetlight_pole_recipe.gd")
 const OfficeRecipesScript = preload("res://world/object_engine/recipes/office_recipes.gd")
+const Furniture2SeatingRecipesScript = preload("res://world/object_engine/recipes/furniture2_seating_recipes.gd")
+const Furniture2BedsRecipesScript = preload("res://world/object_engine/recipes/furniture2_beds_recipes.gd")
+const Furniture2StorageRecipesScript = preload("res://world/object_engine/recipes/furniture2_storage_recipes.gd")
+const Furniture2KitchenRecipesScript = preload("res://world/object_engine/recipes/furniture2_kitchen_recipes.gd")
+const Furniture2PropsRecipesScript = preload("res://world/object_engine/recipes/furniture2_props_recipes.gd")
 
 const BedSingleOakScript = preload("res://world/furniture/bed_single_oak.gd")
 const NightstandOakScript = preload("res://world/furniture/nightstand_oak.gd")
@@ -707,6 +712,260 @@ func add_furniture_by_script(scr: Variant, t: Transform3D, extra_params: Diction
 			return
 		elif s_key == "office_bookcase_low" or s_key == "cupboard01_low":
 			OfficeRecipesScript.OfficeBookcaseLowRecipe.build(self, t, extra_params)
+			return
+
+		# --- MOBILIARIO 2.0 (Interior Village Asset Pack) ---
+		# Tanda 1: Asientos y Sofás (Imagen 5)
+		elif s_key == "sofa_damask_gold" or s_key == "armchair_08":
+			Furniture2SeatingRecipesScript.SofaDamaskGoldRecipe.build(self, t, extra_params)
+			return
+		elif s_key == "sofa_floral_cottage" or s_key == "armchair_06":
+			Furniture2SeatingRecipesScript.SofaFloralCottageRecipe.build(self, t, extra_params)
+			return
+		elif s_key == "sofa_wood_minimal" or s_key == "armchair_07":
+			Furniture2SeatingRecipesScript.SofaWoodMinimalRecipe.build(self, t, extra_params)
+			return
+		elif s_key == "sofa_chesterfield_red" or s_key == "armchair_03":
+			Furniture2SeatingRecipesScript.SofaChesterfieldRedRecipe.build(self, t, extra_params)
+			return
+		elif s_key == "armchair_chesterfield_red" or s_key == "armchair_04":
+			Furniture2SeatingRecipesScript.ArmchairChesterfieldRedRecipe.build(self, t, extra_params)
+			return
+		elif s_key == "armchair_wingback_leather" or s_key == "armchair_vintage":
+			Furniture2SeatingRecipesScript.ArmchairWingbackLeatherRecipe.build(self, t, extra_params)
+			return
+		elif s_key == "armchair_tufted_charcoal" or s_key == "armchair_01":
+			Furniture2SeatingRecipesScript.ArmchairTuftedCharcoalRecipe.build(self, t, extra_params)
+			return
+		elif s_key == "armchair_tufted_skyblue" or s_key == "armchair_02":
+			Furniture2SeatingRecipesScript.ArmchairTuftedSkyBlueRecipe.build(self, t, extra_params)
+			return
+		elif s_key == "armchair_velvet_mustard" or s_key == "armchair_05":
+			Furniture2SeatingRecipesScript.ArmchairVelvetMustardRecipe.build(self, t, extra_params)
+			return
+		elif s_key == "chair_dining_cream" or s_key == "chair_dining":
+			Furniture2SeatingRecipesScript.ChairDiningCreamRecipe.build(self, t, extra_params)
+			return
+		elif s_key == "chair_baroque_oval" or s_key == "chair_04":
+			Furniture2SeatingRecipesScript.ChairBaroqueOvalRecipe.build(self, t, extra_params)
+			return
+		elif s_key == "armchair_louis_xv_blue" or s_key == "chair_05":
+			Furniture2SeatingRecipesScript.ArmchairLouisXVBlueRecipe.build(self, t, extra_params)
+			return
+
+		# Tanda 2: Camas y Ropa de Cama (Imagen 3)
+		elif s_key == "bed_single_plaid" or s_key == "bed_plaid":
+			Furniture2BedsRecipesScript.BedSinglePlaidRecipe.build(self, t, extra_params)
+			return
+		elif s_key == "bed_double_iron_arabesque" or s_key == "bed_02":
+			Furniture2BedsRecipesScript.BedDoubleIronArabesqueRecipe.build(self, t, extra_params)
+			return
+		elif s_key == "bed_double_grey_duvet" or s_key == "bed_03":
+			Furniture2BedsRecipesScript.BedDoubleGreyDuvetRecipe.build(self, t, extra_params)
+			return
+		elif s_key == "bed_double_rustic_band" or s_key == "bed_01":
+			Furniture2BedsRecipesScript.BedDoubleRusticBandRecipe.build(self, t, extra_params)
+			return
+		elif s_key == "bed_double_rustic_wrinkled" or s_key == "bed_04":
+			Furniture2BedsRecipesScript.BedDoubleRusticWrinkledRecipe.build(self, t, extra_params)
+			return
+
+		# Tanda 3: Almacenamiento, Cómodas y Roperos (Imagen 4)
+		elif s_key == "chest_drawers_tall_5" or s_key == "chest_drawers":
+			Furniture2StorageRecipesScript.ChestDrawersTall5Recipe.build(self, t, extra_params)
+			return
+		elif s_key == "chest_drawers_light_4" or s_key == "chest_drawers_01":
+			Furniture2StorageRecipesScript.ChestDrawersLight4Recipe.build(self, t, extra_params)
+			return
+		elif s_key == "chest_drawers_white_3" or s_key == "chest_drawers_02":
+			Furniture2StorageRecipesScript.ChestDrawersWhite3Recipe.build(self, t, extra_params)
+			return
+		elif s_key == "nightstand_tapered_legs_3" or s_key == "chest_drawers_03":
+			Furniture2StorageRecipesScript.NightstandTaperedLegs3Recipe.build(self, t, extra_params)
+			return
+		elif s_key == "nightstand_tapered_legs_2" or s_key == "chest_drawers_04":
+			Furniture2StorageRecipesScript.NightstandTaperedLegs2Recipe.build(self, t, extra_params)
+			return
+		elif s_key == "sideboard_buffet_3drawers" or s_key == "chest_drawers_05":
+			Furniture2StorageRecipesScript.SideboardBuffet3DrawersRecipe.build(self, t, extra_params)
+			return
+		elif s_key == "sideboard_low_2doors" or s_key == "chest_drawers_06":
+			Furniture2StorageRecipesScript.SideboardLow2DoorsRecipe.build(self, t, extra_params)
+			return
+		elif s_key == "cupboard_welsh_dresser" or s_key == "cupboard_rustic":
+			Furniture2StorageRecipesScript.CupboardWelshDresserRecipe.build(self, t, extra_params)
+			return
+		elif s_key == "cupboard_vitrine_books" or s_key == "cupboard_01":
+			Furniture2StorageRecipesScript.CupboardVitrineBooksRecipe.build(self, t, extra_params)
+			return
+		elif s_key == "cupboard_vitrine_books_02" or s_key == "cupboard_02":
+			Furniture2StorageRecipesScript.CupboardVitrineBooks02Recipe.build(self, t, extra_params)
+			return
+		elif s_key == "cupboard_glass_tall" or s_key == "cupboard_03":
+			Furniture2StorageRecipesScript.CupboardGlassTallRecipe.build(self, t, extra_params)
+			return
+		elif s_key == "bookcase_full_books_tall" or s_key == "bookcase_tall":
+			Furniture2StorageRecipesScript.BookcaseFullBooksTallRecipe.build(self, t, extra_params)
+			return
+		elif s_key == "bookcase_full_books_tall_01" or s_key == "bookcase_01":
+			Furniture2StorageRecipesScript.BookcaseFullBooksTall01Recipe.build(self, t, extra_params)
+			return
+		elif s_key == "bookcase_books_low" or s_key == "bookcase_02":
+			Furniture2StorageRecipesScript.BookcaseBooksLowRecipe.build(self, t, extra_params)
+			return
+		elif s_key == "wardrobe_open_clothes" or s_key == "wardrobe_clothes":
+			Furniture2StorageRecipesScript.WardrobeOpenClothesRecipe.build(self, t, extra_params)
+			return
+		elif s_key == "wardrobe_open_coats" or s_key == "wardrobe_01":
+			Furniture2StorageRecipesScript.WardrobeOpenCoatsRecipe.build(self, t, extra_params)
+			return
+
+		# Tanda 4: Cocina y Comedor (Imagen 2)
+		elif s_key == "kitchen_corner_wall_cabinet" or s_key == "kitchen_fitment_wall":
+			Furniture2KitchenRecipesScript.KitchenCornerWallCabinetRecipe.build(self, t, extra_params)
+			return
+		elif s_key == "kitchen_base_counter_sink" or s_key == "kitchen_counter_sink":
+			Furniture2KitchenRecipesScript.KitchenBaseCounterSinkRecipe.build(self, t, extra_params)
+			return
+		elif s_key == "kitchen_island":
+			Furniture2KitchenRecipesScript.KitchenIslandRecipe.build(self, t, extra_params)
+			return
+		elif s_key == "kitchen_stove_gas_white" or s_key == "kitchen_stove_white":
+			Furniture2KitchenRecipesScript.KitchenStoveGasWhiteRecipe.build(self, t, extra_params)
+			return
+		elif s_key == "kitchen_refrigerator_beige" or s_key == "kitchen_refrigerator_retro":
+			Furniture2KitchenRecipesScript.KitchenRefrigeratorBeigeRecipe.build(self, t, extra_params)
+			return
+		elif s_key == "table_hex_gingham_rack" or s_key == "table_hex":
+			Furniture2KitchenRecipesScript.TableHexGinghamRackRecipe.build(self, t, extra_params)
+			return
+		elif s_key == "table_rect_gingham" or s_key == "table_01":
+			Furniture2KitchenRecipesScript.TableRectGinghamRecipe.build(self, t, extra_params)
+			return
+		elif s_key == "table_rect_lace_floral" or s_key == "table_02":
+			Furniture2KitchenRecipesScript.TableRectLaceFloralRecipe.build(self, t, extra_params)
+			return
+		elif s_key == "kitchen_hanging_utensils" or s_key == "hanging_cutlery":
+			Furniture2KitchenRecipesScript.KitchenHangingUtensilsRecipe.build(self, t, extra_params)
+			return
+		elif s_key == "chair_kitchen_slat":
+			Furniture2KitchenRecipesScript.ChairKitchenSlatRecipe.build(self, t, extra_params)
+			return
+		elif s_key == "chair_kitchen_spindle" or s_key == "chair_windsor":
+			Furniture2KitchenRecipesScript.ChairKitchenSpindleRecipe.build(self, t, extra_params)
+			return
+		elif s_key == "chair_kitchen_upholstered":
+			Furniture2KitchenRecipesScript.ChairKitchenUpholsteredRecipe.build(self, t, extra_params)
+			return
+
+		# Tanda 5: Decoración, Lámparas, Radios, Comida y Props (Imagen 1)
+		elif s_key == "fan_pedestal_tall" or s_key == "ventilator_tall":
+			Furniture2PropsRecipesScript.FanPedestalTallRecipe.build(self, t, extra_params)
+			return
+		elif s_key == "fan_desk_table" or s_key == "ventilator_table":
+			Furniture2PropsRecipesScript.FanDeskTableRecipe.build(self, t, extra_params)
+			return
+		elif s_key == "fan_ceiling" or s_key == "ceiling_fan":
+			Furniture2PropsRecipesScript.FanCeilingRecipe.build(self, t, extra_params)
+			return
+		elif s_key == "lamp_table_shade" or s_key == "lamp_shade":
+			Furniture2PropsRecipesScript.LampTableShadeRecipe.build(self, t, extra_params)
+			return
+		elif s_key == "lamp_banker_green" or s_key == "lamp_banker":
+			Furniture2PropsRecipesScript.LampBankerGreenRecipe.build(self, t, extra_params)
+			return
+		elif s_key == "lamp_desk_gooseneck_black" or s_key == "desk_lamp_black":
+			Furniture2PropsRecipesScript.LampDeskGooseneckBlackRecipe.build(self, t, extra_params)
+			return
+		elif s_key == "lamp_desk_gooseneck_white" or s_key == "desk_lamp_white":
+			Furniture2PropsRecipesScript.LampDeskGooseneckWhiteRecipe.build(self, t, extra_params)
+			return
+		elif s_key == "socket_lightbulb_stand" or s_key == "focus_bulb":
+			Furniture2PropsRecipesScript.SocketLightbulbStandRecipe.build(self, t, extra_params)
+			return
+		elif s_key == "alarm_clock_digital_red" or s_key == "alarm_clock_red":
+			Furniture2PropsRecipesScript.AlarmClockDigitalRedRecipe.build(self, t, extra_params)
+			return
+		elif s_key == "alarm_clock_digital_green" or s_key == "alarm_clock_green":
+			Furniture2PropsRecipesScript.AlarmClockDigitalGreenRecipe.build(self, t, extra_params)
+			return
+		elif s_key == "radio_vintage_dial" or s_key == "radio_vintage":
+			Furniture2PropsRecipesScript.RadioVintageDialRecipe.build(self, t, extra_params)
+			return
+		elif s_key == "radio_portable":
+			Furniture2PropsRecipesScript.RadioPortableRecipe.build(self, t, extra_params)
+			return
+		elif s_key == "walkie_talkie_military" or s_key == "gadgets_walkie":
+			Furniture2PropsRecipesScript.WalkieTalkieMilitaryRecipe.build(self, t, extra_params)
+			return
+		elif s_key == "phone_rotary_black" or s_key == "phone_rotary":
+			Furniture2PropsRecipesScript.PhoneRotaryBlackRecipe.build(self, t, extra_params)
+			return
+		elif s_key == "phone_pushbutton_beige" or s_key == "phone_beige":
+			Furniture2PropsRecipesScript.PhonePushbuttonBeigeRecipe.build(self, t, extra_params)
+			return
+		elif s_key == "paintings_wall_canvas" or s_key == "paintings_canvas":
+			Furniture2PropsRecipesScript.PaintingsWallCanvasRecipe.build(self, t, extra_params)
+			return
+		elif s_key == "magazines_books_stack" or s_key == "books_stack":
+			Furniture2PropsRecipesScript.MagazinesBooksStackRecipe.build(self, t, extra_params)
+			return
+		elif s_key == "trash_can_liner" or s_key == "trash_can_prop":
+			Furniture2PropsRecipesScript.TrashCanLinerRecipe.build(self, t, extra_params)
+			return
+		elif s_key == "garbage_bag_full" or s_key == "garbage_bag_prop":
+			Furniture2PropsRecipesScript.GarbageBagFullRecipe.build(self, t, extra_params)
+			return
+		elif s_key == "vase_flower_rose":
+			Furniture2PropsRecipesScript.VaseFlowerRoseRecipe.build(self, t, extra_params)
+			return
+		elif s_key == "vase_flower_lavender":
+			Furniture2PropsRecipesScript.VaseFlowerLavenderRecipe.build(self, t, extra_params)
+			return
+		elif s_key == "food_pizza_box_open" or s_key == "pizza_box":
+			Furniture2PropsRecipesScript.FoodPizzaBoxOpenRecipe.build(self, t, extra_params)
+			return
+		elif s_key == "food_pizza_slice" or s_key == "pizza_slice":
+			Furniture2PropsRecipesScript.FoodPizzaSliceRecipe.build(self, t, extra_params)
+			return
+		elif s_key == "food_roast_chicken" or s_key == "roast_chicken":
+			Furniture2PropsRecipesScript.FoodRoastChickenRecipe.build(self, t, extra_params)
+			return
+		elif s_key == "food_fried_basket" or s_key == "fried_foods":
+			Furniture2PropsRecipesScript.FoodFriedBasketRecipe.build(self, t, extra_params)
+			return
+		elif s_key == "food_meat_cuts" or s_key == "meat_tray":
+			Furniture2PropsRecipesScript.FoodMeatCutsRecipe.build(self, t, extra_params)
+			return
+		elif s_key == "food_soup_bowl" or s_key == "ramen_bowl":
+			Furniture2PropsRecipesScript.FoodSoupBowlRecipe.build(self, t, extra_params)
+			return
+		elif s_key == "food_dinner_plate" or s_key == "dinner_plate":
+			Furniture2PropsRecipesScript.FoodDinnerPlateRecipe.build(self, t, extra_params)
+			return
+		elif s_key == "food_pie_slice" or s_key == "cake_slice":
+			Furniture2PropsRecipesScript.FoodPieSliceRecipe.build(self, t, extra_params)
+			return
+		elif s_key == "food_flan" or s_key == "flan_slice":
+			Furniture2PropsRecipesScript.FoodFlanRecipe.build(self, t, extra_params)
+			return
+		elif s_key == "food_ice_cream_tub" or s_key == "ice_cream_tub":
+			Furniture2PropsRecipesScript.FoodIceCreamTubRecipe.build(self, t, extra_params)
+			return
+		elif s_key == "food_popsicle_red" or s_key == "paleta_hielo":
+			Furniture2PropsRecipesScript.FoodPopsicleRedRecipe.build(self, t, extra_params)
+			return
+		elif s_key == "drink_soda_bottle" or s_key == "soda_bottle":
+			Furniture2PropsRecipesScript.DrinkSodaBottleRecipe.build(self, t, extra_params)
+			return
+		elif s_key == "drink_milk_jug" or s_key == "milk_jug":
+			Furniture2PropsRecipesScript.DrinkMilkJugRecipe.build(self, t, extra_params)
+			return
+		elif s_key == "drink_milk_strawberry" or s_key == "strawberry_milk":
+			Furniture2PropsRecipesScript.DrinkMilkStrawberryRecipe.build(self, t, extra_params)
+			return
+		elif s_key == "drink_can" or s_key == "soda_can":
+			Furniture2PropsRecipesScript.DrinkCanRecipe.build(self, t, extra_params)
 			return
 
 	if scr == BedSingleOakScript:

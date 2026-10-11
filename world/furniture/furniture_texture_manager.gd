@@ -139,6 +139,7 @@ static func ensure_initialized() -> void:
 	_scan_folder_for_textures("res://assets/textures/furniture/")
 	_scan_folder_for_textures("res://assets/textures/house/")
 	_scan_folder_for_textures("res://assets/textures/office pack/")
+	_scan_folder_for_textures("res://assets/textures/furniture 2.0/")
 
 	_rebuild_array()
 	_is_initialized = true

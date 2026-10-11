@@ -1119,6 +1119,7 @@ static func ensure_initialized() -> void:
 	_scan_folders_for_json_regions("res://assets/textures/furniture/")
 	_scan_folders_for_json_regions("res://assets/textures/house/")
 	_scan_folders_for_json_regions("res://assets/textures/office pack/")
+	_scan_folders_for_json_regions("res://assets/textures/furniture 2.0/")
 	_is_initialized = true
 
 

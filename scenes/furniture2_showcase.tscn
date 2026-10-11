@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://dfurniture2showcase"]
+
+[ext_resource type="Script" path="res://scenes/furniture2_showcase.gd" id="1_f2showcase"]
+
+[node name="Furniture2Showcase" type="Node3D"]
+script = ExtResource("1_f2showcase")
