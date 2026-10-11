@@ -11,7 +11,7 @@ const ObjectAtlasScript = preload("res://world/object_engine/object_atlas.gd")
 # 1. ESTANTERÍA / GÓNDOLA MODULAR DE TIENDA OXXO (COMMERCIAL SHELF)
 # =========================================================================
 class CommercialShelfRecipe extends ObjectRecipeBase:
-	static func build(builder: ObjectBuilder, base_t: Transform3D, params: Dictionary = {}) -> void:
+	static func build(builder: Variant, base_t: Transform3D, params: Dictionary = {}) -> void:
 		var modules: int = clampi(params.get("modules", 1), 1, 4)
 		var texture_key: String = params.get("texture_key", "commercial_shelf")
 
@@ -46,7 +46,7 @@ class CommercialShelfRecipe extends ObjectRecipeBase:
 # 2. VITRINA REFRIGERADA COMERCIAL (COMMERCIAL COOLER 1 Y 2 PUERTAS)
 # =========================================================================
 class CommercialCoolerRecipe extends ObjectRecipeBase:
-	static func build(builder: ObjectBuilder, base_t: Transform3D, params: Dictionary = {}) -> void:
+	static func build(builder: Variant, base_t: Transform3D, params: Dictionary = {}) -> void:
 		var is_double: bool = params.get("is_double", false)
 		var doors_open: bool = params.get("doors_open", false)
 		var texture_key: String = params.get("texture_key", "commercial_cooler")

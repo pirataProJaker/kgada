@@ -12,7 +12,7 @@ const ObjectAtlasScript = preload("res://world/object_engine/object_atlas.gd")
 # 1. REFRIGERADOR DOMÉSTICO (REFRIGERATOR CON PUERTAS ABATIBLES)
 # =========================================================================
 class RefrigeratorRecipe extends ObjectRecipeBase:
-	static func build(builder: ObjectBuilder, base_t: Transform3D, params: Dictionary = {}) -> void:
+	static func build(builder: Variant, base_t: Transform3D, params: Dictionary = {}) -> void:
 		var is_open: bool = params.get("is_open", false)
 		var texture_key: String = params.get("texture_key", "refrigerador")
 
@@ -85,7 +85,7 @@ class RefrigeratorRecipe extends ObjectRecipeBase:
 # 2. ESTUFA DE COCINA (STOVE)
 # =========================================================================
 class StoveRecipe extends ObjectRecipeBase:
-	static func build(builder: ObjectBuilder, base_t: Transform3D, params: Dictionary = {}) -> void:
+	static func build(builder: Variant, base_t: Transform3D, params: Dictionary = {}) -> void:
 		var texture_key: String = params.get("texture_key", "estufa")
 		var is_open: bool = params.get("is_open", false)
 
@@ -152,7 +152,7 @@ class StoveRecipe extends ObjectRecipeBase:
 # 3. MICROONDAS (MICROWAVE)
 # =========================================================================
 class MicrowaveRecipe extends ObjectRecipeBase:
-	static func build(builder: ObjectBuilder, base_t: Transform3D, params: Dictionary = {}) -> void:
+	static func build(builder: Variant, base_t: Transform3D, params: Dictionary = {}) -> void:
 		var texture_key: String = params.get("texture_key", "microondas")
 		var is_open: bool = params.get("is_open", false)
 
@@ -202,7 +202,7 @@ class MicrowaveRecipe extends ObjectRecipeBase:
 # 4. LAVADORA Y SECADORA (WASHER & DRYER)
 # =========================================================================
 class WasherRecipe extends ObjectRecipeBase:
-	static func build(builder: ObjectBuilder, base_t: Transform3D, params: Dictionary = {}) -> void:
+	static func build(builder: Variant, base_t: Transform3D, params: Dictionary = {}) -> void:
 		var texture_key: String = params.get("texture_key", "washer")
 		var is_open: bool = params.get("is_open", false)
 		var w := 0.68
@@ -283,7 +283,7 @@ class WasherRecipe extends ObjectRecipeBase:
 
 
 class DryerRecipe extends ObjectRecipeBase:
-	static func build(builder: ObjectBuilder, base_t: Transform3D, params: Dictionary = {}) -> void:
+	static func build(builder: Variant, base_t: Transform3D, params: Dictionary = {}) -> void:
 		var texture_key: String = params.get("texture_key", "dryer")
 		var is_open: bool = params.get("is_open", false)
 		var w := 0.68
@@ -379,7 +379,7 @@ class DryerRecipe extends ObjectRecipeBase:
 # 5. TOSTADORA DE PAN (TOASTER)
 # =========================================================================
 class ToasterRecipe extends ObjectRecipeBase:
-	static func build(builder: ObjectBuilder, base_t: Transform3D, params: Dictionary = {}) -> void:
+	static func build(builder: Variant, base_t: Transform3D, params: Dictionary = {}) -> void:
 		var texture_key: String = params.get("texture_key", "toaster")
 		var w := 0.28
 		var d := 0.17
@@ -414,7 +414,7 @@ class ToasterRecipe extends ObjectRecipeBase:
 # 6. GABINETES DE COCINA (CABINET: BASE Y AÉREO CON PUERTAS ABATIBLES)
 # =========================================================================
 class CabinetRecipe extends ObjectRecipeBase:
-	static func build(builder: ObjectBuilder, base_t: Transform3D, params: Dictionary = {}) -> void:
+	static func build(builder: Variant, base_t: Transform3D, params: Dictionary = {}) -> void:
 		var is_wall: bool = params.get("is_wall", false)
 		var is_open: bool = params.get("is_open", false)
 		var texture_key: String = params.get("texture_key", "cabinets")
@@ -489,7 +489,7 @@ class CabinetRecipe extends ObjectRecipeBase:
 # 7. FREGADERO / TARJA DE COCINA (SINK CON TARJA EMBUTIDA Y GRIFO CROMADO)
 # =========================================================================
 class SinkRecipe extends ObjectRecipeBase:
-	static func build(builder: ObjectBuilder, base_t: Transform3D, params: Dictionary = {}) -> void:
+	static func build(builder: Variant, base_t: Transform3D, params: Dictionary = {}) -> void:
 		var texture_key: String = params.get("texture_key", "cabinets")
 		var is_open: bool = params.get("is_open", false)
 

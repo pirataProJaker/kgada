@@ -6,11 +6,8 @@ extends RefCounted
 ## mediante llamadas a 'builder.add_box()', 'builder.add_cylinder()', etc.
 ## Garantiza que ningún mueble nuevo añada draw calls al juego (+0 Draw Calls por diseño).
 
-const ObjectBuilderScript = preload("res://world/object_engine/object_builder.gd")
-
-
 ## Construye el objeto agregando sus primitivas al builder proporcionado
-static func build(builder: ObjectBuilder, base_transform: Transform3D, params: Dictionary = {}) -> void:
+static func build(builder: Variant, base_transform: Transform3D, params: Dictionary = {}) -> void:
 	# Las clases hijas deben sobrescribir este método
 	push_error("ObjectRecipeBase: El método build() debe ser implementado por la receta concreta.")
 

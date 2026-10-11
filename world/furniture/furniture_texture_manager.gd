@@ -34,6 +34,18 @@ const DEFAULT_APPLIANCE_TEXTURES: Dictionary = {
 	"medidor_cfe": "res://assets/textures/house/medidor_cfe.png"
 }
 
+const DEFAULT_OFFICE_TEXTURES: Dictionary = {
+	"chair01": "res://assets/textures/office pack/chair01_ALBEDO_256x256.png",
+	"chair02": "res://assets/textures/office pack/chair02_ALBEDO_256x256.png",
+	"cupboard01": "res://assets/textures/office pack/cupboard01_ALBEDO256x256.png",
+	"cupboard02": "res://assets/textures/office pack/cupboard02_ALBEDO256x256.png",
+	"desk01": "res://assets/textures/office pack/desk01_ALBEDO_256x256.png",
+	"desk02": "res://assets/textures/office pack/desk02_ALBEDO_256x256.png",
+	"desk03": "res://assets/textures/office pack/desk03_ALBEDO_256x256.png",
+	"desk04": "res://assets/textures/office pack/desk04_ALBEDO_256x256.png",
+	"file_cabinet": "res://assets/textures/office pack/file_cabinet_ALBEDO_256x256.png"
+}
+
 # Catálogo semántico oficial de Sábanas (16 patrones en filas 0 y 1 del atlas)
 const SHEET_NAMES: Array[String] = [
 	"Sábana Blanco Puro",
@@ -118,10 +130,15 @@ static func ensure_initialized() -> void:
 	for k in DEFAULT_APPLIANCE_TEXTURES:
 		_entries[k] = DEFAULT_APPLIANCE_TEXTURES[k]
 
-	# 4. Auto-descubrimiento dinámico inteligente en carpetas de assets
+	# 4. Registrar mobiliario de oficina (Office Pack)
+	for k in DEFAULT_OFFICE_TEXTURES:
+		_entries[k] = DEFAULT_OFFICE_TEXTURES[k]
+
+	# 5. Auto-descubrimiento dinámico inteligente en carpetas de assets
 	# Detecta automáticamente cualquier nuevo .png, .jpg, .webp agregado a las carpetas
 	_scan_folder_for_textures("res://assets/textures/furniture/")
 	_scan_folder_for_textures("res://assets/textures/house/")
+	_scan_folder_for_textures("res://assets/textures/office pack/")
 
 	_rebuild_array()
 	_is_initialized = true
@@ -174,6 +191,10 @@ static func get_texture_layer(key: String) -> int:
 	ensure_initialized()
 	if _layer_map.has(key):
 		return _layer_map[key]
+	if key.begins_with("office_"):
+		var sub := key.trim_prefix("office_")
+		if _layer_map.has(sub):
+			return _layer_map[sub]
 	return 0
 
 

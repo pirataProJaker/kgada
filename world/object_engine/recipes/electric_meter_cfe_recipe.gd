@@ -13,7 +13,7 @@ extends ObjectRecipeBase
 const ROT_FACING_Z := Basis(Vector3(1.0, 0.0, 0.0), 1.57079632679) # 90 grados en X para mirar hacia +Z
 
 
-static func build(builder: ObjectBuilder, base_transform: Transform3D, params: Dictionary = {}) -> void:
+static func build(builder: Variant, base_transform: Transform3D, params: Dictionary = {}) -> void:
 	var include_switch_box: bool = params.get("include_switch_box", false)
 	var include_enclosure: bool = params.get("include_enclosure", false)
 	var z_offset: float = 0.0

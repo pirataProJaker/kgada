@@ -13,6 +13,7 @@ const AppliancesRecipesScript = preload("res://world/object_engine/recipes/appli
 const CommercialRecipesScript = preload("res://world/object_engine/recipes/commercial_recipes.gd")
 const ElectricMeterCFERecipeScript = preload("res://world/object_engine/recipes/electric_meter_cfe_recipe.gd")
 const StreetlightPoleRecipeScript = preload("res://world/object_engine/recipes/streetlight_pole_recipe.gd")
+const OfficeRecipesScript = preload("res://world/object_engine/recipes/office_recipes.gd")
 
 const BedSingleOakScript = preload("res://world/furniture/bed_single_oak.gd")
 const NightstandOakScript = preload("res://world/furniture/nightstand_oak.gd")
@@ -667,6 +668,42 @@ func add_furniture_by_script(scr: Variant, t: Transform3D, extra_params: Diction
 			return
 		elif s_key == "streetlight":
 			StreetlightPoleRecipeScript.build(self, t, extra_params)
+			return
+		elif s_key == "office_desk_double" or s_key == "office_desk01" or s_key == "desk01":
+			OfficeRecipesScript.OfficeDeskDoublePedestalRecipe.build(self, t, extra_params)
+			return
+		elif s_key == "office_desk_metal" or s_key == "office_desk02" or s_key == "desk02":
+			OfficeRecipesScript.OfficeDeskMetalTankerRecipe.build(self, t, extra_params)
+			return
+		elif s_key == "office_desk_l_shaped" or s_key == "office_desk03" or s_key == "desk03":
+			OfficeRecipesScript.OfficeDeskLShapedRecipe.build(self, t, extra_params)
+			return
+		elif s_key == "office_desk_single" or s_key == "office_desk04" or s_key == "desk04":
+			OfficeRecipesScript.OfficeDeskSinglePedestalRecipe.build(self, t, extra_params)
+			return
+		elif s_key == "office_chair_green" or s_key == "office_chair01" or s_key == "chair01":
+			OfficeRecipesScript.OfficeChairGreenRecipe.build(self, t, extra_params)
+			return
+		elif s_key == "office_chair_red" or s_key == "office_chair02" or s_key == "chair02":
+			OfficeRecipesScript.OfficeChairRedRecipe.build(self, t, extra_params)
+			return
+		elif s_key == "office_file_cabinet_closed" or s_key == "file_cabinet":
+			OfficeRecipesScript.OfficeFileCabinetClosedRecipe.build(self, t, extra_params)
+			return
+		elif s_key == "office_file_cabinet_open":
+			OfficeRecipesScript.OfficeFileCabinetOpenRecipe.build(self, t, extra_params)
+			return
+		elif s_key == "office_cabinet_tall" or s_key == "cupboard02_tall":
+			OfficeRecipesScript.OfficeCabinetTallRecipe.build(self, t, extra_params)
+			return
+		elif s_key == "office_cabinet_low" or s_key == "cupboard02_low":
+			OfficeRecipesScript.OfficeCabinetLowRecipe.build(self, t, extra_params)
+			return
+		elif s_key == "office_bookcase_tall" or s_key == "cupboard01_tall":
+			OfficeRecipesScript.OfficeBookcaseTallRecipe.build(self, t, extra_params)
+			return
+		elif s_key == "office_bookcase_low" or s_key == "cupboard01_low":
+			OfficeRecipesScript.OfficeBookcaseLowRecipe.build(self, t, extra_params)
 			return
 
 	if scr == BedSingleOakScript:

@@ -10,7 +10,7 @@ extends ObjectRecipeBase
 ## 4. Carcasa de luminaria LED (Cubo)
 ## 5. Cuña o reflector de haz de luz (Cuña/Wedge)
 
-static func build(builder: ObjectBuilder, base_transform: Transform3D, params: Dictionary = {}) -> void:
+static func build(builder: Variant, base_transform: Transform3D, params: Dictionary = {}) -> void:
 	var height: float = params.get("height", 6.8)
 	var double_arm: bool = params.get("double_arm", false)
 	var arm_reach: float = params.get("arm_reach", 1.4)

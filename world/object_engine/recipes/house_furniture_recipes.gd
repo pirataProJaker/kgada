@@ -13,7 +13,7 @@ const FurnitureTextureManagerScript = preload("res://world/furniture/furniture_t
 # 1. MESA DE COMEDOR (DINING TABLE)
 # =========================================================================
 class TableRecipe extends ObjectRecipeBase:
-	static func build(builder: ObjectBuilder, base_t: Transform3D, params: Dictionary = {}) -> void:
+	static func build(builder: Variant, base_t: Transform3D, params: Dictionary = {}) -> void:
 		var finish: String = params.get("finish", "roble_claro")
 		var l: float = params.get("length", 1.40)
 		var w: float = params.get("width", 0.85)
@@ -54,7 +54,7 @@ class TableRecipe extends ObjectRecipeBase:
 # 2. SILLA DE MADERA (CHAIR)
 # =========================================================================
 class ChairRecipe extends ObjectRecipeBase:
-	static func build(builder: ObjectBuilder, base_t: Transform3D, params: Dictionary = {}) -> void:
+	static func build(builder: Variant, base_t: Transform3D, params: Dictionary = {}) -> void:
 		var finish: String = params.get("finish", "roble_claro")
 		var seat_h := 0.44
 		var seat_w := 0.44
@@ -92,7 +92,7 @@ class ChairRecipe extends ObjectRecipeBase:
 # 3. SILLÓN OREJERO DE CUERO (ARMCHAIR)
 # =========================================================================
 class ArmchairRecipe extends ObjectRecipeBase:
-	static func build(builder: ObjectBuilder, base_t: Transform3D, params: Dictionary = {}) -> void:
+	static func build(builder: Variant, base_t: Transform3D, params: Dictionary = {}) -> void:
 		var w := 0.95
 		var d := 0.88
 		var h := 0.85
@@ -153,7 +153,7 @@ class ArmchairRecipe extends ObjectRecipeBase:
 # 4. MESA DE CENTRO DE SALA (COFFEE TABLE CON CAJÓN)
 # =========================================================================
 class CoffeeTableRecipe extends ObjectRecipeBase:
-	static func build(builder: ObjectBuilder, base_t: Transform3D, params: Dictionary = {}) -> void:
+	static func build(builder: Variant, base_t: Transform3D, params: Dictionary = {}) -> void:
 		var is_open: bool = params.get("is_open", false)
 		var w := 0.95
 		var d := 0.55
@@ -257,7 +257,7 @@ class BedRecipe extends ObjectRecipeBase:
 			"moral_bonus": 10 if state == BedState.MADE and dirt < 0.1 else (-5 if state == BedState.BARE_MATTRESS else 0)
 		}
 
-	static func build(builder: ObjectBuilder, base_t: Transform3D, params: Dictionary = {}) -> void:
+	static func build(builder: Variant, base_t: Transform3D, params: Dictionary = {}) -> void:
 		var finish: String = params.get("finish", "roble_claro")
 
 		# Compatibilidad de estado (admite int o bool is_unmade)
@@ -420,7 +420,7 @@ class BedRecipe extends ObjectRecipeBase:
 # 6. MESITA DE NOCHE (NIGHTSTAND CON CAJÓN DESLIZANTE)
 # =========================================================================
 class NightstandRecipe extends ObjectRecipeBase:
-	static func build(builder: ObjectBuilder, base_t: Transform3D, params: Dictionary = {}) -> void:
+	static func build(builder: Variant, base_t: Transform3D, params: Dictionary = {}) -> void:
 		var finish: String = params.get("finish", "roble_claro")
 		var is_open: bool = params.get("is_open", false)
 		var drawer_slide: float = 0.18 if is_open else 0.0
@@ -448,7 +448,7 @@ class NightstandRecipe extends ObjectRecipeBase:
 # 7. ROPERO ALTO (WARDROBE CON PUERTAS ABATIBLES)
 # =========================================================================
 class WardrobeRecipe extends ObjectRecipeBase:
-	static func build(builder: ObjectBuilder, base_t: Transform3D, params: Dictionary = {}) -> void:
+	static func build(builder: Variant, base_t: Transform3D, params: Dictionary = {}) -> void:
 		var finish: String = params.get("finish", "roble_claro")
 		var is_open: bool = params.get("is_open", false)
 
@@ -493,7 +493,7 @@ class WardrobeRecipe extends ObjectRecipeBase:
 # 8. LIBRERO ALTO (BOOKCASE)
 # =========================================================================
 class BookcaseRecipe extends ObjectRecipeBase:
-	static func build(builder: ObjectBuilder, base_t: Transform3D, params: Dictionary = {}) -> void:
+	static func build(builder: Variant, base_t: Transform3D, params: Dictionary = {}) -> void:
 		var finish: String = params.get("finish", "roble_claro")
 		var w := 0.90
 		var d := 0.36

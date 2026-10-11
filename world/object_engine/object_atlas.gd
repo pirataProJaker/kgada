@@ -655,6 +655,294 @@ static var _REGIONS: Dictionary = {
 			"metallic": 0.02,
 			"desc": "Pino miel dorado rústico"
 		}
+	},
+
+	# =========================================================================
+	# 14. SILLÓN DE OFICINA VERDE (chair01 - 256x256)
+	# =========================================================================
+	"chair01": {
+		"cushion": {
+			"rect": Rect2(0.65, 0.45, 0.33, 0.30),
+			"roughness": 0.70,
+			"metallic": 0.02,
+			"desc": "Tapizado de tela verde para asiento y respaldo ergonómico"
+		},
+		"plastic_black": {
+			"rect": Rect2(0.02, 0.02, 0.30, 0.30),
+			"roughness": 0.45,
+			"metallic": 0.10,
+			"desc": "Carcasa posterior plástica negra, soporte de columna y base de 5 radios"
+		},
+		"stem": {
+			"rect": Rect2(0.05, 0.05, 0.15, 0.15),
+			"roughness": 0.35,
+			"metallic": 0.50,
+			"desc": "Cilindro neumático y soporte bajo el asiento"
+		},
+		"casters": {
+			"rect": Rect2(0.01, 0.01, 0.10, 0.10),
+			"roughness": 0.40,
+			"metallic": 0.10,
+			"desc": "Ruedas giratorias dobles de nylon negro"
+		}
+	},
+
+	# =========================================================================
+	# 15. SILLA DE OFICINA ROJA VINTAGE (chair02 - 256x256)
+	# =========================================================================
+	"chair02": {
+		"cushion": {
+			"rect": Rect2(0.05, 0.45, 0.45, 0.45),
+			"roughness": 0.65,
+			"metallic": 0.02,
+			"desc": "Tapizado rojo/granate para asiento curvo y respaldo"
+		},
+		"metal_pipe": {
+			"rect": Rect2(0.60, 0.55, 0.35, 0.35),
+			"roughness": 0.30,
+			"metallic": 0.75,
+			"desc": "Estructura tubular metálica gris/cromo para soporte trasero"
+		},
+		"base_grey": {
+			"rect": Rect2(0.65, 0.60, 0.30, 0.30),
+			"roughness": 0.40,
+			"metallic": 0.40,
+			"desc": "Base estrellada gris y mecanismo giratorio"
+		}
+	},
+
+	# =========================================================================
+	# 16. LIBRERO ABIERTO DE OFICINA (cupboard01 - 256x256)
+	# =========================================================================
+	"cupboard01": {
+		"wood_frame": {
+			"rect": Rect2(0.00, 0.00, 0.45, 0.50),
+			"roughness": 0.60,
+			"metallic": 0.02,
+			"desc": "Madera de roble claro para paredes laterales, techo y marco exterior"
+		},
+		"shelf": {
+			"rect": Rect2(0.50, 0.00, 0.48, 0.50),
+			"roughness": 0.55,
+			"metallic": 0.02,
+			"desc": "Superficie de baldas y repisas horizontales interiores"
+		},
+		"back_panel": {
+			"rect": Rect2(0.02, 0.68, 0.25, 0.25),
+			"roughness": 0.70,
+			"metallic": 0.01,
+			"desc": "Panel de fondo trasero de madera contrachapada"
+		}
+	},
+
+	# =========================================================================
+	# 17. ARMARIO Y GABINETE DE OFICINA CON PUERTAS (cupboard02 - 256x256)
+	# =========================================================================
+	"cupboard02": {
+		"wood_frame": {
+			"rect": Rect2(0.00, 0.00, 0.45, 0.30),
+			"roughness": 0.60,
+			"metallic": 0.02,
+			"desc": "Cuerpo exterior de madera de roble/miel para costados y techo"
+		},
+		"door_panel": {
+			"rect": Rect2(0.00, 0.30, 0.30, 0.35),
+			"roughness": 0.55,
+			"metallic": 0.02,
+			"desc": "Hojas de puerta batiente estilo shaker con marco y moldura"
+		},
+		"shelf": {
+			"rect": Rect2(0.35, 0.30, 0.40, 0.35),
+			"roughness": 0.60,
+			"metallic": 0.02,
+			"desc": "Repisas y piso interior del mueble"
+		},
+		"knob": {
+			"rect": Rect2(0.02, 0.65, 0.10, 0.10),
+			"roughness": 0.25,
+			"metallic": 0.85,
+			"desc": "Pomos redondos de metal cromado para puertas"
+		},
+		"plinth": {
+			"rect": Rect2(0.00, 0.75, 0.40, 0.20),
+			"roughness": 0.65,
+			"metallic": 0.02,
+			"desc": "Zócalo o rodapié inferior de apoyo"
+		}
+	},
+
+	# =========================================================================
+	# 18. ESCRITORIO EJECUTIVO DOBLE PEDESTAL (desk01 - 256x256)
+	# =========================================================================
+	"desk01": {
+		"wood_top": {
+			"rect": Rect2(0.00, 0.00, 0.50, 0.40),
+			"roughness": 0.50,
+			"metallic": 0.02,
+			"desc": "Cubierta superior de madera noble con barniz satinado"
+		},
+		"wood_body": {
+			"rect": Rect2(0.00, 0.40, 0.50, 0.35),
+			"roughness": 0.60,
+			"metallic": 0.02,
+			"desc": "Laterales de los pedestales y faldón de modestia central"
+		},
+		"drawer": {
+			"rect": Rect2(0.00, 0.45, 0.45, 0.20),
+			"roughness": 0.55,
+			"metallic": 0.02,
+			"desc": "Frentes de cajón de madera a juego"
+		},
+		"handle": {
+			"rect": Rect2(0.25, 0.68, 0.15, 0.08),
+			"roughness": 0.25,
+			"metallic": 0.85,
+			"desc": "Tiradores horizontales plateados de aluminio pulido"
+		},
+		"foot": {
+			"rect": Rect2(0.50, 0.75, 0.25, 0.20),
+			"roughness": 0.65,
+			"metallic": 0.02,
+			"desc": "Patas cúbicas de madera que elevan los pedestales"
+		}
+	},
+
+	# =========================================================================
+	# 19. ESCRITORIO METÁLICO TANKER (desk02 - 256x256)
+	# =========================================================================
+	"desk02": {
+		"top_linoleum": {
+			"rect": Rect2(0.08, 0.08, 0.55, 0.55),
+			"roughness": 0.45,
+			"metallic": 0.05,
+			"desc": "Cubierta superior de linóleo/madera oscura con reborde metálico"
+		},
+		"metal_grey": {
+			"rect": Rect2(0.75, 0.15, 0.24, 0.55),
+			"roughness": 0.35,
+			"metallic": 0.25,
+			"desc": "Chapa de acero esmaltada en gris clásico de oficina"
+		},
+		"drawer": {
+			"rect": Rect2(0.75, 0.15, 0.24, 0.25),
+			"roughness": 0.35,
+			"metallic": 0.25,
+			"desc": "Frente de cajones metálicos grises"
+		},
+		"handle": {
+			"rect": Rect2(0.75, 0.85, 0.20, 0.10),
+			"roughness": 0.20,
+			"metallic": 0.85,
+			"desc": "Jaladeras cromadas redondeadas tipo tanker"
+		},
+		"leg": {
+			"rect": Rect2(0.75, 0.75, 0.22, 0.20),
+			"roughness": 0.30,
+			"metallic": 0.75,
+			"desc": "Patas cilíndricas de acero tubular"
+		}
+	},
+
+	# =========================================================================
+	# 20. ESCRITORIO EN L MODULAR (desk03 - 256x256)
+	# =========================================================================
+	"desk03": {
+		"wood_top": {
+			"rect": Rect2(0.00, 0.00, 0.45, 0.45),
+			"roughness": 0.55,
+			"metallic": 0.02,
+			"desc": "Cubierta de melamina madera clara para configuración en L"
+		},
+		"wood_body": {
+			"rect": Rect2(0.00, 0.75, 0.45, 0.25),
+			"roughness": 0.60,
+			"metallic": 0.02,
+			"desc": "Cuerpo del pedestal cajonero derecho"
+		},
+		"drawer": {
+			"rect": Rect2(0.00, 0.45, 0.40, 0.25),
+			"roughness": 0.55,
+			"metallic": 0.02,
+			"desc": "Frentes de cajón con textura de veta de madera"
+		},
+		"handle": {
+			"rect": Rect2(0.30, 0.68, 0.12, 0.06),
+			"roughness": 0.25,
+			"metallic": 0.85,
+			"desc": "Tiradores de cajón metálicos"
+		}
+	},
+
+	# =========================================================================
+	# 21. ESCRITORIO CON PATAS AZULES / SENCILLO (desk04 - 256x256)
+	# =========================================================================
+	"desk04": {
+		"wood_top": {
+			"rect": Rect2(0.00, 0.00, 0.45, 0.45),
+			"roughness": 0.55,
+			"metallic": 0.02,
+			"desc": "Cubierta de madera clara para escritorio individual"
+		},
+		"wood_body": {
+			"rect": Rect2(0.00, 0.45, 0.45, 0.35),
+			"roughness": 0.60,
+			"metallic": 0.02,
+			"desc": "Laterales de pedestal y patas de madera"
+		},
+		"drawer": {
+			"rect": Rect2(0.00, 0.45, 0.40, 0.20),
+			"roughness": 0.55,
+			"metallic": 0.02,
+			"desc": "Cajonera simple de madera"
+		},
+		"handle": {
+			"rect": Rect2(0.20, 0.65, 0.15, 0.08),
+			"roughness": 0.25,
+			"metallic": 0.85,
+			"desc": "Tirador de cajón plateado"
+		},
+		"blue_metal": {
+			"rect": Rect2(0.6367, 0.1094, 0.3398, 0.1797),
+			"roughness": 0.35,
+			"metallic": 0.50,
+			"desc": "Tubo de acero esmaltado en azul para patas en T y patines del escritorio en L"
+		}
+	},
+
+	# =========================================================================
+	# 22. ARCHIVERO VERTICAL METÁLICO (file_cabinet - 256x256)
+	# =========================================================================
+	"file_cabinet": {
+		"metal_body": {
+			"rect": Rect2(0.18, 0.20, 0.80, 0.35),
+			"roughness": 0.40,
+			"metallic": 0.25,
+			"desc": "Chapa de acero gris carbón para paredes, techo y fondo del archivero"
+		},
+		"drawer_front": {
+			"rect": Rect2(0.18, 0.00, 0.32, 0.18),
+			"roughness": 0.35,
+			"metallic": 0.30,
+			"desc": "Frente de cajón con marco de etiqueta y jaladera empotrada"
+		},
+		"handle": {
+			"rect": Rect2(0.18, 0.00, 0.15, 0.08),
+			"roughness": 0.20,
+			"metallic": 0.85,
+			"desc": "Jaladera metálica y portatarjetas para rótulo"
+		},
+		"folders": {
+			"rect": Rect2(0.504, 0.00, 0.250, 0.168),
+			"roughness": 0.85,
+			"metallic": 0.01,
+			"desc": "Carpetas colgantes manila con pestañas indicadoras en cajón abierto"
+		},
+		"kickplate": {
+			"rect": Rect2(0.18, 0.56, 0.32, 0.16),
+			"roughness": 0.45,
+			"metallic": 0.20,
+			"desc": "Zócalo base inferior del archivero"
+		}
 	}
 }
 
@@ -668,6 +956,7 @@ static func ensure_initialized() -> void:
 	FurnitureTextureManagerScript.ensure_initialized()
 	_scan_folders_for_json_regions("res://assets/textures/furniture/")
 	_scan_folders_for_json_regions("res://assets/textures/house/")
+	_scan_folders_for_json_regions("res://assets/textures/office pack/")
 	_is_initialized = true
 
 
@@ -742,6 +1031,11 @@ const _GLOBAL_ALIASES: Dictionary = {
 	"lavadora_puerta": "washer/door",
 	"secadora_panel": "dryer/panel",
 	"secadora_puerta": "dryer/door",
+	"archivero": "file_cabinet/drawer_front",
+	"carpetas": "file_cabinet/folders",
+	"silla_oficina_verde": "chair01/cushion",
+	"silla_oficina_roja": "chair02/cushion",
+	"patas_azules": "desk04/blue_metal",
 }
 
 
