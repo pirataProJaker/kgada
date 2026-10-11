@@ -661,29 +661,65 @@ static var _REGIONS: Dictionary = {
 	# 14. SILLÓN DE OFICINA VERDE (chair01 - 256x256)
 	# =========================================================================
 	"chair01": {
-		"cushion": {
-			"rect": Rect2(0.65, 0.45, 0.33, 0.30),
+		"cushion_seat": {
+			"rect": Rect2(0.570, 0.406, 0.422, 0.426),
 			"roughness": 0.70,
 			"metallic": 0.02,
-			"desc": "Tapizado de tela verde para asiento y respaldo ergonómico"
+			"desc": "Cojín acolchado verde oliva para asiento con bordes redondeados"
 		},
-		"plastic_black": {
-			"rect": Rect2(0.02, 0.02, 0.30, 0.30),
+		"cushion_back": {
+			"rect": Rect2(0.441, 0.070, 0.176, 0.313),
+			"roughness": 0.70,
+			"metallic": 0.02,
+			"desc": "Cojín acolchado verde oliva para respaldo lumbar"
+		},
+		"cushion": {
+			"rect": Rect2(0.570, 0.406, 0.422, 0.426),
+			"roughness": 0.70,
+			"metallic": 0.02,
+			"desc": "Alias de cojín verde"
+		},
+		"shell_back": {
+			"rect": Rect2(0.125, 0.063, 0.313, 0.328),
 			"roughness": 0.45,
 			"metallic": 0.10,
-			"desc": "Carcasa posterior plástica negra, soporte de columna y base de 5 radios"
+			"desc": "Carcasa plástica negra trasera del respaldo"
+		},
+		"shell_bottom": {
+			"rect": Rect2(0.078, 0.406, 0.484, 0.414),
+			"roughness": 0.45,
+			"metallic": 0.10,
+			"desc": "Carcasa plástica negra inferior del asiento"
+		},
+		"plastic_black": {
+			"rect": Rect2(0.125, 0.063, 0.313, 0.328),
+			"roughness": 0.45,
+			"metallic": 0.10,
+			"desc": "Plástico negro estructural"
+		},
+		"accordion": {
+			"rect": Rect2(0.625, 0.141, 0.133, 0.215),
+			"roughness": 0.50,
+			"metallic": 0.10,
+			"desc": "Fuelle de goma estriado para el cilindro de gas"
 		},
 		"stem": {
-			"rect": Rect2(0.05, 0.05, 0.15, 0.15),
-			"roughness": 0.35,
-			"metallic": 0.50,
-			"desc": "Cilindro neumático y soporte bajo el asiento"
+			"rect": Rect2(0.625, 0.141, 0.133, 0.215),
+			"roughness": 0.50,
+			"metallic": 0.10,
+			"desc": "Columna neumática"
+		},
+		"base_arms": {
+			"rect": Rect2(0.008, 0.867, 0.281, 0.078),
+			"roughness": 0.45,
+			"metallic": 0.10,
+			"desc": "Radios de la base estrellada de 5 apoyos"
 		},
 		"casters": {
-			"rect": Rect2(0.01, 0.01, 0.10, 0.10),
+			"rect": Rect2(0.008, 0.781, 0.086, 0.086),
 			"roughness": 0.40,
 			"metallic": 0.10,
-			"desc": "Ruedas giratorias dobles de nylon negro"
+			"desc": "Ruedas dobles de nylon negro"
 		}
 	},
 
@@ -691,23 +727,47 @@ static var _REGIONS: Dictionary = {
 	# 15. SILLA DE OFICINA ROJA VINTAGE (chair02 - 256x256)
 	# =========================================================================
 	"chair02": {
-		"cushion": {
-			"rect": Rect2(0.05, 0.45, 0.45, 0.45),
+		"cushion_seat": {
+			"rect": Rect2(0.008, 0.406, 0.586, 0.586),
 			"roughness": 0.65,
 			"metallic": 0.02,
-			"desc": "Tapizado rojo/granate para asiento curvo y respaldo"
+			"desc": "Cojín circular rojo/borgoña para asiento con desgaste"
+		},
+		"cushion_back": {
+			"rect": Rect2(0.512, 0.008, 0.398, 0.200),
+			"roughness": 0.65,
+			"metallic": 0.02,
+			"desc": "Cojín ovalado rojo para respaldo"
+		},
+		"cushion": {
+			"rect": Rect2(0.008, 0.406, 0.586, 0.586),
+			"roughness": 0.65,
+			"metallic": 0.02,
+			"desc": "Alias de cojín rojo"
 		},
 		"metal_pipe": {
-			"rect": Rect2(0.60, 0.55, 0.35, 0.35),
-			"roughness": 0.30,
-			"metallic": 0.75,
-			"desc": "Estructura tubular metálica gris/cromo para soporte trasero"
+			"rect": Rect2(0.922, 0.008, 0.070, 0.602),
+			"roughness": 0.20,
+			"metallic": 0.15,
+			"desc": "Tubo cromado vertical continuo para soporte del respaldo"
+		},
+		"accordion": {
+			"rect": Rect2(0.594, 0.414, 0.121, 0.188),
+			"roughness": 0.45,
+			"metallic": 0.15,
+			"desc": "Fuelle de columna estriado"
 		},
 		"base_grey": {
-			"rect": Rect2(0.65, 0.60, 0.30, 0.30),
-			"roughness": 0.40,
-			"metallic": 0.40,
-			"desc": "Base estrellada gris y mecanismo giratorio"
+			"rect": Rect2(0.602, 0.609, 0.281, 0.305),
+			"roughness": 0.35,
+			"metallic": 0.50,
+			"desc": "Radios metálicos esmaltados en gris para base de 4 apoyos"
+		},
+		"base_hub": {
+			"rect": Rect2(0.723, 0.422, 0.168, 0.180),
+			"roughness": 0.35,
+			"metallic": 0.50,
+			"desc": "Tapa central del mecanismo giratorio"
 		}
 	},
 
@@ -716,22 +776,28 @@ static var _REGIONS: Dictionary = {
 	# =========================================================================
 	"cupboard01": {
 		"wood_frame": {
-			"rect": Rect2(0.00, 0.00, 0.45, 0.50),
+			"rect": Rect2(0.000, 0.000, 0.195, 0.664),
 			"roughness": 0.60,
 			"metallic": 0.02,
-			"desc": "Madera de roble claro para paredes laterales, techo y marco exterior"
+			"desc": "Tablero de roble con veta vertical para laterales y marco"
 		},
 		"shelf": {
-			"rect": Rect2(0.50, 0.00, 0.48, 0.50),
+			"rect": Rect2(0.203, 0.684, 0.375, 0.305),
 			"roughness": 0.55,
 			"metallic": 0.02,
-			"desc": "Superficie de baldas y repisas horizontales interiores"
+			"desc": "Balda interior horizontal con veta horizontal"
 		},
 		"back_panel": {
-			"rect": Rect2(0.02, 0.68, 0.25, 0.25),
+			"rect": Rect2(0.586, 0.027, 0.180, 0.739),
 			"roughness": 0.70,
 			"metallic": 0.01,
-			"desc": "Panel de fondo trasero de madera contrachapada"
+			"desc": "Panel de fondo trasero con listones verticales"
+		},
+		"plinth": {
+			"rect": Rect2(0.000, 0.672, 0.195, 0.141),
+			"roughness": 0.65,
+			"metallic": 0.02,
+			"desc": "Zócalo inferior de madera oscura"
 		}
 	},
 
@@ -739,35 +805,77 @@ static var _REGIONS: Dictionary = {
 	# 17. ARMARIO Y GABINETE DE OFICINA CON PUERTAS (cupboard02 - 256x256)
 	# =========================================================================
 	"cupboard02": {
-		"wood_frame": {
-			"rect": Rect2(0.00, 0.00, 0.45, 0.30),
-			"roughness": 0.60,
-			"metallic": 0.02,
-			"desc": "Cuerpo exterior de madera de roble/miel para costados y techo"
-		},
-		"door_panel": {
-			"rect": Rect2(0.00, 0.30, 0.30, 0.35),
+		"doors_tall_pair": {
+			"rect": Rect2(0.000, 0.293, 0.289, 0.398),
 			"roughness": 0.55,
 			"metallic": 0.02,
-			"desc": "Hojas de puerta batiente estilo shaker con marco y moldura"
+			"desc": "Par frontal completo de 2 puertas altas shaker con pomos integrados"
 		},
-		"shelf": {
-			"rect": Rect2(0.35, 0.30, 0.40, 0.35),
+		"door_tall_left": {
+			"rect": Rect2(0.000, 0.293, 0.145, 0.398),
+			"roughness": 0.55,
+			"metallic": 0.02,
+			"desc": "Hoja izquierda de puerta alta shaker con pomo"
+		},
+		"door_tall_right": {
+			"rect": Rect2(0.145, 0.293, 0.145, 0.398),
+			"roughness": 0.55,
+			"metallic": 0.02,
+			"desc": "Hoja derecha de puerta alta shaker con pomo"
+		},
+		"doors_low_pair": {
+			"rect": Rect2(0.000, 0.700, 0.289, 0.180),
+			"roughness": 0.55,
+			"metallic": 0.02,
+			"desc": "Par frontal completo de 2 puertas bajas con pomos integrados"
+		},
+		"door_low_left": {
+			"rect": Rect2(0.000, 0.700, 0.145, 0.180),
+			"roughness": 0.55,
+			"metallic": 0.02,
+			"desc": "Hoja izquierda de puerta baja con pomo"
+		},
+		"door_low_right": {
+			"rect": Rect2(0.145, 0.700, 0.145, 0.180),
+			"roughness": 0.55,
+			"metallic": 0.02,
+			"desc": "Hoja derecha de puerta baja con pomo"
+		},
+		"door_panel": {
+			"rect": Rect2(0.000, 0.293, 0.289, 0.398),
+			"roughness": 0.55,
+			"metallic": 0.02,
+			"desc": "Alias de puertas altas"
+		},
+		"wood_frame": {
+			"rect": Rect2(0.414, 0.293, 0.289, 0.398),
 			"roughness": 0.60,
 			"metallic": 0.02,
-			"desc": "Repisas y piso interior del mueble"
+			"desc": "Laterales de madera de roble con veta vertical"
 		},
-		"knob": {
-			"rect": Rect2(0.02, 0.65, 0.10, 0.10),
-			"roughness": 0.25,
-			"metallic": 0.85,
-			"desc": "Pomos redondos de metal cromado para puertas"
+		"top_panel": {
+			"rect": Rect2(0.414, 0.293, 0.289, 0.398),
+			"roughness": 0.55,
+			"metallic": 0.02,
+			"desc": "Cubierta superior del armario"
+		},
+		"shelf": {
+			"rect": Rect2(0.414, 0.293, 0.289, 0.398),
+			"roughness": 0.60,
+			"metallic": 0.02,
+			"desc": "Repisas interiores"
 		},
 		"plinth": {
-			"rect": Rect2(0.00, 0.75, 0.40, 0.20),
+			"rect": Rect2(0.301, 0.703, 0.109, 0.293),
 			"roughness": 0.65,
 			"metallic": 0.02,
-			"desc": "Zócalo o rodapié inferior de apoyo"
+			"desc": "Zócalo inferior de madera oscura"
+		},
+		"knob": {
+			"rect": Rect2(0.133, 0.550, 0.025, 0.025),
+			"roughness": 0.25,
+			"metallic": 0.85,
+			"desc": "Pomo metálico cromado"
 		}
 	},
 
@@ -776,31 +884,43 @@ static var _REGIONS: Dictionary = {
 	# =========================================================================
 	"desk01": {
 		"wood_top": {
-			"rect": Rect2(0.00, 0.00, 0.50, 0.40),
+			"rect": Rect2(0.000, 0.000, 0.328, 0.640),
 			"roughness": 0.50,
 			"metallic": 0.02,
-			"desc": "Cubierta superior de madera noble con barniz satinado"
+			"desc": "Cubierta superior de nogal con veta orientada a lo largo del escritorio"
 		},
 		"wood_body": {
-			"rect": Rect2(0.00, 0.40, 0.50, 0.35),
+			"rect": Rect2(0.773, 0.086, 0.227, 0.609),
 			"roughness": 0.60,
 			"metallic": 0.02,
-			"desc": "Laterales de los pedestales y faldón de modestia central"
+			"desc": "Costados y faldón de modestia con veta vertical"
 		},
 		"drawer": {
-			"rect": Rect2(0.00, 0.45, 0.45, 0.20),
+			"rect": Rect2(0.000, 0.648, 0.316, 0.074),
 			"roughness": 0.55,
 			"metallic": 0.02,
-			"desc": "Frentes de cajón de madera a juego"
+			"desc": "Frente de cajón de madera con veta horizontal"
+		},
+		"drawer_mid": {
+			"rect": Rect2(0.000, 0.820, 0.191, 0.082),
+			"roughness": 0.55,
+			"metallic": 0.02,
+			"desc": "Cajón intermedio con veta horizontal"
+		},
+		"drawer_bot": {
+			"rect": Rect2(0.000, 0.906, 0.191, 0.082),
+			"roughness": 0.55,
+			"metallic": 0.02,
+			"desc": "Cajón inferior con veta horizontal"
 		},
 		"handle": {
-			"rect": Rect2(0.25, 0.68, 0.15, 0.08),
-			"roughness": 0.25,
-			"metallic": 0.85,
-			"desc": "Tiradores horizontales plateados de aluminio pulido"
+			"rect": Rect2(0.000, 0.727, 0.130, 0.074),
+			"roughness": 0.30,
+			"metallic": 0.10,
+			"desc": "Tirador horizontal plateado de aluminio pulido"
 		},
 		"foot": {
-			"rect": Rect2(0.50, 0.75, 0.25, 0.20),
+			"rect": Rect2(0.773, 0.086, 0.227, 0.200),
 			"roughness": 0.65,
 			"metallic": 0.02,
 			"desc": "Patas cúbicas de madera que elevan los pedestales"
@@ -812,31 +932,31 @@ static var _REGIONS: Dictionary = {
 	# =========================================================================
 	"desk02": {
 		"top_linoleum": {
-			"rect": Rect2(0.08, 0.08, 0.55, 0.55),
+			"rect": Rect2(0.000, 0.000, 0.328, 0.640),
 			"roughness": 0.45,
 			"metallic": 0.05,
-			"desc": "Cubierta superior de linóleo/madera oscura con reborde metálico"
+			"desc": "Cubierta de linóleo oscuro continua sin costura central"
 		},
 		"metal_grey": {
-			"rect": Rect2(0.75, 0.15, 0.24, 0.55),
+			"rect": Rect2(0.773, 0.086, 0.227, 0.609),
 			"roughness": 0.35,
 			"metallic": 0.25,
-			"desc": "Chapa de acero esmaltada en gris clásico de oficina"
+			"desc": "Chapa de acero esmaltada en gris para costados y cuerpo"
 		},
 		"drawer": {
-			"rect": Rect2(0.75, 0.15, 0.24, 0.25),
+			"rect": Rect2(0.000, 0.648, 0.312, 0.078),
 			"roughness": 0.35,
 			"metallic": 0.25,
-			"desc": "Frente de cajones metálicos grises"
+			"desc": "Frente de cajón metálico gris con sombreado perimetral"
 		},
 		"handle": {
-			"rect": Rect2(0.75, 0.85, 0.20, 0.10),
-			"roughness": 0.20,
-			"metallic": 0.85,
-			"desc": "Jaladeras cromadas redondeadas tipo tanker"
+			"rect": Rect2(0.000, 0.730, 0.125, 0.074),
+			"roughness": 0.30,
+			"metallic": 0.10,
+			"desc": "Jaladera cromada redondeada estilo tanker"
 		},
 		"leg": {
-			"rect": Rect2(0.75, 0.75, 0.22, 0.20),
+			"rect": Rect2(0.773, 0.700, 0.227, 0.290),
 			"roughness": 0.30,
 			"metallic": 0.75,
 			"desc": "Patas cilíndricas de acero tubular"
@@ -844,68 +964,104 @@ static var _REGIONS: Dictionary = {
 	},
 
 	# =========================================================================
-	# 20. ESCRITORIO EN L MODULAR (desk03 - 256x256)
+	# 20. ESCRITORIO INDIVIDUAL CON CAJONERA Y PATAS ABIERTAS (desk03 - 256x256)
 	# =========================================================================
 	"desk03": {
 		"wood_top": {
-			"rect": Rect2(0.00, 0.00, 0.45, 0.45),
+			"rect": Rect2(0.000, 0.000, 0.375, 0.656),
 			"roughness": 0.55,
 			"metallic": 0.02,
-			"desc": "Cubierta de melamina madera clara para configuración en L"
+			"desc": "Cubierta de madera con nudo y veta que corre a lo largo del escritorio al rotarse 90°"
 		},
 		"wood_body": {
-			"rect": Rect2(0.00, 0.75, 0.45, 0.25),
+			"rect": Rect2(0.508, 0.324, 0.215, 0.316),
 			"roughness": 0.60,
 			"metallic": 0.02,
-			"desc": "Cuerpo del pedestal cajonero derecho"
+			"desc": "Cuerpo del pedestal y patas con veta vertical"
+		},
+		"modesty": {
+			"rect": Rect2(0.390, 0.000, 0.610, 0.250),
+			"roughness": 0.60,
+			"metallic": 0.02,
+			"desc": "Faldón de modestia trasero con listones horizontales"
 		},
 		"drawer": {
-			"rect": Rect2(0.00, 0.45, 0.40, 0.25),
+			"rect": Rect2(0.000, 0.664, 0.188, 0.082),
 			"roughness": 0.55,
 			"metallic": 0.02,
-			"desc": "Frentes de cajón con textura de veta de madera"
+			"desc": "Frente de cajón con veta horizontal"
+		},
+		"drawer_deep": {
+			"rect": Rect2(0.000, 0.762, 0.188, 0.133),
+			"roughness": 0.55,
+			"metallic": 0.02,
+			"desc": "Cajón inferior profundo"
 		},
 		"handle": {
-			"rect": Rect2(0.30, 0.68, 0.12, 0.06),
-			"roughness": 0.25,
-			"metallic": 0.85,
-			"desc": "Tiradores de cajón metálicos"
+			"rect": Rect2(0.203, 0.676, 0.133, 0.063),
+			"roughness": 0.30,
+			"metallic": 0.10,
+			"desc": "Tiradores de cajón metálicos plateados"
+		},
+		"leg": {
+			"rect": Rect2(0.390, 0.324, 0.094, 0.316),
+			"roughness": 0.60,
+			"metallic": 0.02,
+			"desc": "Pata abierta de madera"
 		}
 	},
 
 	# =========================================================================
-	# 21. ESCRITORIO CON PATAS AZULES / SENCILLO (desk04 - 256x256)
+	# 21. ESCRITORIO MODULAR EN L CON ESTRUCTURA AZUL (desk04 - 256x256)
 	# =========================================================================
 	"desk04": {
-		"wood_top": {
-			"rect": Rect2(0.00, 0.00, 0.45, 0.45),
+		"wood_top_main": {
+			"rect": Rect2(0.000, 0.000, 0.610, 0.300),
 			"roughness": 0.55,
 			"metallic": 0.02,
-			"desc": "Cubierta de madera clara para escritorio individual"
+			"desc": "Ala principal del escritorio en L con veta orientada a lo largo del ala al rotarse 90°"
+		},
+		"wood_top_return": {
+			"rect": Rect2(0.000, 0.000, 0.300, 0.830),
+			"roughness": 0.55,
+			"metallic": 0.02,
+			"desc": "Ala de retorno lateral con veta a lo largo del ala"
+		},
+		"wood_top": {
+			"rect": Rect2(0.000, 0.000, 0.610, 0.300),
+			"roughness": 0.55,
+			"metallic": 0.02,
+			"desc": "Cubierta de melamina roble claro"
 		},
 		"wood_body": {
-			"rect": Rect2(0.00, 0.45, 0.45, 0.35),
+			"rect": Rect2(0.645, 0.490, 0.335, 0.330),
 			"roughness": 0.60,
 			"metallic": 0.02,
-			"desc": "Laterales de pedestal y patas de madera"
+			"desc": "Pedestal cajonero de madera clara"
 		},
 		"drawer": {
-			"rect": Rect2(0.00, 0.45, 0.40, 0.20),
+			"rect": Rect2(0.309, 0.547, 0.191, 0.074),
 			"roughness": 0.55,
 			"metallic": 0.02,
-			"desc": "Cajonera simple de madera"
+			"desc": "Cajón de madera clara con veta horizontal"
+		},
+		"drawer_deep": {
+			"rect": Rect2(0.309, 0.629, 0.191, 0.164),
+			"roughness": 0.55,
+			"metallic": 0.02,
+			"desc": "Cajón inferior de gran capacidad"
 		},
 		"handle": {
-			"rect": Rect2(0.20, 0.65, 0.15, 0.08),
-			"roughness": 0.25,
-			"metallic": 0.85,
-			"desc": "Tirador de cajón plateado"
+			"rect": Rect2(0.527, 0.559, 0.032, 0.097),
+			"roughness": 0.30,
+			"metallic": 0.10,
+			"desc": "Tirador metálico vertical/horizontal plateado"
 		},
 		"blue_metal": {
-			"rect": Rect2(0.6367, 0.1094, 0.3398, 0.1797),
+			"rect": Rect2(0.640, 0.115, 0.300, 0.165),
 			"roughness": 0.35,
 			"metallic": 0.50,
-			"desc": "Tubo de acero esmaltado en azul para patas en T y patines del escritorio en L"
+			"desc": "Tubo de acero esmaltado en azul para patas en T y patín"
 		}
 	},
 
@@ -914,31 +1070,37 @@ static var _REGIONS: Dictionary = {
 	# =========================================================================
 	"file_cabinet": {
 		"metal_body": {
-			"rect": Rect2(0.18, 0.20, 0.80, 0.35),
+			"rect": Rect2(0.172, 0.172, 0.828, 0.375),
 			"roughness": 0.40,
 			"metallic": 0.25,
-			"desc": "Chapa de acero gris carbón para paredes, techo y fondo del archivero"
+			"desc": "Chapa de acero gris carbón para laterales y fondo"
+		},
+		"top_surface": {
+			"rect": Rect2(0.172, 0.000, 0.328, 0.168),
+			"roughness": 0.40,
+			"metallic": 0.25,
+			"desc": "Cubierta superior del archivero"
 		},
 		"drawer_front": {
-			"rect": Rect2(0.18, 0.00, 0.32, 0.18),
+			"rect": Rect2(0.000, 0.172, 0.168, 0.129),
 			"roughness": 0.35,
 			"metallic": 0.30,
-			"desc": "Frente de cajón con marco de etiqueta y jaladera empotrada"
+			"desc": "Frente de gaveta con jaladera cromada y marco de etiqueta integrado"
 		},
 		"handle": {
-			"rect": Rect2(0.18, 0.00, 0.15, 0.08),
+			"rect": Rect2(0.000, 0.172, 0.168, 0.129),
 			"roughness": 0.20,
 			"metallic": 0.85,
-			"desc": "Jaladera metálica y portatarjetas para rótulo"
+			"desc": "Jaladera metálica con portaetiquetas"
 		},
 		"folders": {
-			"rect": Rect2(0.504, 0.00, 0.250, 0.168),
+			"rect": Rect2(0.504, 0.000, 0.320, 0.168),
 			"roughness": 0.85,
 			"metallic": 0.01,
-			"desc": "Carpetas colgantes manila con pestañas indicadoras en cajón abierto"
+			"desc": "Carpetas colgantes manila con pestañas indicadoras"
 		},
 		"kickplate": {
-			"rect": Rect2(0.18, 0.56, 0.32, 0.16),
+			"rect": Rect2(0.172, 0.551, 0.328, 0.188),
 			"roughness": 0.45,
 			"metallic": 0.20,
 			"desc": "Zócalo base inferior del archivero"
