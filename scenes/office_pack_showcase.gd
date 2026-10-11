@@ -2,7 +2,8 @@ class_name OfficePackShowcase
 extends Node3D
 
 ## Escaparate Oficial del Conjunto de Mobiliario de Oficina (Office Pack)
-## Reproduce 1:1 los 12 modelos en Hardware Instancing a +0 Draw Calls en ObjectEngine.
+## Reproduce fielmente los modelos en Hardware Instancing a +0 Draw Calls en ObjectEngine.
+## Soporte interactivo: Gavetas y archiveros abribles/cerrables (Presiona ESPACIO para alternar).
 
 const ObjectEngineScript = preload("res://world/object_engine/object_engine.gd")
 const OfficeRecipesScript = preload("res://world/object_engine/recipes/office_recipes.gd")
@@ -16,6 +17,7 @@ var _camera: Camera3D = null
 var _mouse_captured: bool = false
 var _cam_yaw: float = 0.0
 var _cam_pitch: float = -0.35
+var _all_drawers_open: bool = false
 
 
 func _ready() -> void:
@@ -24,7 +26,7 @@ func _ready() -> void:
 	print("=======================================================================")
 
 	_setup_lighting_and_environment()
-	_build_office_pack()
+	_rebuild_office_pack(false)
 
 
 func _setup_lighting_and_environment() -> void:
@@ -67,7 +69,12 @@ func _setup_lighting_and_environment() -> void:
 	_camera.make_current()
 
 
-func _build_office_pack() -> void:
+func _rebuild_office_pack(all_open: bool = false) -> void:
+	if _engine != null:
+		remove_child(_engine)
+		_engine.queue_free()
+		_engine = null
+
 	_engine = ObjectEngineScript.new()
 	_engine.name = "ShowcaseObjectEngine"
 	add_child(_engine)
@@ -76,9 +83,9 @@ func _build_office_pack() -> void:
 
 	# Coordenadas de la cuadrícula 4x3 calibrada
 	# Columnas X: -3.3, -1.1, 1.1, 3.3
-	# Filas Z con espaciado amplio para evitar que los muebles altos (1.85m) ocluyan las sillas:
+	# Filas Z con espaciado amplio:
 	#   Fila 1 (Z = -3.8): 4 Escritorios
-	#   Fila 2 (Z =  0.0): 2 Sillas y 2 Archiveros
+	#   Fila 2 (Z =  0.0): 2 Sillas y Archivero (Cerrado y Abierto Vacío)
 	#   Fila 3 (Z =  3.8): 2 Armarios y 2 Libreros
 	var col_x := [-3.3, -1.1, 1.1, 3.3]
 	var rot_isometric := Basis(Vector3.UP, deg_to_rad(24.0))
@@ -87,45 +94,50 @@ func _build_office_pack() -> void:
 	# FILA 1: ESCRITORIOS
 	# =========================================================================
 	var r1_z := -3.8
+	var desk_params := {"is_open": true} if all_open else {}
+
 	# 1. Escritorio Ejecutivo Doble Pedestal de Madera
-	OfficeRecipesScript.OfficeDeskDoublePedestalRecipe.build(builder, Transform3D(rot_isometric, Vector3(col_x[0], 0.0, r1_z)))
+	OfficeRecipesScript.OfficeDeskDoublePedestalRecipe.build(builder, Transform3D(rot_isometric, Vector3(col_x[0], 0.0, r1_z)), desk_params)
 
 	# 2. Escritorio Metálico Tanker
-	OfficeRecipesScript.OfficeDeskMetalTankerRecipe.build(builder, Transform3D(rot_isometric, Vector3(col_x[1], 0.0, r1_z)))
+	OfficeRecipesScript.OfficeDeskMetalTankerRecipe.build(builder, Transform3D(rot_isometric, Vector3(col_x[1], 0.0, r1_z)), desk_params)
 
-	# 3. Escritorio Modular en L con Patas Azules (retorno y patas hacia el frente-izq)
-	OfficeRecipesScript.OfficeDeskLShapedRecipe.build(builder, Transform3D(rot_isometric, Vector3(col_x[2], 0.0, r1_z)))
+	# 3. Escritorio Modular en L con Patas Azules
+	OfficeRecipesScript.OfficeDeskLShapedRecipe.build(builder, Transform3D(rot_isometric, Vector3(col_x[2], 0.0, r1_z)), desk_params)
 
 	# 4. Escritorio Sencillo Patas Abiertas
-	OfficeRecipesScript.OfficeDeskSinglePedestalRecipe.build(builder, Transform3D(rot_isometric, Vector3(col_x[3], 0.0, r1_z)))
+	OfficeRecipesScript.OfficeDeskSinglePedestalRecipe.build(builder, Transform3D(rot_isometric, Vector3(col_x[3], 0.0, r1_z)), desk_params)
 
 	# =========================================================================
-	# FILA 2: SILLAS Y ARCHIVEROS
+	# FILA 2: SILLAS Y ARCHIVEROS (MODELO ÚNICO UNIFICADO)
 	# =========================================================================
 	var r2_z := 0.0
 	var rot_chair := Basis(Vector3.UP, deg_to_rad(-24.0))
 
-	# 5. Silla Ergonómica Verde (respaldo atrás-izq, asiento hacia adelante-der)
+	# 5. Silla Ergonómica Verde
 	OfficeRecipesScript.OfficeChairGreenRecipe.build(builder, Transform3D(rot_chair, Vector3(col_x[0], 0.0, r2_z)))
 
-	# 6. Silla Giratoria Roja Vintage (respaldo atrás-izq, asiento hacia adelante-der)
+	# 6. Silla Giratoria Roja Vintage
 	OfficeRecipesScript.OfficeChairRedRecipe.build(builder, Transform3D(rot_chair, Vector3(col_x[1], 0.0, r2_z)))
 
-	# 7. Archivero Vertical Metálico Cerrado
-	OfficeRecipesScript.OfficeFileCabinetClosedRecipe.build(builder, Transform3D(rot_isometric, Vector3(col_x[2], 0.0, r2_z)))
+	# 7. Archivero Vertical Metálico - Estado Cerrado
+	var fc1_params := {"is_open": true} if all_open else {"is_open": false}
+	OfficeRecipesScript.OfficeFileCabinetRecipe.build(builder, Transform3D(rot_isometric, Vector3(col_x[2], 0.0, r2_z)), fc1_params)
 
-	# 8. Archivero Vertical Metálico Abierto con Carpetas
-	OfficeRecipesScript.OfficeFileCabinetOpenRecipe.build(builder, Transform3D(rot_isometric, Vector3(col_x[3], 0.0, r2_z)))
+	# 8. Archivero Vertical Metálico - Demostración Estado Abierto (100% Vacío, sin carpetas)
+	OfficeRecipesScript.OfficeFileCabinetRecipe.build(builder, Transform3D(rot_isometric, Vector3(col_x[3], 0.0, r2_z)), {"is_open": true})
 
 	# =========================================================================
 	# FILA 3: ARMARIOS Y LIBREROS
 	# =========================================================================
 	var r3_z := 3.8
+	var cab_params := {"is_open": true} if all_open else {}
+
 	# 9. Armario Alto de Madera 2 Puertas
-	OfficeRecipesScript.OfficeCabinetTallRecipe.build(builder, Transform3D(rot_isometric, Vector3(col_x[0], 0.0, r3_z)))
+	OfficeRecipesScript.OfficeCabinetTallRecipe.build(builder, Transform3D(rot_isometric, Vector3(col_x[0], 0.0, r3_z)), cab_params)
 
 	# 10. Mueble Bajo / Aparador de Madera 2 Puertas
-	OfficeRecipesScript.OfficeCabinetLowRecipe.build(builder, Transform3D(rot_isometric, Vector3(col_x[1], 0.0, r3_z)))
+	OfficeRecipesScript.OfficeCabinetLowRecipe.build(builder, Transform3D(rot_isometric, Vector3(col_x[1], 0.0, r3_z)), cab_params)
 
 	# 11. Librero Alto Abierto 5 Niveles
 	OfficeRecipesScript.OfficeBookcaseTallRecipe.build(builder, Transform3D(rot_isometric, Vector3(col_x[2], 0.0, r3_z)))
@@ -145,6 +157,12 @@ func _build_office_pack() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if event is InputEventKey and event.pressed and not event.echo:
+		if event.keycode == KEY_SPACE:
+			_all_drawers_open = not _all_drawers_open
+			print("Alternando estado interactivo de gavetas: Abierto=%s" % str(_all_drawers_open))
+			_rebuild_office_pack(_all_drawers_open)
+
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_RIGHT and event.pressed:
 		_mouse_captured = not _mouse_captured
 		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED if _mouse_captured else Input.MOUSE_MODE_VISIBLE

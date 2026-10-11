@@ -687,11 +687,14 @@ func add_furniture_by_script(scr: Variant, t: Transform3D, extra_params: Diction
 		elif s_key == "office_chair_red" or s_key == "office_chair02" or s_key == "chair02":
 			OfficeRecipesScript.OfficeChairRedRecipe.build(self, t, extra_params)
 			return
-		elif s_key == "office_file_cabinet_closed" or s_key == "file_cabinet":
-			OfficeRecipesScript.OfficeFileCabinetClosedRecipe.build(self, t, extra_params)
+		elif s_key == "office_file_cabinet" or s_key == "office_file_cabinet_closed" or s_key == "file_cabinet":
+			OfficeRecipesScript.OfficeFileCabinetRecipe.build(self, t, extra_params)
 			return
 		elif s_key == "office_file_cabinet_open":
-			OfficeRecipesScript.OfficeFileCabinetOpenRecipe.build(self, t, extra_params)
+			var p := extra_params.duplicate()
+			if not p.has("is_open") and not p.has("drawer_slides"):
+				p["is_open"] = true
+			OfficeRecipesScript.OfficeFileCabinetRecipe.build(self, t, p)
 			return
 		elif s_key == "office_cabinet_tall" or s_key == "cupboard02_tall":
 			OfficeRecipesScript.OfficeCabinetTallRecipe.build(self, t, extra_params)

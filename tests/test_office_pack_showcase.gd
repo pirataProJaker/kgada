@@ -74,9 +74,9 @@ func _init() -> void:
 	# 6. Silla Roja Vintage
 	builder.add_furniture_by_script("office_chair_red", Transform3D(basis_chair, Vector3(-1.3, 0.0, r2_z)))
 	# 7. Archivero Vertical Cerrado
-	builder.add_furniture_by_script("office_file_cabinet_closed", Transform3D(basis_desk, Vector3(1.3, 0.0, r2_z)))
-	# 8. Archivero Vertical Abierto con Carpetas
-	builder.add_furniture_by_script("office_file_cabinet_open", Transform3D(basis_desk, Vector3(3.8, 0.0, r2_z)))
+	builder.add_furniture_by_script("office_file_cabinet", Transform3D(basis_desk, Vector3(1.3, 0.0, r2_z)), {"is_open": false})
+	# 8. Archivero Vertical Abierto (Vacío)
+	builder.add_furniture_by_script("office_file_cabinet", Transform3D(basis_desk, Vector3(3.8, 0.0, r2_z)), {"is_open": true})
 
 	# Fila 3 (Z = +2.8): Armarios y Libreros
 	var r3_z := 2.8

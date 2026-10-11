@@ -89,5 +89,16 @@ func _init() -> void:
 			img_storage.save_png("res://tests/showcase_office_storage.png")
 			print("✓ Captura de libreros y armarios guardada en res://tests/showcase_office_storage.png")
 
+		# 5. Captura con TODOS los cajones y puertas abiertas (demostración interactiva de vaciado y apertura)
+		root_node._rebuild_office_pack(true)
+		cam.size = 7.2
+		cam.global_position = Vector3(-0.15, 4.12, 6.62)
+		for i in range(8):
+			await process_frame
+		var img_open := vp.get_texture().get_image()
+		if img_open:
+			img_open.save_png("res://tests/showcase_office_drawers_open.png")
+			print("✓ Captura con todos los cajones abiertos guardada en res://tests/showcase_office_drawers_open.png")
+
 	print("=== CAPTURA FINALIZADA EXITOSAMENTE ===")
 	quit(0)

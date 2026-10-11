@@ -6,23 +6,55 @@ extends RefCounted
 ## =========================================================================
 ## Arquitectura: +0 Draw Calls (Hardware Instancing en ObjectEngine)
 ## Reproducción fiel 1:1 de los 12 modelos de referencia:
-## Fila 1 (Escritorios):
+## Fila 1 (Escritorios con gavetas interactivas):
 ##   1. OfficeDeskDoublePedestalRecipe - Escritorio ejecutivo doble pedestal de madera
 ##   2. OfficeDeskMetalTankerRecipe    - Escritorio metálico tanker vintage (cubierta oscura, pedestales grises)
 ##   3. OfficeDeskLShapedRecipe        - Escritorio modular en L con patas tubulares azules y cajonera
 ##   4. OfficeDeskSinglePedestalRecipe - Escritorio sencillo con cajonera derecha y patas abiertas
-## Fila 2 (Sillas y Archiveros):
+## Fila 2 (Sillas y Archivero interactivo):
 ##   5. OfficeChairGreenRecipe         - Silla ergonómica giratoria tapizada en verde con base de 5 radios
 ##   6. OfficeChairRedRecipe           - Silla giratoria de oficina roja con soporte tubular cromado
-##   7. OfficeFileCabinetClosedRecipe  - Archivero vertical metálico de 3 gavetas cerrado
-##   8. OfficeFileCabinetOpenRecipe    - Archivero vertical metálico con gavetas abiertas y carpetas colgantes
+##   7. OfficeFileCabinetRecipe        - Archivero vertical metálico unificado (abrible/cerrable, interior vacío)
+##      - OfficeFileCabinetClosedRecipe (alias cerrado)
+##      - OfficeFileCabinetOpenRecipe   (alias abierto)
 ## Fila 3 (Libreros y Armarios):
-##   9. OfficeCabinetTallRecipe        - Armario alto de oficina de 2 puertas con pomos
-##  10. OfficeCabinetLowRecipe         - Mueble bajo / aparador de oficina de 2 puertas
-##  11. OfficeBookcaseTallRecipe       - Librero alto abierto de 5 niveles
-##  12. OfficeBookcaseLowRecipe        - Librero bajo abierto de 2 niveles
+##   8. OfficeCabinetTallRecipe        - Armario alto de oficina de 2 puertas batientes
+##   9. OfficeCabinetLowRecipe         - Mueble bajo / aparador de oficina de 2 puertas batientes
+##  10. OfficeBookcaseTallRecipe       - Librero alto abierto de 5 niveles
+##  11. OfficeBookcaseLowRecipe        - Librero bajo abierto de 2 niveles
 
 const ObjectAtlasScript = preload("res://world/object_engine/object_atlas.gd")
+
+
+## Helper estático para construir un cajón deslizante interior completamente hueco y vacío
+static func _build_sliding_drawer_box(
+	builder: Variant, base_t: Transform3D, pos_center: Vector3,
+	box_w: float, box_h: float, slide_ext: float,
+	tex_key: String, body_region: String,
+	roughness: float = 0.55, metallic: float = 0.02
+) -> void:
+	if slide_ext <= 0.005:
+		return
+	var wall_t := 0.012
+	var box_depth := slide_ext
+	var center_z := pos_center.z + slide_ext * 0.5
+	var cy := pos_center.y
+
+	# 1. Pared lateral izquierda (-X)
+	var left_pos := Vector3(pos_center.x - box_w * 0.5 + wall_t * 0.5, cy, center_z)
+	builder.add_smart_box(base_t * Transform3D(Basis.IDENTITY, left_pos), Vector3(wall_t, box_h, box_depth), tex_key, body_region, roughness, metallic, false)
+
+	# 2. Pared lateral derecha (+X)
+	var right_pos := Vector3(pos_center.x + box_w * 0.5 - wall_t * 0.5, cy, center_z)
+	builder.add_smart_box(base_t * Transform3D(Basis.IDENTITY, right_pos), Vector3(wall_t, box_h, box_depth), tex_key, body_region, roughness, metallic, false)
+
+	# 3. Pared trasera (-Z, en la boca del pedestal)
+	var back_pos := Vector3(pos_center.x, cy, pos_center.z + wall_t * 0.5)
+	builder.add_smart_box(base_t * Transform3D(Basis.IDENTITY, back_pos), Vector3(box_w - wall_t * 2.0, box_h, wall_t), tex_key, body_region, roughness, metallic, false)
+
+	# 4. Fondo inferior (-Y)
+	var bot_pos := Vector3(pos_center.x, cy - box_h * 0.5 + wall_t * 0.5, center_z)
+	builder.add_smart_box(base_t * Transform3D(Basis.IDENTITY, bot_pos), Vector3(box_w - wall_t * 2.0, wall_t, box_depth), tex_key, body_region, roughness, metallic, false)
 
 
 # =========================================================================
@@ -47,11 +79,18 @@ class OfficeDeskDoublePedestalRecipe extends ObjectRecipeBase:
 		var top_t := base_t * Transform3D(Basis(Vector3.UP, deg_to_rad(90.0)), Vector3(0.0, h - top_thick * 0.5, 0.0))
 		builder.add_smart_box(top_t, Vector3(d, top_thick, w), texture_key, "wood_top")
 
-		# 2. Pedestales Izquierdo y Derecho
+		# 2. Pedestales Izquierdo y Derecho con gavetas interactivas
 		var drawer_regions := ["drawer", "drawer_mid", "drawer_bot"]
+		var slides_left: Array = params.get("drawer_slides_left", [])
+		var slides_right: Array = params.get("drawer_slides_right", params.get("drawer_slides", []))
+		var is_open: bool = params.get("is_open", false)
+		if slides_left.is_empty() and slides_right.is_empty() and is_open:
+			slides_right = [0.24, 0.14, 0.0]
+
 		for side: float in [-1.0, 1.0]:
 			var px: float = side * ped_offset_x
 			var ped_center_y := foot_h + ped_h * 0.5
+			var cur_slides: Array = slides_left if side < 0.0 else slides_right
 
 			# Cuerpo del pedestal (laterales y fondo)
 			var ped_t := base_t * Transform3D(Basis.IDENTITY, Vector3(px, ped_center_y, 0.0))
@@ -62,16 +101,23 @@ class OfficeDeskDoublePedestalRecipe extends ObjectRecipeBase:
 			var drawer_gap := 0.015
 			var drawer_h := (ped_h - float(drawer_count + 1) * drawer_gap) / float(drawer_count)
 			for i in range(drawer_count):
+				var ext: float = 0.0
+				if i < cur_slides.size():
+					ext = float(cur_slides[i])
 				var dy := foot_h + drawer_gap + float(i) * (drawer_h + drawer_gap) + drawer_h * 0.5
-				var drawer_pos := Vector3(px, dy, ped_d * 0.5 + 0.005)
+				var drawer_pos := Vector3(px, dy, ped_d * 0.5 + ext + 0.005)
 				var drawer_t := base_t * Transform3D(Basis.IDENTITY, drawer_pos)
 				var d_reg: String = drawer_regions[i] if i < drawer_regions.size() else "drawer"
 				builder.add_panel_box(drawer_t, Vector3(ped_w - 0.03, drawer_h, 0.02), texture_key, d_reg, "wood_body")
 
 				# Tirador horizontal plateado
-				var handle_pos := Vector3(px, dy, ped_d * 0.5 + 0.02)
+				var handle_pos := Vector3(px, dy, ped_d * 0.5 + ext + 0.02)
 				var handle_t := base_t * Transform3D(Basis.IDENTITY, handle_pos)
 				builder.add_smart_box(handle_t, Vector3(0.12, 0.02, 0.015), texture_key, "handle", 0.30, 0.10, false)
+
+				# Cajón interior hueco vacío si está extendido
+				if ext > 0.005:
+					OfficeRecipes._build_sliding_drawer_box(builder, base_t, Vector3(px, dy, ped_d * 0.5), ped_w - 0.04, drawer_h - 0.02, ext, texture_key, "wood_body")
 
 			# 2 Patitas cuadradas bajo el pedestal
 			var foot_sz := 0.06
@@ -110,10 +156,17 @@ class OfficeDeskMetalTankerRecipe extends ObjectRecipeBase:
 		var top_t := base_t * Transform3D(Basis(Vector3.UP, deg_to_rad(90.0)), Vector3(0.0, h - top_thick * 0.5, 0.0))
 		builder.add_smart_box(top_t, Vector3(d, top_thick, w), texture_key, "top_linoleum", 0.45, 0.05)
 
-		# 2. Pedestales metálicos grises
+		# 2. Pedestales metálicos grises con gavetas interactivas
+		var slides_left: Array = params.get("drawer_slides_left", [])
+		var slides_right: Array = params.get("drawer_slides_right", params.get("drawer_slides", []))
+		var is_open: bool = params.get("is_open", false)
+		if slides_left.is_empty() and slides_right.is_empty() and is_open:
+			slides_right = [0.24, 0.14, 0.0]
+
 		for side: float in [-1.0, 1.0]:
 			var px: float = side * ped_offset_x
 			var ped_center_y := leg_h + ped_h * 0.5
+			var cur_slides: Array = slides_left if side < 0.0 else slides_right
 
 			# Cuerpo de chapa metálica gris
 			var ped_t := base_t * Transform3D(Basis.IDENTITY, Vector3(px, ped_center_y, 0.0))
@@ -124,15 +177,22 @@ class OfficeDeskMetalTankerRecipe extends ObjectRecipeBase:
 			var drawer_gap := 0.015
 			var drawer_h := (ped_h - float(drawer_count + 1) * drawer_gap) / float(drawer_count)
 			for i in range(drawer_count):
+				var ext: float = 0.0
+				if i < cur_slides.size():
+					ext = float(cur_slides[i])
 				var dy := leg_h + drawer_gap + float(i) * (drawer_h + drawer_gap) + drawer_h * 0.5
-				var drawer_pos := Vector3(px, dy, ped_d * 0.5 + 0.005)
+				var drawer_pos := Vector3(px, dy, ped_d * 0.5 + ext + 0.005)
 				var drawer_t := base_t * Transform3D(Basis.IDENTITY, drawer_pos)
 				builder.add_panel_box(drawer_t, Vector3(ped_w - 0.03, drawer_h, 0.02), texture_key, "drawer", "metal_grey", 0.35, 0.25)
 
 				# Jaladera horizontal cromada
-				var handle_pos := Vector3(px, dy, ped_d * 0.5 + 0.02)
+				var handle_pos := Vector3(px, dy, ped_d * 0.5 + ext + 0.02)
 				var handle_t := base_t * Transform3D(Basis.IDENTITY, handle_pos)
 				builder.add_smart_box(handle_t, Vector3(0.12, 0.02, 0.018), texture_key, "handle", 0.30, 0.10, false)
+
+				# Cajón interior hueco vacío si está extendido
+				if ext > 0.005:
+					OfficeRecipes._build_sliding_drawer_box(builder, base_t, Vector3(px, dy, ped_d * 0.5), ped_w - 0.04, drawer_h - 0.02, ext, texture_key, "metal_grey", 0.35, 0.25)
 
 			# 4 Patas tubulares metálicas bajo cada pedestal
 			var leg_radius := 0.024
@@ -201,7 +261,7 @@ class OfficeDeskLShapedRecipe extends ObjectRecipeBase:
 		var crossbar_t := base_t * Transform3D(Basis.IDENTITY, Vector3(-main_w * 0.5 + 0.08, h - 0.08, 0.0))
 		builder.add_smart_box(crossbar_t, Vector3(0.04, 0.04, main_d - 0.12), texture_key, "blue_metal", 0.35, 0.50, false)
 
-		# 4. Pedestal cajonero de madera a la derecha
+		# 4. Pedestal cajonero de madera a la derecha con gavetas interactivas
 		var ped_w := 0.42
 		var ped_d := main_d - 0.08
 		var ped_h := h - top_thick
@@ -209,19 +269,31 @@ class OfficeDeskLShapedRecipe extends ObjectRecipeBase:
 		var ped_t := base_t * Transform3D(Basis.IDENTITY, Vector3(ped_x, ped_h * 0.5, 0.0))
 		builder.add_smart_box(ped_t, Vector3(ped_w, ped_h, ped_d), texture_key, "wood_body", -1.0, -1.0, false)
 
+		var drawer_slides: Array = params.get("drawer_slides", [])
+		var is_open: bool = params.get("is_open", false)
+		if drawer_slides.is_empty() and is_open:
+			drawer_slides = [0.24, 0.14, 0.0]
+
 		# 3 Gavetas con tiradores
 		var drawer_count := 3
 		var drawer_gap := 0.015
 		var drawer_h := (ped_h - float(drawer_count + 1) * drawer_gap) / float(drawer_count)
 		for i in range(drawer_count):
+			var ext: float = 0.0
+			if i < drawer_slides.size():
+				ext = float(drawer_slides[i])
 			var dy := drawer_gap + float(i) * (drawer_h + drawer_gap) + drawer_h * 0.5
-			var drawer_pos := Vector3(ped_x, dy, ped_d * 0.5 + 0.005)
+			var drawer_pos := Vector3(ped_x, dy, ped_d * 0.5 + ext + 0.005)
 			var drawer_t := base_t * Transform3D(Basis.IDENTITY, drawer_pos)
 			var d_reg: String = "drawer_deep" if i == 0 else "drawer"
 			builder.add_panel_box(drawer_t, Vector3(ped_w - 0.03, drawer_h, 0.02), texture_key, d_reg, "wood_body")
 
-			var handle_pos := Vector3(ped_x, dy, ped_d * 0.5 + 0.02)
+			var handle_pos := Vector3(ped_x, dy, ped_d * 0.5 + ext + 0.02)
 			builder.add_smart_box(base_t * Transform3D(Basis.IDENTITY, handle_pos), Vector3(0.12, 0.02, 0.015), texture_key, "handle", 0.30, 0.10, false)
+
+			# Cajón interior hueco vacío si está extendido
+			if ext > 0.005:
+				OfficeRecipes._build_sliding_drawer_box(builder, base_t, Vector3(ped_x, dy, ped_d * 0.5), ped_w - 0.04, drawer_h - 0.02, ext, texture_key, "wood_body")
 
 
 # =========================================================================
@@ -250,18 +322,30 @@ class OfficeDeskSinglePedestalRecipe extends ObjectRecipeBase:
 		var ped_t := base_t * Transform3D(Basis.IDENTITY, Vector3(ped_x, foot_h + ped_h * 0.5, 0.0))
 		builder.add_smart_box(ped_t, Vector3(ped_w, ped_h, ped_d), texture_key, "wood_body", -1.0, -1.0, false)
 
+		var drawer_slides: Array = params.get("drawer_slides", [])
+		var is_open: bool = params.get("is_open", false)
+		if drawer_slides.is_empty() and is_open:
+			drawer_slides = [0.24, 0.14, 0.0]
+
 		var drawer_count := 3
 		var drawer_gap := 0.015
 		var drawer_h := (ped_h - float(drawer_count + 1) * drawer_gap) / float(drawer_count)
 		for i in range(drawer_count):
+			var ext: float = 0.0
+			if i < drawer_slides.size():
+				ext = float(drawer_slides[i])
 			var dy := foot_h + drawer_gap + float(i) * (drawer_h + drawer_gap) + drawer_h * 0.5
-			var drawer_pos := Vector3(ped_x, dy, ped_d * 0.5 + 0.005)
+			var drawer_pos := Vector3(ped_x, dy, ped_d * 0.5 + ext + 0.005)
 			var drawer_t := base_t * Transform3D(Basis.IDENTITY, drawer_pos)
 			var d_reg: String = "drawer_deep" if i == 0 else "drawer"
 			builder.add_panel_box(drawer_t, Vector3(ped_w - 0.03, drawer_h, 0.02), texture_key, d_reg, "wood_body")
 
-			var handle_pos := Vector3(ped_x, dy, ped_d * 0.5 + 0.02)
+			var handle_pos := Vector3(ped_x, dy, ped_d * 0.5 + ext + 0.02)
 			builder.add_smart_box(base_t * Transform3D(Basis.IDENTITY, handle_pos), Vector3(0.12, 0.02, 0.015), texture_key, "handle", 0.30, 0.10, false)
+
+			# Cajón interior hueco vacío si está extendido
+			if ext > 0.005:
+				OfficeRecipes._build_sliding_drawer_box(builder, base_t, Vector3(ped_x, dy, ped_d * 0.5), ped_w - 0.04, drawer_h - 0.02, ext, texture_key, "wood_body")
 
 		# Patas de la cajonera
 		var foot_sz := 0.05
@@ -408,9 +492,9 @@ class OfficeChairRedRecipe extends ObjectRecipeBase:
 
 
 # =========================================================================
-# 7. ARCHIVERO VERTICAL METÁLICO CERRADO (FILE CABINET CLOSED)
+# 7. ARCHIVERO VERTICAL METÁLICO (FILE CABINET - MODELO UNIFICADO INTERACTIVO)
 # =========================================================================
-class OfficeFileCabinetClosedRecipe extends ObjectRecipeBase:
+class OfficeFileCabinetRecipe extends ObjectRecipeBase:
 	static func build(builder: Variant, base_t: Transform3D, params: Dictionary = {}) -> void:
 		var w: float = params.get("width", 0.46)
 		var d: float = params.get("depth", 0.62)
@@ -432,71 +516,60 @@ class OfficeFileCabinetClosedRecipe extends ObjectRecipeBase:
 		var kick_t := base_t * Transform3D(Basis.IDENTITY, Vector3(0.0, kick_h * 0.5, 0.0))
 		builder.add_smart_box(kick_t, Vector3(w - 0.02, kick_h, d - 0.02), texture_key, "kickplate", 0.45, 0.20)
 
-		# 2. Las 3 gavetas verticales (con jaladera y portarótulo integrados en la textura del atlas)
+		# 2. Las 3 gavetas con soporte completo para abrirse y cerrarse individualmente o en grupo
+		var drawer_slides: Array = params.get("drawer_slides", [])
+		var drawer_open_ratios: Array = params.get("drawer_open_ratios", [])
+		var is_open: bool = params.get("is_open", false)
+		var max_slide: float = 0.35
+
+		if drawer_slides.is_empty():
+			if not drawer_open_ratios.is_empty():
+				drawer_slides = []
+				for r in drawer_open_ratios:
+					drawer_slides.append(float(r) * max_slide)
+			elif is_open:
+				# Index 0 es inferior (0.32m), 1 es media (0.20m), 2 es superior (0.0m cerrada)
+				drawer_slides = [0.32, 0.20, 0.00]
+			else:
+				drawer_slides = [0.0, 0.0, 0.0]
+
 		var drawer_count := 3
 		var drawer_gap := 0.015
 		var drawer_h := (casing_h - float(drawer_count + 1) * drawer_gap) / float(drawer_count)
-		for i in range(drawer_count):
-			var dy := kick_h + drawer_gap + float(i) * (drawer_h + drawer_gap) + drawer_h * 0.5
-			var drawer_pos := Vector3(0.0, dy, d * 0.5 + 0.005)
-			var drawer_t := base_t * Transform3D(Basis.IDENTITY, drawer_pos)
-			builder.add_panel_box(drawer_t, Vector3(w - 0.03, drawer_h, 0.02), texture_key, "drawer_front", "metal_body", 0.35, 0.30)
-
-
-# =========================================================================
-# 8. ARCHIVERO VERTICAL METÁLICO ABIERTO (FILE CABINET OPEN)
-# =========================================================================
-class OfficeFileCabinetOpenRecipe extends ObjectRecipeBase:
-	static func build(builder: Variant, base_t: Transform3D, params: Dictionary = {}) -> void:
-		var w: float = params.get("width", 0.46)
-		var d: float = params.get("depth", 0.62)
-		var h: float = params.get("height", 1.05)
-		var texture_key: String = params.get("texture_key", "file_cabinet")
-
-		var kick_h := 0.06
-		var top_thick := 0.025
-		var casing_h := h - kick_h - top_thick
-
-		# 1. Armazón exterior
-		var top_t := base_t * Transform3D(Basis.IDENTITY, Vector3(0.0, h - top_thick * 0.5, 0.0))
-		builder.add_smart_box(top_t, Vector3(w, top_thick, d), texture_key, "top_surface", 0.40, 0.25)
-
-		var body_t := base_t * Transform3D(Basis.IDENTITY, Vector3(0.0, kick_h + casing_h * 0.5, 0.0))
-		builder.add_smart_box(body_t, Vector3(w, casing_h, d), texture_key, "metal_body", 0.40, 0.25, false)
-
-		var kick_t := base_t * Transform3D(Basis.IDENTITY, Vector3(0.0, kick_h * 0.5, 0.0))
-		builder.add_smart_box(kick_t, Vector3(w - 0.02, kick_h, d - 0.02), texture_key, "kickplate", 0.45, 0.20)
-
-		# 2. Gavetas: Superior cerrada, Media abierta (0.20m), Inferior muy abierta (0.32m)
-		var drawer_count := 3
-		var drawer_gap := 0.015
-		var drawer_h := (casing_h - float(drawer_count + 1) * drawer_gap) / float(drawer_count)
-		var extensions := [0.32, 0.20, 0.00] # Index 0 es inferior, 1 es media, 2 es superior
 
 		for i in range(drawer_count):
-			var ext: float = extensions[i]
+			var ext: float = 0.0
+			if i < drawer_slides.size():
+				ext = float(drawer_slides[i])
+
 			var dy := kick_h + drawer_gap + float(i) * (drawer_h + drawer_gap) + drawer_h * 0.5
 			var drawer_pos := Vector3(0.0, dy, d * 0.5 + ext + 0.005)
 			var drawer_t := base_t * Transform3D(Basis.IDENTITY, drawer_pos)
 			builder.add_panel_box(drawer_t, Vector3(w - 0.03, drawer_h, 0.02), texture_key, "drawer_front", "metal_body", 0.35, 0.30)
 
-			# Si la gaveta está extendida, construir el cajón interior y las carpetas colgantes
-			if ext > 0.05:
-				var box_depth := ext
-				var box_center_z := d * 0.5 + ext * 0.5
-				# Laterales del cajón abierto
-				var side_l := base_t * Transform3D(Basis.IDENTITY, Vector3(-w * 0.5 + 0.025, dy, box_center_z))
-				builder.add_smart_box(side_l, Vector3(0.015, drawer_h - 0.04, box_depth), texture_key, "metal_body", 0.40, 0.25, false)
-				var side_r := base_t * Transform3D(Basis.IDENTITY, Vector3( w * 0.5 - 0.025, dy, box_center_z))
-				builder.add_smart_box(side_r, Vector3(0.015, drawer_h - 0.04, box_depth), texture_key, "metal_body", 0.40, 0.25, false)
+			# Si la gaveta está extendida, construir el cajón interior metálico COMPLETAMENTE VACÍO (sin carpetas)
+			if ext > 0.005:
+				OfficeRecipes._build_sliding_drawer_box(builder, base_t, Vector3(0.0, dy, d * 0.5), w - 0.045, drawer_h - 0.02, ext, texture_key, "metal_body", 0.40, 0.25)
 
-				# Carpetas colgantes manila con pestañas
-				var folder_pos := Vector3(0.0, dy + 0.01, box_center_z)
-				builder.add_smart_box(base_t * Transform3D(Basis.IDENTITY, folder_pos), Vector3(w - 0.08, drawer_h - 0.03, box_depth - 0.04), texture_key, "folders", 0.85, 0.01, false)
+
+## Clases de retrocompatibilidad que llaman al modelo canónico OfficeFileCabinetRecipe
+class OfficeFileCabinetClosedRecipe extends ObjectRecipeBase:
+	static func build(builder: Variant, base_t: Transform3D, params: Dictionary = {}) -> void:
+		var p := params.duplicate()
+		p["is_open"] = false
+		OfficeFileCabinetRecipe.build(builder, base_t, p)
+
+
+class OfficeFileCabinetOpenRecipe extends ObjectRecipeBase:
+	static func build(builder: Variant, base_t: Transform3D, params: Dictionary = {}) -> void:
+		var p := params.duplicate()
+		if not p.has("drawer_slides") and not p.has("is_open"):
+			p["is_open"] = true
+		OfficeFileCabinetRecipe.build(builder, base_t, p)
 
 
 # =========================================================================
-# 9. ARMARIO ALTO DE OFICINA CON 2 PUERTAS (CUPBOARD 02 TALL)
+# 8. ARMARIO ALTO DE OFICINA CON 2 PUERTAS (CUPBOARD 02 TALL)
 # =========================================================================
 class OfficeCabinetTallRecipe extends ObjectRecipeBase:
 	static func build(builder: Variant, base_t: Transform3D, params: Dictionary = {}) -> void:
@@ -519,15 +592,47 @@ class OfficeCabinetTallRecipe extends ObjectRecipeBase:
 		var plinth_t := base_t * Transform3D(Basis.IDENTITY, Vector3(0.0, plinth_h * 0.5, 0.0))
 		builder.add_smart_box(plinth_t, Vector3(w - 0.02, plinth_h, d - 0.02), texture_key, "plinth")
 
-		# 2. Par frontal de puertas batientes Shaker con pomos integrados en la textura del atlas
+		# 2. Puertas batientes con soporte de apertura
 		var doors_w := w - 0.04
 		var door_y := plinth_h + door_h * 0.5
-		var doors_t := base_t * Transform3D(Basis.IDENTITY, Vector3(0.0, door_y, d * 0.5 + 0.005))
-		builder.add_panel_box(doors_t, Vector3(doors_w, door_h, 0.025), texture_key, "doors_tall_pair", "wood_frame")
+		var is_open: bool = params.get("is_open", params.get("doors_open", false))
+
+		if not is_open:
+			var doors_t := base_t * Transform3D(Basis.IDENTITY, Vector3(0.0, door_y, d * 0.5 + 0.005))
+			builder.add_panel_box(doors_t, Vector3(doors_w, door_h, 0.025), texture_key, "doors_tall_pair", "wood_frame")
+		else:
+			var single_door_w := doors_w * 0.5
+			var door_thick := 0.025
+			var left_hinge_x := -doors_w * 0.5
+			var right_hinge_x := doors_w * 0.5
+			var front_z := d * 0.5 + 0.005
+			var swing_angle := deg_to_rad(85.0)
+
+			# Puerta izquierda abierta
+			var left_rot := Basis(Vector3.UP, -swing_angle)
+			var left_door_center := Vector3(left_hinge_x, door_y, front_z) + left_rot * Vector3(single_door_w * 0.5, 0.0, 0.0)
+			var left_t := base_t * Transform3D(left_rot, left_door_center)
+			builder.add_smart_box(left_t, Vector3(single_door_w, door_h, door_thick), texture_key, "wood_frame")
+
+			# Puerta derecha abierta
+			var right_rot := Basis(Vector3.UP, swing_angle)
+			var right_door_center := Vector3(right_hinge_x, door_y, front_z) + right_rot * Vector3(-single_door_w * 0.5, 0.0, 0.0)
+			var right_t := base_t * Transform3D(right_rot, right_door_center)
+			builder.add_smart_box(right_t, Vector3(single_door_w, door_h, door_thick), texture_key, "wood_frame")
+
+			# Repisas interiores visibles
+			var inner_w := w - 0.06
+			var inner_d := d - 0.06
+			var shelf_count := 4
+			var shelf_spacing := door_h / float(shelf_count)
+			for s in range(1, shelf_count):
+				var sy := plinth_h + float(s) * shelf_spacing
+				var shelf_t := base_t * Transform3D(Basis.IDENTITY, Vector3(0.0, sy, 0.0))
+				builder.add_smart_box(shelf_t, Vector3(inner_w, 0.03, inner_d), texture_key, "top_panel")
 
 
 # =========================================================================
-# 10. MUEBLE BAJO / APARADOR DE OFICINA (CUPBOARD 02 LOW)
+# 9. MUEBLE BAJO / APARADOR DE OFICINA (CUPBOARD 02 LOW)
 # =========================================================================
 class OfficeCabinetLowRecipe extends ObjectRecipeBase:
 	static func build(builder: Variant, base_t: Transform3D, params: Dictionary = {}) -> void:
@@ -550,15 +655,42 @@ class OfficeCabinetLowRecipe extends ObjectRecipeBase:
 		var plinth_t := base_t * Transform3D(Basis.IDENTITY, Vector3(0.0, plinth_h * 0.5, 0.0))
 		builder.add_smart_box(plinth_t, Vector3(w - 0.02, plinth_h, d - 0.02), texture_key, "plinth")
 
-		# 2. Par frontal de puertas bajas con pomos integrados en la textura del atlas
+		# 2. Puertas batientes bajas con soporte de apertura
 		var doors_w := w - 0.04
 		var door_y := plinth_h + door_h * 0.5
-		var doors_t := base_t * Transform3D(Basis.IDENTITY, Vector3(0.0, door_y, d * 0.5 + 0.005))
-		builder.add_panel_box(doors_t, Vector3(doors_w, door_h, 0.025), texture_key, "doors_low_pair", "wood_frame")
+		var is_open: bool = params.get("is_open", params.get("doors_open", false))
+
+		if not is_open:
+			var doors_t := base_t * Transform3D(Basis.IDENTITY, Vector3(0.0, door_y, d * 0.5 + 0.005))
+			builder.add_panel_box(doors_t, Vector3(doors_w, door_h, 0.025), texture_key, "doors_low_pair", "wood_frame")
+		else:
+			var single_door_w := doors_w * 0.5
+			var door_thick := 0.025
+			var left_hinge_x := -doors_w * 0.5
+			var right_hinge_x := doors_w * 0.5
+			var front_z := d * 0.5 + 0.005
+			var swing_angle := deg_to_rad(85.0)
+
+			# Puerta izquierda abierta
+			var left_rot := Basis(Vector3.UP, -swing_angle)
+			var left_door_center := Vector3(left_hinge_x, door_y, front_z) + left_rot * Vector3(single_door_w * 0.5, 0.0, 0.0)
+			var left_t := base_t * Transform3D(left_rot, left_door_center)
+			builder.add_smart_box(left_t, Vector3(single_door_w, door_h, door_thick), texture_key, "wood_frame")
+
+			# Puerta derecha abierta
+			var right_rot := Basis(Vector3.UP, swing_angle)
+			var right_door_center := Vector3(right_hinge_x, door_y, front_z) + right_rot * Vector3(-single_door_w * 0.5, 0.0, 0.0)
+			var right_t := base_t * Transform3D(right_rot, right_door_center)
+			builder.add_smart_box(right_t, Vector3(single_door_w, door_h, door_thick), texture_key, "wood_frame")
+
+			# 1 Repisa interior visible
+			var mid_y := plinth_h + door_h * 0.5
+			var shelf_t := base_t * Transform3D(Basis.IDENTITY, Vector3(0.0, mid_y, 0.0))
+			builder.add_smart_box(shelf_t, Vector3(w - 0.06, 0.03, d - 0.06), texture_key, "top_panel")
 
 
 # =========================================================================
-# 11. LIBRERO ALTO ABIERTO DE 5 NIVELES (CUPBOARD 01 TALL)
+# 10. LIBRERO ALTO ABIERTO DE 5 NIVELES (CUPBOARD 01 TALL)
 # =========================================================================
 class OfficeBookcaseTallRecipe extends ObjectRecipeBase:
 	static func build(builder: Variant, base_t: Transform3D, params: Dictionary = {}) -> void:
@@ -605,7 +737,7 @@ class OfficeBookcaseTallRecipe extends ObjectRecipeBase:
 
 
 # =========================================================================
-# 12. LIBRERO BAJO ABIERTO DE 2 NIVELES (CUPBOARD 01 LOW)
+# 11. LIBRERO BAJO ABIERTO DE 2 NIVELES (CUPBOARD 01 LOW)
 # =========================================================================
 class OfficeBookcaseLowRecipe extends ObjectRecipeBase:
 	static func build(builder: Variant, base_t: Transform3D, params: Dictionary = {}) -> void:
