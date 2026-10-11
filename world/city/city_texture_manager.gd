@@ -133,6 +133,10 @@ static func get_wall_layer(key: String) -> int:
 	if _wall_layer_map.has(key):
 		return _wall_layer_map[key]
 	
+	var cleaned := key.replace("pared_", "").replace("_ext", "").replace("_seamless", "")
+	if _wall_layer_map.has(cleaned):
+		return _wall_layer_map[cleaned]
+
 	if not _wall_keys.is_empty():
 		return 0 # Fallback seguro a la primera pared válida
 	return 0

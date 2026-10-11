@@ -15,6 +15,8 @@ const TARGET_FRAME_TIME_MS := 16.667 # 60 FPS = 16.66 ms
 
 var _history: Array[float] = []
 var _fps_label: Label
+var _geo_label: Label
+var _engine_label: Label
 var _graph_control: Control
 var _fps_update_timer := 0.0
 var _cached_fps_text := ""
@@ -36,19 +38,19 @@ func _setup_ui() -> void:
 
 	# Estilo PSX oscuro semi-transparente
 	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.08, 0.10, 0.12, 0.82)
-	style.border_color = Color(0.3, 0.4, 0.45, 0.9)
+	style.bg_color = Color(0.08, 0.10, 0.13, 0.88)
+	style.border_color = Color(0.28, 0.38, 0.45, 0.9)
 	style.set_border_width_all(1)
 	style.set_corner_radius_all(4)
-	style.content_margin_left = 8
-	style.content_margin_right = 8
-	style.content_margin_top = 6
-	style.content_margin_bottom = 6
+	style.content_margin_left = 10
+	style.content_margin_right = 10
+	style.content_margin_top = 8
+	style.content_margin_bottom = 8
 	root_panel.add_theme_stylebox_override("panel", style)
 
 	var vbox := VBoxContainer.new()
 	vbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	vbox.add_theme_constant_override("separation", 4)
+	vbox.add_theme_constant_override("separation", 5)
 	root_panel.add_child(vbox)
 
 	_fps_label = Label.new()
@@ -56,9 +58,6 @@ func _setup_ui() -> void:
 	_fps_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_fps_label.add_theme_font_size_override("font_size", 13)
 	_fps_label.add_theme_color_override("font_color", Color(0.95, 0.98, 1.0))
-	_fps_label.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.8))
-	_fps_label.add_theme_constant_override("shadow_offset_x", 1)
-	_fps_label.add_theme_constant_override("shadow_offset_y", 1)
 	_fps_label.text = "FPS: -- (-- ms)\nMin: -- | 1% Low: --"
 	vbox.add_child(_fps_label)
 
@@ -68,6 +67,30 @@ func _setup_ui() -> void:
 	_graph_control.custom_minimum_size = Vector2(GRAPH_WIDTH, GRAPH_HEIGHT)
 	_graph_control.draw.connect(_on_graph_draw)
 	vbox.add_child(_graph_control)
+
+	# Separador de sección
+	var sep := HSeparator.new()
+	sep.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	sep.add_theme_constant_override("separation", 2)
+	vbox.add_child(sep)
+
+	# Telemetría de Geometría GPU en vivo
+	_geo_label = Label.new()
+	_geo_label.name = "GeometryLabel"
+	_geo_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_geo_label.add_theme_font_size_override("font_size", 11)
+	_geo_label.add_theme_color_override("font_color", Color(0.82, 0.88, 0.95))
+	_geo_label.text = "Geometría GPU: Calculando..."
+	vbox.add_child(_geo_label)
+
+	# Telemetría específica del Motor de Objetos (+0 Draw Calls)
+	_engine_label = Label.new()
+	_engine_label.name = "EngineLabel"
+	_engine_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_engine_label.add_theme_font_size_override("font_size", 11)
+	_engine_label.add_theme_color_override("font_color", Color(0.45, 0.92, 0.82))
+	_engine_label.visible = false
+	vbox.add_child(_engine_label)
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -126,6 +149,73 @@ func _update_labels(last_frame_time_ms: float) -> void:
 		_fps_label.add_theme_color_override("font_color", Color(0.95, 0.85, 0.2))
 	else:
 		_fps_label.add_theme_color_override("font_color", Color(0.95, 0.3, 0.25))
+
+	# 1. Telemetría de Geometría GPU en el frame actual
+	var tris: int = int(Performance.get_monitor(Performance.RENDER_TOTAL_PRIMITIVES_IN_FRAME))
+	var verts: int = tris * 3
+	var draw_calls_total: int = int(Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME))
+	var vram_mb: float = float(Performance.get_monitor(Performance.RENDER_VIDEO_MEM_USED)) / 1048576.0
+
+	# Desglose de Draw Calls por etapa de renderizado (3D Visible, Sombras, UI)
+	var vp_rid := get_viewport().get_viewport_rid()
+	var dc_3d_visible: int = RenderingServer.viewport_get_render_info(
+		vp_rid, 
+		RenderingServer.VIEWPORT_RENDER_INFO_TYPE_VISIBLE, 
+		RenderingServer.VIEWPORT_RENDER_INFO_DRAW_CALLS_IN_FRAME
+	)
+	var dc_3d_shadow: int = RenderingServer.viewport_get_render_info(
+		vp_rid, 
+		RenderingServer.VIEWPORT_RENDER_INFO_TYPE_SHADOW, 
+		RenderingServer.VIEWPORT_RENDER_INFO_DRAW_CALLS_IN_FRAME
+	)
+	var dc_2d_ui: int = RenderingServer.viewport_get_render_info(
+		vp_rid, 
+		RenderingServer.VIEWPORT_RENDER_INFO_TYPE_CANVAS, 
+		RenderingServer.VIEWPORT_RENDER_INFO_DRAW_CALLS_IN_FRAME
+	)
+
+	_geo_label.text = "GEOMETRÍA GPU (FRAME):\n" + \
+		"▲ Triángulos: %s | ● Vérts: %s\n" % [_format_number(tris), _format_number(verts)] + \
+		"⚡ Draw Calls GPU Total: %d\n" % draw_calls_total + \
+		"  ├─ 3D Malla Visible: %d DC\n" % dc_3d_visible + \
+		"  ├─ 3D Sombras (Luz): %d DC\n" % dc_3d_shadow + \
+		"  └─ 2D Interfaz (UI): %d DC\n" % dc_2d_ui + \
+		"💾 VRAM: %.1f MB" % vram_mb
+
+	# 2. Telemetría específica del Motor de Objetos (+0 Draw Calls) si está presente
+	var engine_nodes := get_tree().get_nodes_in_group("object_engine")
+	if not engine_nodes.is_empty():
+		var total_eng_pieces := 0
+		var total_eng_dc := 0
+		var total_eng_tris := 0
+		var total_eng_verts := 0
+		for node in engine_nodes:
+			if node.has_method("get_stats"):
+				var stats: Dictionary = node.get_stats()
+				total_eng_pieces += stats.get("total_instances", 0)
+				total_eng_dc += stats.get("draw_calls", 0)
+				total_eng_tris += stats.get("triangles", 0)
+				total_eng_verts += stats.get("vertices", 0)
+		
+		_engine_label.visible = true
+		_engine_label.text = "MOTOR DE OBJETOS (+0 DC):\n" + \
+			"📦 Piezas: %s instanciadas\n" % _format_number(total_eng_pieces) + \
+			"🎯 Draw Calls Motor: %d DC (+0 DC)\n" % total_eng_dc + \
+			"📐 Tris: %s | Verts: %s" % [_format_number(total_eng_tris), _format_number(total_eng_verts)]
+	else:
+		_engine_label.visible = false
+
+
+func _format_number(val: int) -> String:
+	var s := str(val)
+	var res := ""
+	var count := 0
+	for i in range(s.length() - 1, -1, -1):
+		res = s[i] + res
+		count += 1
+		if count % 3 == 0 and i > 0:
+			res = "," + res
+	return res
 
 
 func _on_graph_draw() -> void:

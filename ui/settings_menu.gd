@@ -24,6 +24,7 @@ extends Control
 @onready var chunks_spin: SpinBox = $Panel/VBox/Content/GraphicsPanel/ChunksRow/ChunksSpin
 @onready var window_option: OptionButton = $Panel/VBox/Content/GraphicsPanel/WindowRow/WindowOption
 @onready var vsync_check: CheckButton = $Panel/VBox/Content/GraphicsPanel/VsyncRow/VsyncCheck
+@onready var shadows_option: OptionButton = $Panel/VBox/Content/GraphicsPanel/ShadowsRow/ShadowsOption
 
 var _awaiting_key: String = ""
 
@@ -41,11 +42,16 @@ func _ready() -> void:
 	chunks_spin.value_changed.connect(_on_chunks_changed)
 	window_option.item_selected.connect(_on_window_changed)
 	vsync_check.toggled.connect(_on_vsync_changed)
+	shadows_option.item_selected.connect(_on_shadows_changed)
 
 	# Opciones del modo ventana
 	window_option.add_item("Ventana")
 	window_option.add_item("Pantalla completa")
 	window_option.add_item("Sin bordes")
+
+	# Opciones de sombras
+	shadows_option.add_item("Sombras detalladas")
+	shadows_option.add_item("Sombras simples")
 
 	_refresh_controls()
 	_refresh_graphics()
@@ -84,6 +90,7 @@ func _refresh_graphics() -> void:
 	chunks_spin.value = SettingsManager.get_view_distance()
 	window_option.selected = SettingsManager.graphics.get("window_mode", 0)
 	vsync_check.button_pressed = SettingsManager.graphics.get("vsync", true)
+	shadows_option.selected = SettingsManager.get_shadow_mode()
 
 
 func _on_key_button_pressed(action: String) -> void:
@@ -107,6 +114,10 @@ func _on_vsync_changed(enabled: bool) -> void:
 	SettingsManager.graphics["vsync"] = enabled
 	SettingsManager.save_settings()
 	SettingsManager.apply_graphics()
+
+
+func _on_shadows_changed(index: int) -> void:
+	SettingsManager.set_shadow_mode(index)
 
 
 signal back_requested

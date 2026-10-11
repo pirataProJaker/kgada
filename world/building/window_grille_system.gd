@@ -49,6 +49,10 @@ static func build_house_grilles(windows: Array, house_seed: int, zone_type: int)
 	# - Colonia Vieja (0): Muy alta presencia (100% planta baja, 35% planta alta).
 	# - Infonavit / Fraccionamiento (1): 100% planta baja, 40% planta alta.
 	# - Zona X (2 - Residencial de lujo): Baja presencia (25% solo en accesos, herrería minimalista).
+	# - Comercial / OTXO (3): CERO protecciones (ventanales panorámicos de exhibición comercial).
+	if zone_type == 3:
+		return null
+
 	var has_grilles_at_all := true
 	if zone_type == 2:
 		# Zona X: muchas casas tienen barda perimetral con cerca electrificada y no ponen herrería

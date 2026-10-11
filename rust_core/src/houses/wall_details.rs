@@ -109,6 +109,7 @@ impl WallDetailSystem {
             HouseZoneType::ColoniaVieja => 0.85,
             HouseZoneType::ColoniaNueva => 0.65,
             HouseZoneType::ZonaX => 0.30,
+            HouseZoneType::CommercialConvenience => 0.45,
         };
 
         // Filtrar tramos aptos: exteriores, 100% ciegos, longitud mínima 2.5m
@@ -305,6 +306,7 @@ impl WallDetailSystem {
             HouseZoneType::ColoniaVieja => (0.90, 3),
             HouseZoneType::ColoniaNueva => (0.65, 2),
             HouseZoneType::ZonaX => (0.25, 1),
+            HouseZoneType::CommercialConvenience => (0.40, 1),
         };
 
         // Aspect ratios de las 7 texturas procesadas de pared desgastada:

@@ -28,7 +28,10 @@ const DEFAULT_APPLIANCE_TEXTURES: Dictionary = {
 	"dryer": "res://assets/textures/furniture/dryer.png",
 	"sofa_leather": "res://assets/textures/furniture/sofa_leather.png",
 	"props_atlas": "res://assets/textures/furniture/furniture_props_atlas.png",
-	"bed_linens_atlas": "res://assets/textures/furniture/bed_linens_master_atlas.png"
+	"bed_linens_atlas": "res://assets/textures/furniture/bed_linens_master_atlas.png",
+	"commercial_shelf": "res://assets/textures/furniture/commercial_shelf.png",
+	"commercial_cooler": "res://assets/textures/furniture/commercial_cooler.png",
+	"medidor_cfe": "res://assets/textures/house/medidor_cfe.png"
 }
 
 # Catálogo semántico oficial de Sábanas (16 patrones en filas 0 y 1 del atlas)
@@ -111,9 +114,14 @@ static func ensure_initialized() -> void:
 	# 2. Generar acabados de madera derivados (Caoba y Pino)
 	_add_derived_wood_finishes()
 
-	# 3. Registrar electrodomésticos y mobiliario
+	# 3. Registrar electrodomésticos y mobiliario por defecto
 	for k in DEFAULT_APPLIANCE_TEXTURES:
 		_entries[k] = DEFAULT_APPLIANCE_TEXTURES[k]
+
+	# 4. Auto-descubrimiento dinámico inteligente en carpetas de assets
+	# Detecta automáticamente cualquier nuevo .png, .jpg, .webp agregado a las carpetas
+	_scan_folder_for_textures("res://assets/textures/furniture/")
+	_scan_folder_for_textures("res://assets/textures/house/")
 
 	_rebuild_array()
 	_is_initialized = true
@@ -222,6 +230,17 @@ static func get_shared_material() -> ShaderMaterial:
 	return _shared_material
 
 
+## Retorna el Texture2DArray universal compilado del Atlas Inteligente
+static func get_texture_array() -> Texture2DArray:
+	ensure_initialized()
+	return _texture_array
+
+
+## Alias público para asegurar inicialización del atlas
+static func init_manager() -> void:
+	ensure_initialized()
+
+
 ## Retorna el Material Shader Compartido para el MultiMesh de Alfombras Rectangulares (Delegado al Atlas Inteligente)
 static func get_rugs_material() -> ShaderMaterial:
 	PlanarPropsManagerScript.ensure_initialized()
@@ -242,13 +261,50 @@ static func get_rug_count() -> int:
 	return PlanarPropsManagerScript.get_props_by_filter("floor", ["rug"]).size()
 
 
+## Escanea una carpeta del proyecto y auto-registra cualquier archivo nuevo (.png, .jpg, .webp)
+static func _scan_folder_for_textures(folder_path: String) -> void:
+	var gpath := ProjectSettings.globalize_path(folder_path)
+	if not DirAccess.dir_exists_absolute(gpath):
+		return
+	var dir := DirAccess.open(gpath)
+	if dir == null:
+		return
+	dir.list_dir_begin()
+	var file_name := dir.get_next()
+	while not file_name.is_empty():
+		if not dir.current_is_dir():
+			var lower := file_name.to_lower()
+			if (lower.ends_with(".png") or lower.ends_with(".jpg") or lower.ends_with(".webp")) and not lower.ends_with(".import"):
+				if not lower.contains("raw"):
+					var id := file_name.get_basename().to_lower()
+					if not _entries.has(id):
+						_entries[id] = folder_path.path_join(file_name)
+		file_name = dir.get_next()
+	dir.list_dir_end()
+
+
 ## Reconstruye el Texture2DArray y refresca el material compartido
 static func _rebuild_array() -> void:
 	_keys.clear()
 	_layer_map.clear()
 
+	# Ordenación determinista y reproducible:
+	# Maderas base primero (capas 0..3: roble_claro, nogal_oscuro, caoba_rojiza, pino_natural)
+	# Luego el resto ordenado alfabéticamente
+	var sorted_keys: Array[String] = []
+	var base_order := ["roble_claro", "nogal_oscuro", "caoba_rojiza", "pino_natural"]
+	for bk in base_order:
+		if _entries.has(bk):
+			sorted_keys.append(bk)
+	var other_keys: Array[String] = []
+	for k in _entries:
+		if not sorted_keys.has(k):
+			other_keys.append(k)
+	other_keys.sort()
+	sorted_keys.append_array(other_keys)
+
 	var images: Array[Image] = []
-	for key in _entries:
+	for key in sorted_keys:
 		var path_val = _entries[key]
 		var img := _load_and_normalize_image(path_val)
 		if img != null:
@@ -257,7 +313,7 @@ static func _rebuild_array() -> void:
 			_keys.append(key)
 			_layer_map[key] = layer_idx
 		else:
-			print("[FurnitureTextureManager] Advertencia: Textura '%s' (%s) no encontrada. Omitiendo." % [key, str(path_val)])
+			print("[FurnitureTextureManager] Advertencia: Textura '%s' (%s) no encontrada o eliminada. Omitiendo del Texture2DArray." % [key, str(path_val)])
 
 	if images.is_empty():
 		var dummy := Image.create(TEXTURE_RESOLUTION, TEXTURE_RESOLUTION, true, Image.FORMAT_RGBA8)

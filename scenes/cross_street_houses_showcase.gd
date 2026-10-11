@@ -29,6 +29,7 @@ const ApplianceMicrowaveScript = preload("res://world/furniture/appliance_microw
 const KitchenCabinetScript = preload("res://world/furniture/kitchen_cabinet.gd")
 const HouseFurniturePlannerScript = preload("res://world/furniture/house_furniture_planner.gd")
 const StairModuleScript = preload("res://world/building/stair_module.gd")
+const CommercialPropsBuilder = preload("res://world/building/commercial_props_builder.gd")
 
 ## Texturas exteriores de fachada para paredes de afuera (archivos *_ext.png)
 const EXT_WALL_TEXTURE_PATHS: Array[String] = [
@@ -75,7 +76,8 @@ enum ZoneMode {
 	MIXED = 0,
 	ALL_COLONIA_VIEJA = 1,
 	ALL_COLONIA_NUEVA = 2,
-	ALL_ZONA_X = 3
+	ALL_ZONA_X = 3,
+	ALL_COMMERCIAL = 4
 }
 
 var _engine = null
@@ -231,18 +233,18 @@ func _init_parcel_definitions() -> void:
 		},
 
 		# =====================================================================
-		# --- ESQUINA 3: SUROESTE (SW) - COLONIA VIEJA MIXTO ------------------
+		# --- ESQUINA 3: SUROESTE (SW) - TIENDA COMERCIAL OTXO / MIXTO --------
 		# =====================================================================
 		{
-			"corner_name": "SW - Barrio Tradicional",
-			"rect": Rect2(-17.0, 7.0, 10.0, 16.0),
+			"corner_name": "SW - Tienda OTXO",
+			"rect": Rect2(-23.0, 7.0, 16.0, 16.0),
 			"front_side": 0, # Frente a calle en Z = +7
-			"default_zone": 0,
-			"lot_color": Color(0.36, 0.34, 0.30)
+			"default_zone": 3, # CommercialConvenience (OTXO)
+			"lot_color": Color(0.24, 0.24, 0.26) # Asfalto oscuro de estacionamiento
 		},
 		{
 			"corner_name": "SW - Adosado Sur",
-			"rect": Rect2(-26.0, 7.0, 9.0, 16.0),
+			"rect": Rect2(-26.0, 7.0, 3.0, 16.0),
 			"front_side": 0,
 			"default_zone": 0,
 			"lot_color": Color(0.34, 0.32, 0.28)
@@ -563,6 +565,8 @@ func regenerate_houses() -> void:
 				zone_type = 1
 			ZoneMode.ALL_ZONA_X:
 				zone_type = 2
+			ZoneMode.ALL_COMMERCIAL:
+				zone_type = 3
 			_:
 				zone_type = p_cfg["default_zone"]
 
@@ -612,9 +616,13 @@ func regenerate_houses() -> void:
 			var ext_inst := MultiMeshInstance3D.new()
 			ext_inst.name = "ExtWallsMultiMesh"
 			ext_inst.multimesh = ext_walls_mm
-			var wall_keys := CityTextureManager.get_all_wall_keys()
-			var wall_key: String = wall_keys[int((house_seed ^ (house_seed >> 5)) & 0x7FFFFFFF) % wall_keys.size()]
-			var layer_idx: int = CityTextureManager.get_wall_layer(wall_key)
+			var layer_idx: int
+			if zone_type == 3:
+				layer_idx = CityTextureManager.get_wall_layer("amarilla")
+			else:
+				var wall_keys := CityTextureManager.get_all_wall_keys()
+				var wall_key: String = wall_keys[int((house_seed ^ (house_seed >> 5)) & 0x7FFFFFFF) % wall_keys.size()]
+				layer_idx = CityTextureManager.get_wall_layer(wall_key)
 			ext_inst.material_override = CityTextureManager.get_walls_shared_material()
 			ext_inst.set_instance_shader_parameter("wall_layer", layer_idx)
 			house_node.add_child(ext_inst)
@@ -637,6 +645,16 @@ func regenerate_houses() -> void:
 			glass_inst.material_override = mat_glass
 			house_node.add_child(glass_inst)
 
+		# MultiMeshInstance3D de Columnas Estructurales y Basamentos (1 Draw Call GPU con textura gris concreto)
+		var columns_mm: MultiMesh = res.get("columns_multimesh", null)
+		if columns_mm:
+			var col_inst := MultiMeshInstance3D.new()
+			col_inst.name = "ColumnsMultiMesh"
+			col_inst.multimesh = columns_mm
+			col_inst.material_override = CityTextureManager.get_walls_shared_material()
+			col_inst.set_instance_shader_parameter("wall_layer", CityTextureManager.get_wall_layer("gris"))
+			house_node.add_child(col_inst)
+
 		# 5. Cajas de colisión físicas (StaticBody3D)
 		var col_boxes: Array = res.get("collision_boxes", [])
 		if not col_boxes.is_empty():
@@ -651,7 +669,7 @@ func regenerate_houses() -> void:
 				col_body.add_child(c_shape)
 			house_node.add_child(col_body)
 
-		# 5b. Puerta frontal texturizada con WoodenDoor (solamente la primera puerta con textura)
+		# 5b. Puerta frontal texturizada con WoodenDoor (solamente casas residenciales, no comercios)
 		var door_data: Array = res.get("doors", [])
 		var main_door_dict: Dictionary = {}
 		for door_entry in door_data:
@@ -661,7 +679,7 @@ func regenerate_houses() -> void:
 		if main_door_dict.is_empty() and not door_data.is_empty():
 			main_door_dict = door_data[0]
 
-		if not main_door_dict.is_empty():
+		if not main_door_dict.is_empty() and zone_type != 3:
 			var door_pos: Vector3 = main_door_dict.get("position", Vector3.ZERO)
 			var door_size: Vector3 = main_door_dict.get("size", Vector3(0.85, 2.10, 0.06))
 			var door_rot_y: float = main_door_dict.get("rotation_y", 0.0)
@@ -683,9 +701,9 @@ func regenerate_houses() -> void:
 			if decals_inst:
 				house_node.add_child(decals_inst)
 
-		# 5d. Protecciones de Herrería para Ventanas (WindowGrilleSystem)
+		# 5d. Protecciones de Herrería para Ventanas (WindowGrilleSystem, omitir en comercios)
 		var windows_data: Array = res.get("windows", [])
-		if not windows_data.is_empty():
+		if not windows_data.is_empty() and zone_type != 3:
 			var grilles := WindowGrilleSystem.build_house_grilles(windows_data, house_seed, zone_type)
 			if grilles:
 				house_node.add_child(grilles)
@@ -848,6 +866,11 @@ func regenerate_houses() -> void:
 					var item_rot_basis := house_basis * Basis(Vector3.UP, float(item["rotation_y"]))
 					var item_t := Transform3D(item_rot_basis, item_global_pos)
 					neighborhood_furniture.add_furniture_by_script(scr, item_t, item)
+
+		# 8. Infraestructura Comercial OTXO (Tótem, Letrero de Fachada, Estacionamiento, Bolardos, etc.)
+		var comm_data: Dictionary = res.get("commercial", {})
+		if not comm_data.is_empty():
+			CommercialPropsBuilder.build_all_commercial_elements(house_node, comm_data, rooms_data, float(w), float(d))
 
 		_houses_root.add_child(house_node)
 
@@ -1024,7 +1047,7 @@ func _setup_ui() -> void:
 	var btn_zone := Button.new()
 	btn_zone.text = "🏙️ Zona [Z]"
 	btn_zone.pressed.connect(func():
-		_zone_mode = ((_zone_mode + 1) % 4) as ZoneMode
+		_zone_mode = ((_zone_mode + 1) % 5) as ZoneMode
 		regenerate_houses()
 	)
 	hbox.add_child(btn_zone)
@@ -1046,6 +1069,7 @@ func _update_stats_ui() -> void:
 		ZoneMode.ALL_COLONIA_VIEJA: zone_str = "Pura Colonia Vieja (Pared con pared)"
 		ZoneMode.ALL_COLONIA_NUEVA: zone_str = "Pura Colonia Nueva (Infonavit)"
 		ZoneMode.ALL_ZONA_X: zone_str = "Pura Zona X (Mansiones de Lujo)"
+		ZoneMode.ALL_COMMERCIAL: zone_str = "Puro OTXO (Tienda de Conveniencia)"
 
 	var text := "Semilla: %d | Modo Zona: %s\n" % [_global_seed, zone_str]
 	text += "Techos: %s | Lotes y Vecinos Traseros: %d\n" % [

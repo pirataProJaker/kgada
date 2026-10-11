@@ -16,12 +16,15 @@ const DEFAULT_KEYS := {
 	"toggle_inventory": KEY_V,
 }
 
+signal shadow_settings_changed(mode: int)
+
 # Configuracion de graficos por defecto
 const DEFAULT_GRAPHICS := {
 	"view_distance_chunks": 1,   # radio en chunks (1 = 3x3 = 9 chunks)
 	"window_mode": 0,            # 0 = ventana, 1 = pantalla completa, 2 = sin bordes
 	"vsync": true,
 	"low_spec_foliage": false,   # follaje detallado completo (STANDARD) por defecto
+	"shadow_mode": 0,            # 0 = Sombras detalladas, 1 = Sombras simples (icosaedro GPU proxy)
 }
 
 var keys: Dictionary = {}
@@ -104,3 +107,15 @@ func get_view_distance() -> int:
 ## Devuelve si el modo de follaje hiperoptimizado está activado.
 func is_low_spec_foliage() -> bool:
 	return bool(graphics.get("low_spec_foliage", false))
+
+
+## Devuelve el modo de sombras: 0 = Detalladas, 1 = Simples.
+func get_shadow_mode() -> int:
+	return int(graphics.get("shadow_mode", 0))
+
+
+## Establece el modo de sombras y emite la señal de cambio.
+func set_shadow_mode(mode: int) -> void:
+	graphics["shadow_mode"] = mode
+	save_settings()
+	shadow_settings_changed.emit(mode)

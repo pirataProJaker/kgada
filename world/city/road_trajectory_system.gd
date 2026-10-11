@@ -5,6 +5,7 @@ extends Node3D
 ## son cintas paralelas elevadas que se aplican a las orillas que el usuario decida.
 
 const ProceduralRoadMaterials = preload("res://world/city/procedural_road_materials.gd")
+const PROCEDURAL_TREE_SCRIPT = preload("res://world/procedural_trees/procedural_tree.gd")
 
 ## Anchos métricos estándar de carril según jerarquía y contexto vial
 const LANE_WIDTH_RESIDENTIAL: float = 3.25   # Calles de colonia, residenciales y privadas
@@ -18,18 +19,31 @@ enum RoadType {
 	AVENUE_ONEWAY_3LANE,  # Calzada de avenida unidireccional de 3 carriles (2 líneas blancas discontinuas)
 	COMMERCIAL_4LANE,     # Avenida comercial de 4 carriles (2 por sentido, doble amarilla central + líneas blancas)
 	RURAL_PLAIN_2LANE,    # Carretera rural de 2 carriles sin pintar
+	ALLEY_1LANE,          # Callejón / Privada de 1 solo carril (sin línea central)
+	DIVIDED_MEDIAN_3LANE, # Calle de 3 carriles por sentido (6 carriles total) con camellón central de 2.0m
 	# Aliases retrocompatibles
 	TWO_WAY_YELLOW = TWO_WAY_2LANE,
 	AVENUE_WHITE = AVENUE_ONEWAY_3LANE,
 	RURAL_PLAIN = RURAL_PLAIN_2LANE,
 }
 
+## Constantes métricas para calle dividida de 3 carriles por sentido con camellón central de 2.0m
+const LANE_WIDTH_DIVIDED_3LANE: float = 3.50         # Ancho de cada carril (3.50m)
+const LANES_PER_WAY_DIVIDED_3LANE: int = 3           # 3 carriles en cada calzada / sentido
+const ROADWAY_WIDTH_DIVIDED_3LANE: float = 10.50     # 3 * 3.50m = 10.50m por calzada
+const MEDIAN_WIDTH_DIVIDED_3LANE: float = 2.00       # Separador central elevado de 2.00m
+const STANDARD_WIDTH_DIVIDED_3LANE: float = 23.00    # 10.50m + 2.00m + 10.50m = 23.00m total
+
 static func get_lane_count_for_type(type: RoadType) -> int:
 	match type:
+		RoadType.ALLEY_1LANE:
+			return 1
 		RoadType.AVENUE_ONEWAY_2LANE:
 			return 2
 		RoadType.AVENUE_ONEWAY_3LANE:
 			return 3
+		RoadType.DIVIDED_MEDIAN_3LANE:
+			return 6
 		RoadType.COMMERCIAL_4LANE:
 			return 4
 		RoadType.RURAL_PLAIN_2LANE:
@@ -39,6 +53,8 @@ static func get_lane_count_for_type(type: RoadType) -> int:
 
 
 static func get_standard_width_for_type(type: RoadType) -> float:
+	if type == RoadType.DIVIDED_MEDIAN_3LANE:
+		return STANDARD_WIDTH_DIVIDED_3LANE
 	return float(get_lane_count_for_type(type)) * STANDARD_LANE_WIDTH
 
 
@@ -82,7 +98,7 @@ class RoadSegment:
 
 
 const ROAD_HEIGHT := 0.04
-const PAINT_HEIGHT := 0.003
+const PAINT_HEIGHT := 0.007
 const SIDEWALK_HEIGHT := 0.20
 const CURB_WIDTH := 0.20
 
@@ -419,6 +435,137 @@ func _resolve_network_intersections() -> void:
 			has_splits = true
 
 
+## Calcula recortes métricos de señalización vial (líneas de carril y líneas de orilla)
+## para normalizar cruces, intersecciones en T, esquinas y retornos.
+func _compute_marking_cuts() -> Dictionary:
+	var cuts: Dictionary = {}
+	for seg_id in _segments:
+		cuts[seg_id] = {
+			"cut_start_lanes": 0.0,
+			"cut_end_lanes": 0.0,
+			"cut_start_left": 0.0,
+			"cut_end_left": 0.0,
+			"cut_start_right": 0.0,
+			"cut_end_right": 0.0
+		}
+
+	for ep_item in _endpoints.values():
+		var ep: RoadEndpoint = ep_item
+		var connected_list: Array[RoadSegment] = []
+		for seg_item in _segments.values():
+			var s: RoadSegment = seg_item
+			if s.start_pos.distance_to(ep.position) < 0.30 or s.end_pos.distance_to(ep.position) < 0.30:
+				if not connected_list.has(s):
+					connected_list.append(s)
+
+		if connected_list.size() < 2:
+			continue
+
+		var branches: Array[Dictionary] = []
+		for s in connected_list:
+			var is_start := s.start_pos.distance_to(ep.position) < 0.30
+			var u: Vector3 = (s.end_pos - s.start_pos).normalized() if is_start else (s.start_pos - s.end_pos).normalized()
+			var s_len := (s.end_pos - s.start_pos).length()
+			branches.append({
+				"seg": s,
+				"is_start": is_start,
+				"u": u,
+				"half_w": s.width * 0.5,
+				"length": s_len
+			})
+
+		var num_branches := branches.size()
+
+		for i in range(num_branches):
+			var b := branches[i]
+			var seg: RoadSegment = b["seg"]
+			var is_start: bool = b["is_start"]
+			var u: Vector3 = b["u"]
+			var seg_len: float = b["length"]
+			var seg_fwd: Vector3 = (seg.end_pos - seg.start_pos).normalized()
+			var seg_right: Vector3 = Vector3(-seg_fwd.z, 0.0, seg_fwd.x).normalized()
+
+			# 1. Buscar si esta rama tiene continuación colineal opuesta (~180°)
+			var colinear_idx := -1
+			for j in range(num_branches):
+				if i == j:
+					continue
+				if u.dot(branches[j]["u"]) < -0.98:
+					colinear_idx = j
+					break
+
+			var has_colinear: bool = (colinear_idx != -1)
+
+			# 2. Ramas transversales (las que cruzan en ángulo)
+			var transverse_branches: Array[Dictionary] = []
+			for j in range(num_branches):
+				if j != i and j != colinear_idx:
+					transverse_branches.append(branches[j])
+
+			var has_transverse: bool = not transverse_branches.is_empty()
+
+			if has_colinear and has_transverse:
+				# VÍA CONTINUA ATRAVESANDO UN CRUCE (Ej: Bulevar o Avenida en T o Cruz)
+				var is_major := (seg.road_type == RoadType.AVENUE_ONEWAY_3LANE or seg.road_type == RoadType.AVENUE_ONEWAY_2LANE or seg.road_type == RoadType.DIVIDED_MEDIAN_3LANE)
+				if num_branches >= 4 and not is_major:
+					var max_cross := 0.0
+					for tb in transverse_branches:
+						max_cross = maxf(max_cross, tb["half_w"])
+					var stop_dist := clampf(max_cross + 0.15, 0.0, seg_len * 0.45)
+					if is_start:
+						cuts[seg.id]["cut_start_lanes"] = maxf(cuts[seg.id]["cut_start_lanes"], stop_dist)
+					else:
+						cuts[seg.id]["cut_end_lanes"] = maxf(cuts[seg.id]["cut_end_lanes"], stop_dist)
+
+				# Líneas de orilla: se abren en la boca de cada rama transversal
+				for tb in transverse_branches:
+					var cross_half_w: float = tb["half_w"]
+					var cross_u: Vector3 = tb["u"]
+					var side := seg_right.dot(cross_u)
+					var open_dist := clampf(cross_half_w + 0.15, 0.0, seg_len * 0.45)
+
+					if side > 0.20:
+						# Rama transversal sale hacia la DERECHA del segmento
+						if is_start:
+							cuts[seg.id]["cut_start_right"] = maxf(cuts[seg.id]["cut_start_right"], open_dist)
+						else:
+							cuts[seg.id]["cut_end_right"] = maxf(cuts[seg.id]["cut_end_right"], open_dist)
+					elif side < -0.20:
+						# Rama transversal sale hacia la IZQUIERDA del segmento
+						if is_start:
+							cuts[seg.id]["cut_start_left"] = maxf(cuts[seg.id]["cut_start_left"], open_dist)
+						else:
+							cuts[seg.id]["cut_end_left"] = maxf(cuts[seg.id]["cut_end_left"], open_dist)
+
+			elif not has_colinear:
+				# RAMA QUE DESEMBOCA EN EL CRUCE (Calle secundaria de una T, o rama en esquina/estrella)
+				var max_cross_depth := 0.0
+				for j in range(num_branches):
+					if i == j:
+						continue
+					var other_b := branches[j]
+					var other_half_w: float = other_b["half_w"]
+					var sin_a := absf(u.cross(other_b["u"]).y)
+					var depth := other_half_w
+					if sin_a > 0.20:
+						depth = other_half_w / sin_a
+					max_cross_depth = maxf(max_cross_depth, depth)
+
+				var stop_lanes := clampf(max_cross_depth + 0.15, 0.0, seg_len * 0.48)
+				var stop_edges := clampf(max_cross_depth, 0.0, seg_len * 0.48)
+
+				if is_start:
+					cuts[seg.id]["cut_start_lanes"] = maxf(cuts[seg.id]["cut_start_lanes"], stop_lanes)
+					cuts[seg.id]["cut_start_left"] = maxf(cuts[seg.id]["cut_start_left"], stop_edges)
+					cuts[seg.id]["cut_start_right"] = maxf(cuts[seg.id]["cut_start_right"], stop_edges)
+				else:
+					cuts[seg.id]["cut_end_lanes"] = maxf(cuts[seg.id]["cut_end_lanes"], stop_lanes)
+					cuts[seg.id]["cut_end_left"] = maxf(cuts[seg.id]["cut_end_left"], stop_edges)
+					cuts[seg.id]["cut_end_right"] = maxf(cuts[seg.id]["cut_end_right"], stop_edges)
+
+	return cuts
+
+
 func rebuild_geometry() -> void:
 	if is_batch_updating:
 		return
@@ -611,7 +758,10 @@ func rebuild_geometry() -> void:
 
 	var col_index := 0
 
-	# 2. Construcción geométrica de los tramos rectos
+	# 2. Precalcular recortes de señalización vial en cruces e intersecciones
+	var marking_cuts := _compute_marking_cuts()
+
+	# 3. Construcción geométrica de los tramos rectos
 	for seg_id in _segments:
 		var seg: RoadSegment = _segments[seg_id]
 		var p0 := seg.start_pos
@@ -633,56 +783,235 @@ func rebuild_geometry() -> void:
 
 		_append_oriented_slab(geom_data[ProceduralRoadMaterials.KEY_ASPHALT], c0, c1, c2, c3, 0.0, ROAD_HEIGHT)
 
-		# B. Señalización vial
+		# A2. Camellón / Separador Central Integrado (Para calles de 3 carriles divididas)
+		if seg.road_type == RoadType.DIVIDED_MEDIAN_3LANE:
+			var seg_cuts_m: Dictionary = marking_cuts[seg.id]
+			var t_med_0: float = maxf(seg_cuts_m["cut_start_lanes"], 1.8)
+			var t_med_1: float = length - maxf(seg_cuts_m["cut_end_lanes"], 1.8)
+			var med_rad: float = MEDIAN_WIDTH_DIVIDED_3LANE * 0.5
+			var curb_w: float = CURB_WIDTH
+			var y_med: float = ROAD_HEIGHT + SIDEWALK_HEIGHT
+
+			# Coordenadas transversales del camellón:
+			# Ambas vías tienen 3 carriles de 3.50m = 10.50m cada una (21m total de asfalto).
+			# El camellón mide 2.00m de ancho y queda exactamente centrado en el eje (x = 0.0).
+			var xm_left: float = -MEDIAN_WIDTH_DIVIDED_3LANE * 0.5 # -1.00m
+			var xm_right: float = MEDIAN_WIDTH_DIVIDED_3LANE * 0.5  # +1.00m
+			var xm_center: float = 0.0
+
+			if (t_med_1 - t_med_0) > (med_rad * 2.0 + 0.5):
+				var tb_0: float = t_med_0 + med_rad
+				var tb_1: float = t_med_1 - med_rad
+
+				# 1. Bordillo izquierdo del camellón
+				var mkb0 := p0 + fwd * tb_0 + right * xm_left
+				var mkb1 := p0 + fwd * tb_0 + right * (xm_left + curb_w)
+				var mkb2 := p0 + fwd * tb_1 + right * (xm_left + curb_w)
+				var mkb3 := p0 + fwd * tb_1 + right * xm_left
+				_append_oriented_slab(geom_data[ProceduralRoadMaterials.KEY_CURB], mkb0, mkb1, mkb2, mkb3, ROAD_HEIGHT, y_med)
+
+				# 2. Relleno central (tierra / vegetación / losa de camellón)
+				var msw0 := mkb1
+				var msw1 := p0 + fwd * tb_0 + right * (xm_right - curb_w)
+				var msw2 := p0 + fwd * tb_1 + right * (xm_right - curb_w)
+				var msw3 := mkb2
+				_append_oriented_slab(geom_data[ProceduralRoadMaterials.KEY_MEDIAN], msw0, msw1, msw2, msw3, ROAD_HEIGHT, y_med)
+
+				# 3. Bordillo derecho del camellón
+				var mkbr0 := msw1
+				var mkbr1 := p0 + fwd * tb_0 + right * xm_right
+				var mkbr2 := p0 + fwd * tb_1 + right * xm_right
+				var mkbr3 := msw2
+				_append_oriented_slab(geom_data[ProceduralRoadMaterials.KEY_CURB], mkbr0, mkbr1, mkbr2, mkbr3, ROAD_HEIGHT, y_med)
+
+				# 4. Narices / Cabeceras redondeadas en ambos extremos
+				var cap_center_0 := p0 + fwd * tb_0 + right * xm_center
+				_append_median_cap(geom_data, cap_center_0, -fwd, right, med_rad, curb_w, ROAD_HEIGHT, y_med)
+
+				var cap_center_1 := p0 + fwd * tb_1 + right * xm_center
+				_append_median_cap(geom_data, cap_center_1, fwd, right, med_rad, curb_w, ROAD_HEIGHT, y_med)
+
+				# 5. Colisión física del camellón
+				var col_med := CollisionShape3D.new()
+				col_med.name = "Col_Median_%d" % col_index
+				var med_box := BoxShape3D.new()
+				med_box.size = Vector3(MEDIAN_WIDTH_DIVIDED_3LANE, SIDEWALK_HEIGHT + 0.10, t_med_1 - t_med_0)
+				col_med.shape = med_box
+				var med_mid := p0 + fwd * ((t_med_0 + t_med_1) * 0.5) + right * xm_center + Vector3(0.0, ROAD_HEIGHT + SIDEWALK_HEIGHT * 0.5, 0.0)
+				col_med.transform = Transform3D(Basis.looking_at(fwd, Vector3.UP), med_mid)
+				_static_body.add_child(col_med)
+				col_index += 1
+
+		# B. Señalización vial (con recortes normalizados en cruces)
 		var stripe_w := 0.14
-		var white_stripe_w := 0.12
+		var white_stripe_w := 0.14
 		var y_paint := ROAD_HEIGHT + PAINT_HEIGHT
+		var edge_inset := 0.28 # Distancia desde la orilla de la calzada
+
+		var seg_cuts: Dictionary = marking_cuts[seg.id]
+		var t_lanes_0: float = seg_cuts["cut_start_lanes"]
+		var t_lanes_1: float = length - seg_cuts["cut_end_lanes"]
+		var has_lane_markings: bool = (t_lanes_1 - t_lanes_0) > 0.40
+
+		var p_lane_0: Vector3 = p0 + fwd * t_lanes_0
+		var p_lane_1: Vector3 = p0 + fwd * t_lanes_1
+
+		var t_left_0: float = seg_cuts["cut_start_left"]
+		var t_left_1: float = length - seg_cuts["cut_end_left"]
+		var has_left_edge: bool = (t_left_1 - t_left_0) > 0.40
+
+		var t_right_0: float = seg_cuts["cut_start_right"]
+		var t_right_1: float = length - seg_cuts["cut_end_right"]
+		var has_right_edge: bool = (t_right_1 - t_right_0) > 0.40
 
 		match seg.road_type:
 			RoadType.TWO_WAY_2LANE:
-				# Doble línea amarilla continua al centro exacto
-				var s0_l := p0 - right * (stripe_w * 1.5)
-				var s1_l := p0 - right * (stripe_w * 0.5)
-				var s2_l := p1 - right * (stripe_w * 0.5)
-				var s3_l := p1 - right * (stripe_w * 1.5)
-				_append_quad(geom_data[ProceduralRoadMaterials.KEY_YELLOW_LINE], s0_l, s1_l, s2_l, s3_l, y_paint, Vector3.UP)
+				# 1. Doble línea amarilla continua al centro exacto (detenida en cruces)
+				if has_lane_markings:
+					var s0_l := p_lane_0 - right * (stripe_w * 1.3)
+					var s1_l := p_lane_0 - right * (stripe_w * 0.3)
+					var s2_l := p_lane_1 - right * (stripe_w * 0.3)
+					var s3_l := p_lane_1 - right * (stripe_w * 1.3)
+					_append_quad_top(geom_data[ProceduralRoadMaterials.KEY_YELLOW_LINE], s0_l, s1_l, s2_l, s3_l, y_paint)
 
-				var s0_r := p0 + right * (stripe_w * 0.5)
-				var s1_r := p0 + right * (stripe_w * 1.5)
-				var s2_r := p1 + right * (stripe_w * 1.5)
-				var s3_r := p1 + right * (stripe_w * 0.5)
-				_append_quad(geom_data[ProceduralRoadMaterials.KEY_YELLOW_LINE], s0_r, s1_r, s2_r, s3_r, y_paint, Vector3.UP)
+					var s0_r := p_lane_0 + right * (stripe_w * 0.3)
+					var s1_r := p_lane_0 + right * (stripe_w * 1.3)
+					var s2_r := p_lane_1 + right * (stripe_w * 1.3)
+					var s3_r := p_lane_1 + right * (stripe_w * 0.3)
+					_append_quad_top(geom_data[ProceduralRoadMaterials.KEY_YELLOW_LINE], s0_r, s1_r, s2_r, s3_r, y_paint)
+
+				# 2. Líneas blancas continuas en las orillas (abiertas en bocacalles)
+				if has_left_edge and half_w > edge_inset + 0.5:
+					var pl0 := p0 + fwd * t_left_0 - right * (half_w - edge_inset)
+					var pl1 := p0 + fwd * t_left_1 - right * (half_w - edge_inset)
+					_append_continuous_line(geom_data[ProceduralRoadMaterials.KEY_WHITE_LINE], pl0, pl1, right, white_stripe_w, y_paint)
+
+				if has_right_edge and half_w > edge_inset + 0.5:
+					var pr0 := p0 + fwd * t_right_0 + right * (half_w - edge_inset)
+					var pr1 := p0 + fwd * t_right_1 + right * (half_w - edge_inset)
+					_append_continuous_line(geom_data[ProceduralRoadMaterials.KEY_WHITE_LINE], pr0, pr1, right, white_stripe_w, y_paint)
 
 			RoadType.AVENUE_ONEWAY_2LANE:
-				# 2 carriles unidireccionales: 1 línea blanca discontinua exactamente al centro
-				_append_dashed_line(geom_data[ProceduralRoadMaterials.KEY_WHITE_LINE], p0, p1, right, white_stripe_w, y_paint)
+				# 2 carriles unidireccionales: 1 línea blanca discontinua al centro
+				if has_lane_markings:
+					_append_dashed_line(geom_data[ProceduralRoadMaterials.KEY_WHITE_LINE], p_lane_0, p_lane_1, right, white_stripe_w, y_paint)
+				# Líneas blancas continuas en las orillas
+				if has_left_edge and half_w > edge_inset + 0.5:
+					var pl0 := p0 + fwd * t_left_0 - right * (half_w - edge_inset)
+					var pl1 := p0 + fwd * t_left_1 - right * (half_w - edge_inset)
+					_append_continuous_line(geom_data[ProceduralRoadMaterials.KEY_WHITE_LINE], pl0, pl1, right, white_stripe_w, y_paint)
+				if has_right_edge and half_w > edge_inset + 0.5:
+					var pr0 := p0 + fwd * t_right_0 + right * (half_w - edge_inset)
+					var pr1 := p0 + fwd * t_right_1 + right * (half_w - edge_inset)
+					_append_continuous_line(geom_data[ProceduralRoadMaterials.KEY_WHITE_LINE], pr0, pr1, right, white_stripe_w, y_paint)
 
 			RoadType.AVENUE_ONEWAY_3LANE:
-				# 3 carriles unidireccionales: 2 líneas blancas discontinuas a +-half_w / 3.0
-				var lane_w := seg.width / 3.0
-				for lane_idx in [-1, 1]:
-					var center_offset := float(lane_idx) * (lane_w * 0.5)
-					_append_dashed_line(geom_data[ProceduralRoadMaterials.KEY_WHITE_LINE], p0 + right * center_offset, p1 + right * center_offset, right, white_stripe_w, y_paint)
+				# 3 carriles unidireccionales: 2 líneas blancas discontinuas dividiendo los 3 carriles
+				if has_lane_markings:
+					var lane_w := seg.width / 3.0
+					_append_dashed_line(geom_data[ProceduralRoadMaterials.KEY_WHITE_LINE], p_lane_0 - right * (lane_w * 0.5), p_lane_1 - right * (lane_w * 0.5), right, white_stripe_w, y_paint)
+					_append_dashed_line(geom_data[ProceduralRoadMaterials.KEY_WHITE_LINE], p_lane_0 + right * (lane_w * 0.5), p_lane_1 + right * (lane_w * 0.5), right, white_stripe_w, y_paint)
+
+				# Líneas blancas continuas en las orillas (abiertas en bocacalles)
+				if has_left_edge and half_w > edge_inset + 0.5:
+					var pl0 := p0 + fwd * t_left_0 - right * (half_w - edge_inset)
+					var pl1 := p0 + fwd * t_left_1 - right * (half_w - edge_inset)
+					_append_continuous_line(geom_data[ProceduralRoadMaterials.KEY_WHITE_LINE], pl0, pl1, right, white_stripe_w, y_paint)
+				if has_right_edge and half_w > edge_inset + 0.5:
+					var pr0 := p0 + fwd * t_right_0 + right * (half_w - edge_inset)
+					var pr1 := p0 + fwd * t_right_1 + right * (half_w - edge_inset)
+					_append_continuous_line(geom_data[ProceduralRoadMaterials.KEY_WHITE_LINE], pr0, pr1, right, white_stripe_w, y_paint)
 
 			RoadType.COMMERCIAL_4LANE:
 				# 4 carriles: 2 por sentido
 				# 1. Doble línea amarilla continua al centro exacto
-				var s0_l := p0 - right * (stripe_w * 1.5)
-				var s1_l := p0 - right * (stripe_w * 0.5)
-				var s2_l := p1 - right * (stripe_w * 0.5)
-				var s3_l := p1 - right * (stripe_w * 1.5)
-				_append_quad(geom_data[ProceduralRoadMaterials.KEY_YELLOW_LINE], s0_l, s1_l, s2_l, s3_l, y_paint, Vector3.UP)
+				if has_lane_markings:
+					var s0_l := p_lane_0 - right * (stripe_w * 1.3)
+					var s1_l := p_lane_0 - right * (stripe_w * 0.3)
+					var s2_l := p_lane_1 - right * (stripe_w * 0.3)
+					var s3_l := p_lane_1 - right * (stripe_w * 1.3)
+					_append_quad_top(geom_data[ProceduralRoadMaterials.KEY_YELLOW_LINE], s0_l, s1_l, s2_l, s3_l, y_paint)
 
-				var s0_r := p0 + right * (stripe_w * 0.5)
-				var s1_r := p0 + right * (stripe_w * 1.5)
-				var s2_r := p1 + right * (stripe_w * 1.5)
-				var s3_r := p1 + right * (stripe_w * 0.5)
-				_append_quad(geom_data[ProceduralRoadMaterials.KEY_YELLOW_LINE], s0_r, s1_r, s2_r, s3_r, y_paint, Vector3.UP)
+					var s0_r := p_lane_0 + right * (stripe_w * 0.3)
+					var s1_r := p_lane_0 + right * (stripe_w * 1.3)
+					var s2_r := p_lane_1 + right * (stripe_w * 1.3)
+					var s3_r := p_lane_1 + right * (stripe_w * 0.3)
+					_append_quad_top(geom_data[ProceduralRoadMaterials.KEY_YELLOW_LINE], s0_r, s1_r, s2_r, s3_r, y_paint)
 
-				# 2. Líneas blancas discontinuas dividiendo los dos carriles de cada sentido
-				var lane_w := seg.width / 4.0
-				_append_dashed_line(geom_data[ProceduralRoadMaterials.KEY_WHITE_LINE], p0 - right * lane_w, p1 - right * lane_w, right, white_stripe_w, y_paint)
-				_append_dashed_line(geom_data[ProceduralRoadMaterials.KEY_WHITE_LINE], p0 + right * lane_w, p1 + right * lane_w, right, white_stripe_w, y_paint)
+					# 2. Líneas blancas discontinuas dividiendo los dos carriles de cada sentido
+					var lane_w := seg.width / 4.0
+					_append_dashed_line(geom_data[ProceduralRoadMaterials.KEY_WHITE_LINE], p_lane_0 - right * lane_w, p_lane_1 - right * lane_w, right, white_stripe_w, y_paint)
+					_append_dashed_line(geom_data[ProceduralRoadMaterials.KEY_WHITE_LINE], p_lane_0 + right * lane_w, p_lane_1 + right * lane_w, right, white_stripe_w, y_paint)
+
+				# 3. Líneas blancas continuas en las orillas comerciales
+				if has_left_edge and half_w > edge_inset + 0.5:
+					var pl0 := p0 + fwd * t_left_0 - right * (half_w - edge_inset)
+					var pl1 := p0 + fwd * t_left_1 - right * (half_w - edge_inset)
+					_append_continuous_line(geom_data[ProceduralRoadMaterials.KEY_WHITE_LINE], pl0, pl1, right, white_stripe_w, y_paint)
+				if has_right_edge and half_w > edge_inset + 0.5:
+					var pr0 := p0 + fwd * t_right_0 + right * (half_w - edge_inset)
+					var pr1 := p0 + fwd * t_right_1 + right * (half_w - edge_inset)
+					_append_continuous_line(geom_data[ProceduralRoadMaterials.KEY_WHITE_LINE], pr0, pr1, right, white_stripe_w, y_paint)
+
+			RoadType.ALLEY_1LANE:
+				# Callejón / Privada de 1 solo carril: ¡CERO línea divisoria central!
+				# Únicamente línea blanca continua en la orilla junto a la banqueta si existe
+				if seg.has_left_sidewalk and has_left_edge and half_w > edge_inset + 0.3:
+					var pl0 := p0 + fwd * t_left_0 - right * (half_w - edge_inset)
+					var pl1 := p0 + fwd * t_left_1 - right * (half_w - edge_inset)
+					_append_continuous_line(geom_data[ProceduralRoadMaterials.KEY_WHITE_LINE], pl0, pl1, right, white_stripe_w, y_paint)
+				if seg.has_right_sidewalk and has_right_edge and half_w > edge_inset + 0.3:
+					var pr0 := p0 + fwd * t_right_0 + right * (half_w - edge_inset)
+					var pr1 := p0 + fwd * t_right_1 + right * (half_w - edge_inset)
+			RoadType.DIVIDED_MEDIAN_3LANE:
+				var x_m_left := -MEDIAN_WIDTH_DIVIDED_3LANE * 0.5  # -1.00m
+				var x_m_right := MEDIAN_WIDTH_DIVIDED_3LANE * 0.5  # +1.00m
+
+				# 1. Calzada izquierda (3 carriles de 3.50m netos, total 10.50m: de -11.50m a -1.00m):
+				# Dos líneas blancas discontinuas divisorias:
+				# Carril 1 exterior: [-11.50, -8.00] -> Línea 1 en x = -8.00m
+				# Carril 2 medio:    [-8.00, -4.50]  -> Línea 2 en x = -4.50m
+				# Carril 3 interior: [-4.50, -1.00]
+				if has_lane_markings:
+					var lane_div_l1 := -half_w + 3.50 # -8.00m
+					var lane_div_l2 := -half_w + 7.00 # -4.50m
+					_append_dashed_line(geom_data[ProceduralRoadMaterials.KEY_WHITE_LINE], p_lane_0 + right * lane_div_l1, p_lane_1 + right * lane_div_l1, right, white_stripe_w, y_paint)
+					_append_dashed_line(geom_data[ProceduralRoadMaterials.KEY_WHITE_LINE], p_lane_0 + right * lane_div_l2, p_lane_1 + right * lane_div_l2, right, white_stripe_w, y_paint)
+
+				# Línea blanca continua de orilla exterior izquierda (junto a la banqueta)
+				if has_left_edge and half_w > edge_inset + 0.5:
+					var pl0 := p0 + fwd * t_left_0 - right * (half_w - edge_inset)
+					var pl1 := p0 + fwd * t_left_1 - right * (half_w - edge_inset)
+					_append_continuous_line(geom_data[ProceduralRoadMaterials.KEY_WHITE_LINE], pl0, pl1, right, white_stripe_w, y_paint)
+
+				# Línea blanca continua interior izquierda (junto al bordillo del camellón)
+				if has_lane_markings:
+					var p_med_l0 := p0 + fwd * t_lanes_0 + right * (x_m_left - edge_inset)
+					var p_med_l1 := p0 + fwd * t_lanes_1 + right * (x_m_left - edge_inset)
+					_append_continuous_line(geom_data[ProceduralRoadMaterials.KEY_WHITE_LINE], p_med_l0, p_med_l1, right, white_stripe_w, y_paint)
+
+				# 2. Calzada derecha (3 carriles de 3.50m netos, total 10.50m: de +1.00m a +11.50m):
+				# Línea blanca continua interior derecha (junto al bordillo del camellón)
+				if has_lane_markings:
+					var p_med_r0 := p0 + fwd * t_lanes_0 + right * (x_m_right + edge_inset)
+					var p_med_r1 := p0 + fwd * t_lanes_1 + right * (x_m_right + edge_inset)
+					_append_continuous_line(geom_data[ProceduralRoadMaterials.KEY_WHITE_LINE], p_med_r0, p_med_r1, right, white_stripe_w, y_paint)
+
+				# Dos líneas blancas discontinuas divisorias:
+				# Carril 1 interior: [+1.00, +4.50]  -> Línea 1 en x = +4.50m
+				# Carril 2 medio:    [+4.50, +8.00]  -> Línea 2 en x = +8.00m
+				# Carril 3 exterior: [+8.00, +11.50]
+				if has_lane_markings:
+					var lane_div_r1 := half_w - 7.00 # +4.50m
+					var lane_div_r2 := half_w - 3.50 # +8.00m
+					_append_dashed_line(geom_data[ProceduralRoadMaterials.KEY_WHITE_LINE], p_lane_0 + right * lane_div_r1, p_lane_1 + right * lane_div_r1, right, white_stripe_w, y_paint)
+					_append_dashed_line(geom_data[ProceduralRoadMaterials.KEY_WHITE_LINE], p_lane_0 + right * lane_div_r2, p_lane_1 + right * lane_div_r2, right, white_stripe_w, y_paint)
+
+				# Línea blanca continua de orilla exterior derecha (junto a la banqueta)
+				if has_right_edge and half_w > edge_inset + 0.5:
+					var pr0 := p0 + fwd * t_right_0 + right * (half_w - edge_inset)
+					var pr1 := p0 + fwd * t_right_1 + right * (half_w - edge_inset)
+					_append_continuous_line(geom_data[ProceduralRoadMaterials.KEY_WHITE_LINE], pr0, pr1, right, white_stripe_w, y_paint)
 
 			RoadType.RURAL_PLAIN_2LANE:
 				pass
@@ -972,6 +1301,43 @@ static func _append_triangle(
 	data["index_offset"] = base + 3
 
 
+static func _append_median_cap(
+	geom_data: Dictionary,
+	center: Vector3,
+	outward_dir: Vector3,
+	lateral_dir: Vector3,
+	radius: float,
+	curb_w: float,
+	y_min: float,
+	y_max: float,
+	num_segments: int = 8
+) -> void:
+	var curb_data: Dictionary = geom_data[ProceduralRoadMaterials.KEY_CURB]
+	var median_data: Dictionary = geom_data[ProceduralRoadMaterials.KEY_MEDIAN]
+	var inner_radius := radius - curb_w
+
+	for i in range(num_segments):
+		var a0 := -PI * 0.5 + float(i) * PI / float(num_segments)
+		var a1 := -PI * 0.5 + float(i + 1) * PI / float(num_segments)
+
+		var dir0 := outward_dir * cos(a0) + lateral_dir * sin(a0)
+		var dir1 := outward_dir * cos(a1) + lateral_dir * sin(a1)
+
+		var p_out0 := center + dir0 * radius
+		var p_out1 := center + dir1 * radius
+		var p_in0 := center + dir0 * inner_radius
+		var p_in1 := center + dir1 * inner_radius
+
+		# 1. Cara vertical del bordillo exterior hacia el asfalto
+		_append_vertical_strip(curb_data, p_out0, p_out1, y_min, y_max)
+
+		# 2. Tapa horizontal superior del bordillo
+		_append_quad_top(curb_data, p_out0, p_out1, p_in1, p_in0, y_max)
+
+		# 3. Relleno interior superior (tierra / vegetación / losa de camellón)
+		_append_triangle_top(median_data, center, p_in0, p_in1, y_max)
+
+
 static func _append_quad_top(
 	data: Dictionary,
 	v0: Vector3, v1: Vector3, v2: Vector3, v3: Vector3,
@@ -1118,6 +1484,23 @@ static func _append_quad_3d(
 	data["index_offset"] = base + 4
 
 
+static func _append_continuous_line(
+	data: Dictionary,
+	start: Vector3, end: Vector3,
+	right: Vector3, width: float, y_pos: float
+) -> void:
+	var delta := end - start
+	var total_len := delta.length()
+	if total_len <= 0.1:
+		return
+	var half_w := width * 0.5
+	var v0 := start - right * half_w
+	var v1 := start + right * half_w
+	var v2 := end + right * half_w
+	var v3 := end - right * half_w
+	_append_quad_top(data, Vector3(v0.x, y_pos, v0.z), Vector3(v1.x, y_pos, v1.z), Vector3(v2.x, y_pos, v2.z), Vector3(v3.x, y_pos, v3.z), y_pos)
+
+
 static func _append_dashed_line(
 	data: Dictionary,
 	start: Vector3, end: Vector3,
@@ -1130,17 +1513,587 @@ static func _append_dashed_line(
 	var dir := delta / total_len
 	var half_w := width * 0.5
 
-	var dash_len := 1.5
-	var gap_len := 1.5
+	var dash_len := 2.5
+	var gap_len := 2.5
 	var period := dash_len + gap_len
 
-	var cur := 0.0
-	while cur + dash_len <= total_len:
+	var cur := 0.2
+	while cur + dash_len <= total_len - 0.2:
 		var p0 := start + dir * cur
 		var p1 := start + dir * (cur + dash_len)
 		var v0 := p0 - right * half_w
 		var v1 := p0 + right * half_w
 		var v2 := p1 + right * half_w
 		var v3 := p1 - right * half_w
-		_append_quad(data, Vector3(v0.x, y_pos, v0.z), Vector3(v1.x, y_pos, v1.z), Vector3(v2.x, y_pos, v2.z), Vector3(v3.x, y_pos, v3.z), y_pos, Vector3.UP)
+		_append_quad_top(data, Vector3(v0.x, y_pos, v0.z), Vector3(v1.x, y_pos, v1.z), Vector3(v2.x, y_pos, v2.z), Vector3(v3.x, y_pos, v3.z), y_pos)
 		cur += period
+
+
+# ==============================================================================
+# SISTEMA PROCEDURAL DE POSTES DE LUZ (STREETLIGHT INTELLIGENCE)
+# ==============================================================================
+
+const STREETLIGHT_TARGET_SPACING: float = 28.0       ## Espaciado nominal ideal entre postes (25m - 30m)
+const STREETLIGHT_SAFETY_MARGIN: float = 7.0        ## Despeje mínimo respecto al extremo del camellón o cruces
+const STREETLIGHT_MIN_SEGMENT_LENGTH: float = 14.0   ## Largo mínimo para alojar al menos 1 poste
+
+
+## Retorna los transforms 3D óptimos para postes de luz en un segmento específico.
+## Distribuye las posiciones paramétricamente a lo largo de la calle o camellón
+## adaptándose de forma elástica a la longitud sin medidas hardcodeadas.
+func get_streetlight_transforms_for_segment(seg_id: int) -> Array[Transform3D]:
+	var seg: RoadSegment = _segments.get(seg_id, null)
+	if seg == null:
+		return []
+
+	var p0 := seg.start_pos
+	var p1 := seg.end_pos
+	var delta := p1 - p0
+	var length := delta.length()
+	if length < STREETLIGHT_MIN_SEGMENT_LENGTH:
+		return []
+
+	var fwd := delta / length
+	var right := Vector3(-fwd.z, 0.0, fwd.x).normalized()
+	var seg_basis := Basis.looking_at(fwd, Vector3.UP)
+
+	var marking_cuts := _compute_marking_cuts()
+	var seg_cuts: Dictionary = marking_cuts.get(seg.id, {
+		"cut_start_lanes": 0.0,
+		"cut_end_lanes": 0.0,
+	})
+
+	var transforms: Array[Transform3D] = []
+
+	match seg.road_type:
+		RoadType.DIVIDED_MEDIAN_3LANE:
+			# Los postes van DIRECTAMENTE sobre el camellón central elevado (centrados en x = 0.0)
+			var x_m_center := 0.0
+			var y_pos := ROAD_HEIGHT + SIDEWALK_HEIGHT
+
+			var t_med_0: float = maxf(seg_cuts["cut_start_lanes"], 1.8) + (MEDIAN_WIDTH_DIVIDED_3LANE * 0.5)
+			var t_med_1: float = length - maxf(seg_cuts["cut_end_lanes"], 1.8) - (MEDIAN_WIDTH_DIVIDED_3LANE * 0.5)
+
+			var t_first: float = t_med_0 + STREETLIGHT_SAFETY_MARGIN
+			var t_last: float = t_med_1 - STREETLIGHT_SAFETY_MARGIN
+			var usable_dist: float = t_last - t_first
+
+			if usable_dist < 6.0:
+				# Cuadra corta/mediana (15m a ~35m): 1 poste único en el centro exacto del camellón
+				var mid_t: float = (t_med_0 + t_med_1) * 0.5
+				var pos := p0 + fwd * mid_t + right * x_m_center + Vector3(0.0, y_pos, 0.0)
+				transforms.append(Transform3D(seg_basis, pos))
+			else:
+				# Cuadra estándar o larga (> 35m): distribución adaptativa perfectamente equidistante
+				var spans: int = maxi(1, int(round(usable_dist / STREETLIGHT_TARGET_SPACING)))
+				var count: int = spans + 1
+				var step: float = usable_dist / float(spans)
+				for i in range(count):
+					var t: float = t_first + float(i) * step
+					var pos := p0 + fwd * t + right * x_m_center + Vector3(0.0, y_pos, 0.0)
+					transforms.append(Transform3D(seg_basis, pos))
+
+		_:
+			# En calles sin camellón central (residenciales, comerciales, etc.), van en las banquetas
+			var half_w := seg.width * 0.5
+			var t_first: float = float(seg_cuts.get("cut_start_lanes", 0.0)) + STREETLIGHT_SAFETY_MARGIN
+			var t_last: float = length - float(seg_cuts.get("cut_end_lanes", 0.0)) - STREETLIGHT_SAFETY_MARGIN
+			var usable_dist: float = t_last - t_first
+			var y_pos := ROAD_HEIGHT + SIDEWALK_HEIGHT
+
+			if usable_dist >= 6.0:
+				var spans: int = maxi(1, int(round(usable_dist / STREETLIGHT_TARGET_SPACING)))
+				var count: int = spans + 1
+				var step: float = usable_dist / float(spans)
+				for i in range(count):
+					var t: float = t_first + float(i) * step
+					# Alternar lado izquierdo y derecho si ambas banquetas existen
+					var side_offset: float = (half_w + 0.60)
+					if seg.has_right_sidewalk and (i % 2 == 0 or not seg.has_left_sidewalk):
+						var pos := p0 + fwd * t + right * side_offset + Vector3(0.0, y_pos, 0.0)
+						transforms.append(Transform3D(seg_basis, pos))
+					elif seg.has_left_sidewalk:
+						var pos := p0 + fwd * t - right * side_offset + Vector3(0.0, y_pos, 0.0)
+						transforms.append(Transform3D(seg_basis, pos))
+
+	return transforms
+
+
+## Retorna la lista de todos los transforms de postes de luz en toda la red vial
+func get_all_streetlight_transforms() -> Array[Transform3D]:
+	var all_xf: Array[Transform3D] = []
+	for seg_id in _segments:
+		all_xf.append_array(get_streetlight_transforms_for_segment(seg_id))
+	return all_xf
+
+
+## Crea la malla cilíndrica low-poly idéntica a la del medidor CFE (12 lados)
+static func create_cfe_lowpoly_cylinder_mesh(height: float = 7.2, top_rad: float = 0.09, bot_rad: float = 0.13) -> CylinderMesh:
+	var cyl := CylinderMesh.new()
+	cyl.top_radius = top_rad
+	cyl.bottom_radius = bot_rad
+	cyl.height = height
+	cyl.radial_segments = 12 # 12 segmentos: estándar medidor CFE / estética PSX
+	cyl.rings = 1
+	return cyl
+
+
+## Determina si una calle califica como vía grande/primaria (bulevares y avenidas multilínea con o sin camellón)
+static func is_major_street(road_type: RoadType, _width: float = 0.0) -> bool:
+	return road_type == RoadType.DIVIDED_MEDIAN_3LANE \
+		or road_type == RoadType.AVENUE_ONEWAY_3LANE \
+		or road_type == RoadType.AVENUE_ONEWAY_2LANE
+
+
+## Determina deterministamente si un poste en una posición dada presenta óxido / desgaste
+static func _is_streetlight_rusty(pos: Vector3) -> bool:
+	var ix := int(floor(pos.x * 19.0 + pos.z * 7.0))
+	var iz := int(floor(pos.z * 23.0 - pos.x * 11.0))
+	var n: int = (ix * 374761393 + iz * 668265263) & 0x7FFFFFFF
+	n = ((n ^ (n >> 13)) * 1274126177) & 0x7FFFFFFF
+	n = (n ^ (n >> 16)) & 0x7FFFFFFF
+	var val: float = float(n) / 2147483647.0
+	return val < 0.22 # ~22% de probabilidad: óxido aparece de vez en cuando, no siempre
+
+
+## Instancia por GPU Hardware (MultiMeshInstance3D) todos los postes de luz usando el cilindro low-poly de 12 lados del medidor CFE.
+## Aplica las reglas de texturizado:
+## - Calles grandes (Bulevares, Avenidas divididas) -> Tono Metal (Galvanizado).
+## - Calles medianas o chicas (Comerciales, Residenciales, Callejones) -> Tono Amarillo.
+## - Textura con óxido: Aparece de vez en cuando (~22%) de manera determinista.
+## Agrupa en MultiMesh por variante de textura (máximo 4 draw calls para toda la ciudad).
+func spawn_streetlights_gpu(parent_node: Node3D, target_seg_id: int = -1, force_tone: String = "") -> Dictionary:
+	var seg_list: Array = [target_seg_id] if target_seg_id != -1 else _segments.keys()
+	if seg_list.is_empty():
+		return {}
+
+	# Clasificar transforms por clave de material
+	var groups: Dictionary = {
+		ProceduralRoadMaterials.KEY_POLE_METAL_CLEAN: [],
+		ProceduralRoadMaterials.KEY_POLE_METAL_RUSTY: [],
+		ProceduralRoadMaterials.KEY_POLE_YELLOW_CLEAN: [],
+		ProceduralRoadMaterials.KEY_POLE_YELLOW_RUSTY: [],
+	}
+
+	var all_lamp_xfs: Array[Transform3D] = []
+	var total_poles := 0
+
+	for s_id in seg_list:
+		var seg: RoadSegment = _segments.get(s_id, null)
+		if seg == null:
+			continue
+
+		var is_major: bool = is_major_street(seg.road_type, seg.width)
+		if force_tone == "metal":
+			is_major = true
+		elif force_tone == "yellow":
+			is_major = false
+
+		var seg_xfs := get_streetlight_transforms_for_segment(s_id)
+		for xf in seg_xfs:
+			total_poles += 1
+			var is_rusty := _is_streetlight_rusty(xf.origin)
+			var key: String
+			if is_major:
+				key = ProceduralRoadMaterials.KEY_POLE_METAL_RUSTY if is_rusty else ProceduralRoadMaterials.KEY_POLE_METAL_CLEAN
+			else:
+				key = ProceduralRoadMaterials.KEY_POLE_YELLOW_RUSTY if is_rusty else ProceduralRoadMaterials.KEY_POLE_YELLOW_CLEAN
+
+			groups[key].append(xf)
+
+			# Dos luminarias LED por poste
+			all_lamp_xfs.append(xf.translated_local(Vector3(-1.05, 7.10, 0.0)))
+			all_lamp_xfs.append(xf.translated_local(Vector3(1.05, 7.10, 0.0)))
+
+	if total_poles == 0:
+		return {}
+
+	# Contenedor del grupo
+	var group_root := Node3D.new()
+	group_root.name = "Streetlights_GPU_Instanced"
+	parent_node.add_child(group_root)
+
+	var pole_nodes: Array[MultiMeshInstance3D] = []
+	var arm_nodes: Array[MultiMeshInstance3D] = []
+
+	# Instanciar cada grupo de mástiles y brazos por GPU Hardware Instancing
+	for mat_key in groups:
+		var xfs: Array = groups[mat_key]
+		if xfs.is_empty():
+			continue
+
+		var count: int = xfs.size()
+		var mat: Material = ProceduralRoadMaterials.get_material(mat_key)
+
+		# 1. MultiMesh Mástiles CFE 12 lados
+		var mm_poles := MultiMesh.new()
+		mm_poles.transform_format = MultiMesh.TRANSFORM_3D
+		mm_poles.instance_count = count
+		var pole_mesh := create_cfe_lowpoly_cylinder_mesh(7.2, 0.09, 0.13)
+		pole_mesh.material = mat
+		mm_poles.mesh = pole_mesh
+
+		# 2. MultiMesh Brazos transversales dobles
+		var mm_arms := MultiMesh.new()
+		mm_arms.transform_format = MultiMesh.TRANSFORM_3D
+		mm_arms.instance_count = count
+		var arm_mesh := BoxMesh.new()
+		arm_mesh.size = Vector3(2.2, 0.10, 0.10)
+		arm_mesh.material = mat
+		mm_arms.mesh = arm_mesh
+
+		for i in range(count):
+			var xf: Transform3D = xfs[i]
+			var pole_xf := xf.translated_local(Vector3(0.0, 3.6, 0.0))
+			mm_poles.set_instance_transform(i, pole_xf)
+
+			var arm_xf := xf.translated_local(Vector3(0.0, 7.15, 0.0))
+			mm_arms.set_instance_transform(i, arm_xf)
+
+		var inst_p := MultiMeshInstance3D.new()
+		inst_p.name = "Poles_%s" % mat_key
+		inst_p.multimesh = mm_poles
+		group_root.add_child(inst_p)
+		pole_nodes.append(inst_p)
+
+		var inst_a := MultiMeshInstance3D.new()
+		inst_a.name = "Arms_%s" % mat_key
+		inst_a.multimesh = mm_arms
+		group_root.add_child(inst_a)
+		arm_nodes.append(inst_a)
+
+	# 3. MultiMesh para los cabezales LED (1 solo draw call para todos los focos)
+	var inst_lamps: MultiMeshInstance3D = null
+	if not all_lamp_xfs.is_empty():
+		var mm_lamps := MultiMesh.new()
+		mm_lamps.transform_format = MultiMesh.TRANSFORM_3D
+		mm_lamps.instance_count = all_lamp_xfs.size()
+		var lamp_mesh := BoxMesh.new()
+		lamp_mesh.size = Vector3(0.35, 0.12, 0.22)
+		lamp_mesh.material = ProceduralRoadMaterials.get_material(ProceduralRoadMaterials.KEY_LAMP_LED)
+		mm_lamps.mesh = lamp_mesh
+
+		for i in range(all_lamp_xfs.size()):
+			mm_lamps.set_instance_transform(i, all_lamp_xfs[i])
+
+		inst_lamps = MultiMeshInstance3D.new()
+		inst_lamps.name = "Lamps_LED_Warm"
+		inst_lamps.multimesh = mm_lamps
+		group_root.add_child(inst_lamps)
+
+	return {
+		"root": group_root,
+		"pole_instances": pole_nodes,
+		"arm_instances": arm_nodes,
+		"lamps": inst_lamps
+	}
+
+
+## Instancia postes de luz procedurales en el árbol de escena.
+## Por defecto utiliza GPU Hardware Instancing (MultiMeshInstance3D) con el cilindro del medidor CFE (12 lados).
+func spawn_streetlights(parent_node: Node3D, custom_scene_or_factory = null, target_seg_id: int = -1, force_tone: String = "") -> Array[Node3D]:
+	if custom_scene_or_factory == null:
+		# GPU Hardware Instancing hiperoptimizado con las texturas auténticas CFE
+		var gpu_res := spawn_streetlights_gpu(parent_node, target_seg_id, force_tone)
+		if gpu_res.has("root"):
+			return [gpu_res["root"]]
+		return []
+
+	var spawned: Array[Node3D] = []
+	var xforms: Array[Transform3D] = get_streetlight_transforms_for_segment(target_seg_id) if target_seg_id != -1 else get_all_streetlight_transforms()
+
+	for xf in xforms:
+		var node: Node3D = null
+		if custom_scene_or_factory is PackedScene:
+			node = (custom_scene_or_factory as PackedScene).instantiate()
+		elif custom_scene_or_factory is Callable:
+			node = (custom_scene_or_factory as Callable).call()
+
+		if node != null:
+			parent_node.add_child(node)
+			node.transform = xf
+			spawned.append(node)
+
+	return spawned
+
+
+# ==============================================================================
+# VEGETACIÓN PROCEDURAL EN CAMELLÓN CENTRAL (REGLA STRICT AGENTS.MD: ProceduralTree)
+# ==============================================================================
+
+const MEDIAN_TREE_TARGET_SPACING: float = 16.0       ## Espaciado nominal entre árboles en camellón
+const MEDIAN_TREE_SAFETY_MARGIN: float = 6.0         ## Margen respecto al extremo del camellón
+
+
+## Retorna los transforms 3D para árboles en el camellón central de 2m.
+## Se colocan a lo largo del camellón en x = 0.0 a altura y_pos,
+## intercalándose armónicamente y respetando la distancia con los postes de luz.
+func get_median_tree_transforms_for_segment(seg_id: int) -> Array[Transform3D]:
+	var seg: RoadSegment = _segments.get(seg_id, null)
+	if seg == null or seg.road_type != RoadType.DIVIDED_MEDIAN_3LANE:
+		return []
+
+	var p0 := seg.start_pos
+	var p1 := seg.end_pos
+	var delta := p1 - p0
+	var length := delta.length()
+	if length < 16.0:
+		return []
+
+	var fwd := delta / length
+	var right := Vector3(-fwd.z, 0.0, fwd.x).normalized()
+	var seg_basis := Basis.looking_at(fwd, Vector3.UP)
+
+	var marking_cuts := _compute_marking_cuts()
+	var seg_cuts: Dictionary = marking_cuts.get(seg.id, {
+		"cut_start_lanes": 0.0,
+		"cut_end_lanes": 0.0,
+	})
+
+	var t_med_0: float = maxf(seg_cuts["cut_start_lanes"], 1.8) + (MEDIAN_WIDTH_DIVIDED_3LANE * 0.5)
+	var t_med_1: float = length - maxf(seg_cuts["cut_end_lanes"], 1.8) - (MEDIAN_WIDTH_DIVIDED_3LANE * 0.5)
+	var y_pos := ROAD_HEIGHT + SIDEWALK_HEIGHT
+
+	# Obtener posiciones de postes para no plantar un árbol encima de una luminaria
+	var light_xfs := get_streetlight_transforms_for_segment(seg_id)
+	var light_ts: Array[float] = []
+	for l_xf in light_xfs:
+		var t_proj := (l_xf.origin - p0).dot(fwd)
+		light_ts.append(t_proj)
+
+	var t_first := t_med_0 + MEDIAN_TREE_SAFETY_MARGIN
+	var t_last := t_med_1 - MEDIAN_TREE_SAFETY_MARGIN
+	var usable_dist := t_last - t_first
+
+	var tree_xfs: Array[Transform3D] = []
+	if usable_dist <= 2.0:
+		return []
+
+	var spans: int = maxi(1, int(round(usable_dist / MEDIAN_TREE_TARGET_SPACING)))
+	var count: int = spans + 1
+	var step: float = usable_dist / float(spans)
+
+	for i in range(count):
+		var t := t_first + float(i) * step
+		# Verificar que no colisione con un poste de luz (mantener despeje mínimo de 3.5m)
+		var near_light := false
+		for lt in light_ts:
+			if absf(lt - t) < 3.5:
+				near_light = true
+				break
+		if near_light:
+			continue
+
+		# Rotación variada en Y para aspecto natural
+		var rot_y := fmod(float(i * 137.5), 360.0) * (PI / 180.0)
+		var t_basis := seg_basis.rotated(Vector3.UP, rot_y)
+		var pos := p0 + fwd * t + Vector3(0.0, y_pos, 0.0)
+		tree_xfs.append(Transform3D(t_basis, pos))
+
+	return tree_xfs
+
+
+## Instancia árboles en los camellones usando ÚNICA Y EXCLUSIVAMENTE ProceduralTree (Regla AGENTS.md)
+func spawn_median_trees(parent_node: Node3D, profile_id: String = "classic_oak", target_seg_id: int = -1) -> Array[Node3D]:
+	var spawned: Array[Node3D] = []
+	var seg_list: Array = [target_seg_id] if target_seg_id != -1 else _segments.keys()
+	for seg_id in seg_list:
+		var xforms := get_median_tree_transforms_for_segment(seg_id)
+		for xf in xforms:
+			var tree: Node3D = PROCEDURAL_TREE_SCRIPT.new()
+			tree.set("profile_id", profile_id)
+			tree.set("tree_seed", randi())
+			parent_node.add_child(tree)
+			tree.global_transform = xf
+			spawned.append(tree)
+	return spawned
+
+
+# ==============================================================================
+# MACETAS CUADRADAS PROCEDURALES EN CAMELLÓN CENTRAL (DISTRIBUCIÓN INTELIGENTE)
+# ==============================================================================
+
+const PLANTER_SQUARE_SIZE: float = 1.20              ## Ancho y largo exterior de la maceta (1.20m en camellón de 2.0m)
+const PLANTER_SQUARE_HEIGHT: float = 0.55            ## Altura de la jardinera de concreto (0.55m)
+const PLANTER_TARGET_SPACING: float = 8.5            ## Espaciado nominal ideal entre jardineras
+const PLANTER_LIGHT_SAFETY_MARGIN: float = 2.4       ## Despeje mínimo respecto al poste de luz
+
+
+## Retorna los transforms 3D para macetas cuadradas en el camellón central de 2.0m.
+## La colocación es 100% paramétrica, inteligente y elástica:
+## - No utiliza medidas estáticas ni espaciados fijos que se rompan con largos arbitrarios.
+## - Detecta las posiciones de los postes de luz GPU y subdivide armónicamente los vanos entre ellos.
+## - Mantiene simetría perfecta tanto en cuadras cortas de 20m como en avenidas de 300m.
+func get_median_planter_transforms_for_segment(seg_id: int) -> Array[Transform3D]:
+	var seg: RoadSegment = _segments.get(seg_id, null)
+	if seg == null or seg.road_type != RoadType.DIVIDED_MEDIAN_3LANE:
+		return []
+
+	var p0 := seg.start_pos
+	var p1 := seg.end_pos
+	var delta := p1 - p0
+	var length := delta.length()
+	if length < 10.0:
+		return []
+
+	var fwd := delta / length
+	var right := Vector3(-fwd.z, 0.0, fwd.x).normalized()
+	var seg_basis := Basis.looking_at(fwd, Vector3.UP)
+
+	var marking_cuts := _compute_marking_cuts()
+	var seg_cuts: Dictionary = marking_cuts.get(seg.id, {
+		"cut_start_lanes": 0.0,
+		"cut_end_lanes": 0.0,
+	})
+
+	var t_med_0: float = maxf(seg_cuts["cut_start_lanes"], 1.8) + (MEDIAN_WIDTH_DIVIDED_3LANE * 0.5)
+	var t_med_1: float = length - maxf(seg_cuts["cut_end_lanes"], 1.8) - (MEDIAN_WIDTH_DIVIDED_3LANE * 0.5)
+	var y_pos := ROAD_HEIGHT + SIDEWALK_HEIGHT
+
+	# Puntos de referencia de luminarias GPU en el camellón
+	var light_xfs := get_streetlight_transforms_for_segment(seg_id)
+	var light_ts: Array[float] = []
+	for l_xf in light_xfs:
+		var t_proj := (l_xf.origin - p0).dot(fwd)
+		if t_proj >= t_med_0 and t_proj <= t_med_1:
+			light_ts.append(t_proj)
+	light_ts.sort()
+
+	var planter_ts: Array[float] = []
+
+	if light_ts.is_empty():
+		# Cuadra corta sin luminarias: subdivisión simétrica del tramo útil
+		var usable := t_med_1 - t_med_0 - 4.0
+		if usable > 2.0:
+			var count: int = maxi(1, int(round(usable / PLANTER_TARGET_SPACING)))
+			var step := usable / float(count + 1)
+			for i in range(1, count + 1):
+				planter_ts.append(t_med_0 + 2.0 + float(i) * step)
+	else:
+		# Cuadra estándar con luminarias: subdivisión rítmica inteligente por tramos intermedios
+		# 1. Tramo inicial: Nariz del camellón -> Primer poste
+		var dist_start: float = float(light_ts[0]) - t_med_0 - 2.0
+		if dist_start >= PLANTER_LIGHT_SAFETY_MARGIN * 2.0:
+			var k_start: int = maxi(1, int(round((dist_start - PLANTER_LIGHT_SAFETY_MARGIN) / PLANTER_TARGET_SPACING)))
+			var step_start: float = (dist_start - PLANTER_LIGHT_SAFETY_MARGIN) / float(k_start + 1)
+			for j in range(1, k_start + 1):
+				planter_ts.append(t_med_0 + 2.0 + float(j) * step_start)
+
+		# 2. Tramos intermedios: Entre postes consecutivos (equidistancia simétrica)
+		for i in range(light_ts.size() - 1):
+			var span_len: float = float(light_ts[i + 1]) - float(light_ts[i])
+			var usable_span: float = span_len - 2.0 * PLANTER_LIGHT_SAFETY_MARGIN
+			if usable_span >= 3.0:
+				var k_mid: int = maxi(1, int(round(usable_span / PLANTER_TARGET_SPACING)))
+				var step_mid: float = usable_span / float(k_mid + 1)
+				for j in range(1, k_mid + 1):
+					planter_ts.append(float(light_ts[i]) + PLANTER_LIGHT_SAFETY_MARGIN + float(j) * step_mid)
+
+		# 3. Tramo final: Último poste -> Nariz final
+		var dist_end: float = t_med_1 - 2.0 - float(light_ts.back())
+		if dist_end >= PLANTER_LIGHT_SAFETY_MARGIN * 2.0:
+			var k_end: int = maxi(1, int(round((dist_end - PLANTER_LIGHT_SAFETY_MARGIN) / PLANTER_TARGET_SPACING)))
+			var step_end: float = (dist_end - PLANTER_LIGHT_SAFETY_MARGIN) / float(k_end + 1)
+			for j in range(1, k_end + 1):
+				planter_ts.append(float(light_ts.back()) + PLANTER_LIGHT_SAFETY_MARGIN + float(j) * step_end)
+
+	var transforms: Array[Transform3D] = []
+	for t in planter_ts:
+		var pos := p0 + fwd * t + Vector3(0.0, y_pos, 0.0)
+		transforms.append(Transform3D(seg_basis, pos))
+
+	return transforms
+
+
+## Retorna todos los transforms de macetas cuadradas en la red vial
+func get_all_median_planter_transforms() -> Array[Transform3D]:
+	var all_xf: Array[Transform3D] = []
+	for seg_id in _segments:
+		all_xf.append_array(get_median_planter_transforms_for_segment(seg_id))
+	return all_xf
+
+
+## Instancia macetas cuadradas mediante GPU Hardware Instancing (MultiMeshInstance3D)
+## con cajón de cantera/concreto, tierra vegetal y vegetación ProceduralTree (shrub_sapling).
+func spawn_median_planters(parent_node: Node3D, with_vegetation: bool = true, target_seg_id: int = -1) -> Dictionary:
+	var xforms: Array[Transform3D] = get_median_planter_transforms_for_segment(target_seg_id) if target_seg_id != -1 else get_all_median_planter_transforms()
+	if xforms.is_empty():
+		return {}
+
+	var count := xforms.size()
+
+	var group_root := Node3D.new()
+	group_root.name = "MedianPlanters_GPU_Instanced"
+	parent_node.add_child(group_root)
+
+	# Material de concreto/cantera urbana para las jardineras cuadradas
+	var concrete_mat := StandardMaterial3D.new()
+	concrete_mat.albedo_color = Color(0.56, 0.56, 0.55) # Cantera / concreto urbano mate
+	concrete_mat.roughness = 0.88
+
+	# Material de tierra vegetal húmeda
+	var soil_mat := StandardMaterial3D.new()
+	soil_mat.albedo_color = Color(0.18, 0.14, 0.10)
+	soil_mat.roughness = 0.95
+
+	# 1. MultiMesh para cajones de concreto de 1.20m x 0.55m x 1.20m
+	var mm_planters := MultiMesh.new()
+	mm_planters.transform_format = MultiMesh.TRANSFORM_3D
+	mm_planters.instance_count = count
+	var box_mesh := BoxMesh.new()
+	box_mesh.size = Vector3(PLANTER_SQUARE_SIZE, PLANTER_SQUARE_HEIGHT, PLANTER_SQUARE_SIZE)
+	box_mesh.material = concrete_mat
+	mm_planters.mesh = box_mesh
+
+	# 2. MultiMesh para tierra fértil interior
+	var mm_soil := MultiMesh.new()
+	mm_soil.transform_format = MultiMesh.TRANSFORM_3D
+	mm_soil.instance_count = count
+	var soil_mesh := BoxMesh.new()
+	soil_mesh.size = Vector3(PLANTER_SQUARE_SIZE - 0.16, 0.05, PLANTER_SQUARE_SIZE - 0.16)
+	soil_mesh.material = soil_mat
+	mm_soil.mesh = soil_mesh
+
+	var spawned_plants: Array[Node3D] = []
+
+	for i in range(count):
+		var xf := xforms[i]
+
+		# Transform del cajón de la maceta (elevado la mitad de su altura sobre el camellón)
+		var planter_xf := xf.translated_local(Vector3(0.0, PLANTER_SQUARE_HEIGHT * 0.5, 0.0))
+		mm_planters.set_instance_transform(i, planter_xf)
+
+		# Transform de la tierra (en la parte superior de la maceta)
+		var soil_xf := xf.translated_local(Vector3(0.0, PLANTER_SQUARE_HEIGHT - 0.02, 0.0))
+		mm_soil.set_instance_transform(i, soil_xf)
+
+		# 3. Vegetación procedural dentro de la maceta (ProceduralTree perfil shrub_sapling)
+		if with_vegetation:
+			var shrub: Node3D = PROCEDURAL_TREE_SCRIPT.new()
+			shrub.set("profile_id", "shrub_sapling")
+			shrub.set("tree_seed", randi())
+			# Escala proporcional de arbusto para encajar orgánicamente en la maceta urbana
+			shrub.scale = Vector3(0.40, 0.40, 0.40)
+			group_root.add_child(shrub)
+			var plant_pos := xf.origin + Vector3(0.0, PLANTER_SQUARE_HEIGHT - 0.08, 0.0)
+			shrub.global_position = plant_pos
+			shrub.rotation.y = fmod(float(i * 123.7), 360.0) * (PI / 180.0)
+			spawned_plants.append(shrub)
+
+	var inst_planters := MultiMeshInstance3D.new()
+	inst_planters.name = "PlanterBoxes_120cm_GPU"
+	inst_planters.multimesh = mm_planters
+	group_root.add_child(inst_planters)
+
+	var inst_soil := MultiMeshInstance3D.new()
+	inst_soil.name = "PlanterSoil_GPU"
+	inst_soil.multimesh = mm_soil
+	group_root.add_child(inst_soil)
+
+	return {
+		"root": group_root,
+		"planters": inst_planters,
+		"soil": inst_soil,
+		"plants": spawned_plants
+	}
+

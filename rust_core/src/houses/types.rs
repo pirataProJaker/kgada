@@ -1,6 +1,6 @@
 use godot::prelude::*;
 
-/// Tipología de zonificación urbana mexicana para casas procedurales.
+/// Tipología de zonificación urbana mexicana para casas y comercios procedurales.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum HouseZoneType {
     /// Barrio tradicional: casas pared con pared (100% frente del lote),
@@ -14,6 +14,12 @@ pub enum HouseZoneType {
     /// Residencial de lujo: terrenos grandes, casas aisladas con jardines a 4 vientos,
     /// techos altos, ventanales panorámicos y terrazas.
     ZonaX = 2,
+
+    /// Tienda de conveniencia / Negocio comercial (ej. OTXO):
+    /// Retiro frontal o en L para estacionamiento de clientes (3 a 8 cajones),
+    /// tótem gigante exterior, marquesina con alero perimetral rojo/amarillo,
+    /// muro cortina de cristal al frente, piso de venta amplio, cuarto frío y bodega.
+    CommercialConvenience = 3,
 }
 
 impl HouseZoneType {
@@ -21,6 +27,7 @@ impl HouseZoneType {
         match val {
             1 => HouseZoneType::ColoniaNueva,
             2 => HouseZoneType::ZonaX,
+            3 => HouseZoneType::CommercialConvenience,
             _ => HouseZoneType::ColoniaVieja,
         }
     }
@@ -69,6 +76,12 @@ pub enum RoomType {
     GymOrGames = 8,
     /// Cuarto de lavado / Zotehuela techada
     Laundry = 9,
+    /// Piso de venta abierto de tienda de conveniencia / autoservicio (OTXO)
+    StoreFloor = 10,
+    /// Cuarto frío / Cámaras de refrigeración con puertas de vidrio
+    ColdRoom = 11,
+    /// Bodega / Almacén de mercancía y recepción de pedidos
+    Storage = 12,
 }
 
 impl RoomType {
@@ -84,11 +97,17 @@ impl RoomType {
             RoomType::Studio => "Estudio/Biblioteca",
             RoomType::GymOrGames => "Gimnasio",
             RoomType::Laundry => "Lavandería",
+            RoomType::StoreFloor => "Piso de Venta",
+            RoomType::ColdRoom => "Cuarto Frío",
+            RoomType::Storage => "Bodega",
         }
     }
 
     pub fn is_private(self) -> bool {
-        matches!(self, RoomType::Bedroom | RoomType::Bathroom | RoomType::Studio)
+        matches!(
+            self,
+            RoomType::Bedroom | RoomType::Bathroom | RoomType::Studio | RoomType::ColdRoom | RoomType::Storage
+        )
     }
 
     pub fn is_social_or_circulation(self) -> bool {
@@ -100,6 +119,7 @@ impl RoomType {
                 | RoomType::DiningRoom
                 | RoomType::GymOrGames
                 | RoomType::Laundry
+                | RoomType::StoreFloor
         )
     }
 }
@@ -246,4 +266,44 @@ pub struct StairData {
     pub width: usize,
     pub length: usize,
     pub orientation: u8, // 0: Sube hacia +Z, 1: hacia +X, 2: hacia -Z, 3: hacia -X
+}
+
+/// Datos de cajón de estacionamiento para negocios comerciales.
+#[derive(Debug, Clone)]
+pub struct ParkingBayData {
+    pub position: Vector3,
+    pub size: Vector2, // ancho x largo (ej. 2.5m x 5.0m)
+    pub rotation_y: f32,
+}
+
+/// Datos de letrero gigante / tótem panorámico exterior.
+#[derive(Debug, Clone)]
+pub struct TotemSignData {
+    pub position: Vector3,
+    pub height: f32,
+    pub rotation_y: f32,
+}
+
+/// Datos de letrero de marquesina / fachada comercial.
+#[derive(Debug, Clone)]
+pub struct FasciaSignData {
+    pub position: Vector3,
+    pub size: Vector2,
+    pub rotation_y: f32,
+}
+
+/// Metadatos integrales de un negocio comercial procedural (ej. OTXO).
+#[derive(Debug, Clone, Default)]
+pub struct CommercialMetadata {
+    pub parking_bays: Vec<ParkingBayData>,
+    pub totem_sign: Option<TotemSignData>,
+    pub fascia_signs: Vec<FasciaSignData>,
+    pub bollards: Vec<Vector3>,
+    pub sidewalk_boxes: Vec<InstanceBox>,
+    pub ice_freezer: Option<Vector3>,
+    pub trash_bin: Option<Vector3>,
+    pub lateral_parking_side: u8, // 0: Ninguno (Frontal), 1: Oeste, 2: Este
+    pub has_lateral_showcase: bool,
+    pub lateral_window_span: (usize, usize),
+    pub entrance_type: u8, // 0: Centro, 1: Esquina, 2: Desplazada
 }

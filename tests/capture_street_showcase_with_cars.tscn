@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://b8xq4c2m8p5la"]
+
+[ext_resource type="Script" path="res://tests/capture_street_showcase_with_cars.gd" id="1_capt"]
+
+[node name="CaptureStreetShowcaseWithCars" type="Node3D"]
+script = ExtResource("1_capt")

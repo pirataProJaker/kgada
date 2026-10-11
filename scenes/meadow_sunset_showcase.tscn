@@ -3,10 +3,10 @@
 [ext_resource type="Script" path="res://scenes/meadow_sunset_showcase.gd" id="1_showcase"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_sunset"]
-sky_top_color = Color(0.26, 0.14, 0.40, 1)
-sky_horizon_color = Color(0.96, 0.52, 0.36, 1)
-ground_bottom_color = Color(0.12, 0.10, 0.08, 1)
-ground_horizon_color = Color(0.80, 0.44, 0.28, 1)
+sky_top_color = Color(0.28, 0.44, 0.72, 1)
+sky_horizon_color = Color(0.98, 0.60, 0.35, 1)
+ground_bottom_color = Color(0.12, 0.16, 0.10, 1)
+ground_horizon_color = Color(0.88, 0.52, 0.28, 1)
 sun_angle_max = 35.0
 
 [sub_resource type="Sky" id="Sky_sunset"]
@@ -15,14 +15,13 @@ sky_material = SubResource("ProceduralSkyMaterial_sunset")
 [sub_resource type="Environment" id="Environment_sunset"]
 background_mode = 2
 sky = SubResource("Sky_sunset")
-ambient_light_source = 3
-ambient_light_color = Color(0.52, 0.38, 0.54, 1)
-ambient_light_energy = 0.70
-ambient_light_sky_contribution = 0.50
+ambient_light_source = 2
+ambient_light_color = Color(0.45, 0.52, 0.62, 1)
+ambient_light_energy = 0.60
+ambient_light_sky_contribution = 0.45
 tonemap_mode = 2
-glow_enabled = true
-glow_intensity = 0.30
-glow_bloom = 0.15
+glow_enabled = false
+fog_enabled = false
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_terrain"]
 vertex_color_use_as_albedo = true
@@ -37,11 +36,12 @@ script = ExtResource("1_showcase")
 environment = SubResource("Environment_sunset")
 
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
-transform = Transform3D(0.819152, -0.198267, 0.538356, 0, 0.938006, 0.345388, -0.573576, -0.282924, 0.76837, 0, 15, 0)
-light_color = Color(1, 0.82, 0.65, 1)
-light_energy = 1.35
+transform = Transform3D(-0.965926, 0.0670396, -0.25, 0, 0.965926, 0.258819, 0.258819, 0.25, -0.933013, 0, 15, -15)
+light_color = Color(1, 0.84, 0.64, 1)
+light_energy = 1.45
 shadow_enabled = true
-directional_shadow_max_distance = 35.0
+directional_shadow_max_distance = 60.0
+directional_shadow_blend_splits = true
 
 [node name="Terrain" type="MeshInstance3D" parent="."]
 surface_material_override/0 = SubResource("StandardMaterial3D_terrain")
@@ -50,14 +50,16 @@ surface_material_override/0 = SubResource("StandardMaterial3D_terrain")
 
 [node name="Vegetation" type="Node3D" parent="."]
 
+[node name="Roses" type="Node3D" parent="."]
+
 [node name="CameraPivot" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.2, 0.9, -1.2)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2, -1.0)
 
 [node name="Camera3D" type="Camera3D" parent="CameraPivot"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 6.8)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 7.5)
 current = true
-fov = 48.0
-far = 250.0
+fov = 46.0
+far = 300.0
 
 [node name="HUD" type="CanvasLayer" parent="."]
 
@@ -94,16 +96,16 @@ layout_mode = 2
 [node name="LabelTitle" type="Label" parent="HUD/Margin/VBox/Panel/Margin/VBox"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 17
-text = "🌿 PLAY SECTOR X — PAISAJE BOTÁNICO NATURAL"
+text = "🌅 PLAY SECTOR X — ATARDECER EN EL PRADO DE ROSAS"
 
 [node name="LabelViews" type="Label" parent="HUD/Margin/VBox/Panel/Margin/VBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.85, 0.88, 0.92, 1)
 theme_override_font_sizes/font_size = 13
-text = "[1] Panorámica Atardecer  |  [2] Cresta de Lavandas  |  [3] Pradera de Margaritas"
+text = "[1] Panorámica Atardecer  |  [2] Rosas Únicas Macro  |  [3] Valle de Flores  |  [4] Cresta y Bosque"
 
 [node name="LabelControls" type="Label" parent="HUD/Margin/VBox/Panel/Margin/VBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.72, 0.75, 0.8, 1)
 theme_override_font_sizes/font_size = 12
-text = "[R] Nueva Semilla Aleatoria  |  [Arrastrar Ratón] Orbitar  |  [Rueda] Zoom"
+text = "[R] Nueva Semilla  |  [G] Modo Césped  |  [Arrastrar Ratón] Orbitar  |  [Rueda] Zoom"

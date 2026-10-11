@@ -25,6 +25,8 @@ const NightstandOakScript = preload("res://world/furniture/nightstand_oak.gd")
 const BedSingleOakScript = preload("res://world/furniture/bed_single_oak.gd")
 const WardrobeOakScript = preload("res://world/furniture/wardrobe_oak.gd")
 const SinkUnitWhiteScript = preload("res://world/furniture/sink_unit_white.gd")
+const CommercialShelfModularScript = preload("res://world/furniture/commercial_shelf_modular.gd")
+const CommercialRefrigeratorModularScript = preload("res://world/furniture/commercial_refrigerator_modular.gd")
 const FurniturePropsBuilderScript = preload("res://world/furniture/furniture_props_builder.gd")
 const PlanarPropsManagerScript = preload("res://world/furniture/planar_props_manager.gd")
 
@@ -46,6 +48,8 @@ var _nightstands: Array[Dictionary] = []
 var _beds: Array[Dictionary] = []
 var _wardrobes: Array[Dictionary] = []
 var _sink_units: Array[Dictionary] = []
+var _commercial_shelves: Array[Dictionary] = []
+var _commercial_coolers: Array[Dictionary] = []
 var _rugs: Array[Dictionary] = []
 var _planar_wall_props: Array[Dictionary] = []
 var _pictures: Array[Dictionary] = []
@@ -99,6 +103,8 @@ func clear() -> void:
 	_beds.clear()
 	_wardrobes.clear()
 	_sink_units.clear()
+	_commercial_shelves.clear()
+	_commercial_coolers.clear()
 	_rugs.clear()
 	_planar_wall_props.clear()
 	_pictures.clear()
@@ -245,6 +251,25 @@ func add_wardrobe(t: Transform3D) -> void:
 ## Registra un mueble lavaplatos blanco con grifo
 func add_sink_unit(t: Transform3D) -> void:
 	_sink_units.append({"transform": t})
+
+
+## Registra una estantería comercial modular (góndola) en el sistema de GPU Instancing
+func add_commercial_shelf(t: Transform3D, modules: int = 1, style: int = 0, preset: int = 0) -> void:
+	_commercial_shelves.append({
+		"transform": t,
+		"modules": maxi(1, modules),
+		"style": style,
+		"preset": preset
+	})
+
+
+## Registra una vitrina refrigerada comercial (1 puerta o 2 puertas) en GPU Instancing
+func add_commercial_refrigerator(t: Transform3D, type: int = 1, color: int = 0) -> void:
+	_commercial_coolers.append({
+		"transform": t,
+		"type": type,
+		"color": color
+	})
 
 
 ## Registra un plano de piso (alfombra, tapete, felpudo) en el sistema universal de planos 2D
@@ -441,6 +466,15 @@ func add_furniture_by_script(scr: Variant, t: Transform3D, extra_params: Diction
 		add_wardrobe(t)
 	elif scr == SinkUnitWhiteScript:
 		add_sink_unit(t)
+	elif scr == CommercialShelfModularScript:
+		var mods: int = extra_params.get("modules", 1)
+		var st: int = extra_params.get("style", 0)
+		var pre: int = extra_params.get("preset", 0)
+		add_commercial_shelf(t, mods, st, pre)
+	elif scr == CommercialRefrigeratorModularScript:
+		var c_type: int = extra_params.get("refrigerator_type", 1)
+		var c_col: int = extra_params.get("finish_color", 0)
+		add_commercial_refrigerator(t, c_type, c_col)
 
 
 # =========================================================================
@@ -481,6 +515,8 @@ func build(include_collisions: bool = true) -> void:
 	_build_beds()
 	_build_category("wardrobes", WardrobeOakScript.get_shared_mesh(), _wardrobes, "props_atlas", 0.65, 0.02, shared_mat)
 	_build_category("sink_units", SinkUnitWhiteScript.get_shared_mesh(), _sink_units, "props_atlas", 0.35, 0.15, shared_mat)
+	_build_commercial_shelves(shared_mat)
+	_build_commercial_coolers(shared_mat)
 	_build_rugs()
 	_build_planar_wall_props()
 	_build_category("pictures", FurniturePropsBuilderScript.get_picture_landscape_mesh(), _pictures, "props_atlas", 0.50, 0.05, shared_mat)
@@ -524,6 +560,35 @@ func build(include_collisions: bool = true) -> void:
 		_append_boxes_collision(_beds, BedSingleOakScript.get_collision_boxes())
 		_append_boxes_collision(_wardrobes, WardrobeOakScript.get_collision_boxes())
 		_append_boxes_collision(_sink_units, SinkUnitWhiteScript.get_collision_boxes())
+
+		# Colisiones de estanterías comerciales
+		for entry in _commercial_shelves:
+			var mods: int = entry.get("modules", 1)
+			var st: int = entry.get("style", 0)
+			var pre: int = entry.get("preset", 0)
+			var boxes := CommercialShelfModularScript.get_collision_boxes(mods, st, pre)
+			var t: Transform3D = entry["transform"]
+			for b in boxes:
+				var c_shape := CollisionShape3D.new()
+				var b_shape := BoxShape3D.new()
+				b_shape.size = b["size"]
+				c_shape.shape = b_shape
+				c_shape.transform = t * Transform3D(Basis.IDENTITY, b.get("position", Vector3.ZERO))
+				_collision_body.add_child(c_shape)
+
+		# Colisiones de vitrinas refrigeradas comerciales
+		for entry in _commercial_coolers:
+			var c_type: int = entry.get("type", 1)
+			var w: float = 1.00 if c_type == 0 else 1.80
+			var boxes := CommercialRefrigeratorModularScript.get_collision_boxes(c_type, w, 0.90, 2.05)
+			var t: Transform3D = entry["transform"]
+			for b in boxes:
+				var c_shape := CollisionShape3D.new()
+				var b_shape := BoxShape3D.new()
+				b_shape.size = b["size"]
+				c_shape.shape = b_shape
+				c_shape.transform = t * Transform3D(Basis.IDENTITY, b.get("position", Vector3.ZERO))
+				_collision_body.add_child(c_shape)
 
 		# Colisiones de primitivas
 		for entry in _primitive_cubes:
@@ -593,6 +658,103 @@ func _build_category(cat_name: String, mesh: Mesh, items: Array, default_layer_k
 	mmi.material_override = shared_mat
 	add_child(mmi)
 	_multimesh_nodes[cat_name] = mmi
+
+
+## Construye las estanterías comerciales modulares agrupando tramos de 1m en MultiMesh
+func _build_commercial_shelves(shared_mat: ShaderMaterial) -> void:
+	if _commercial_shelves.is_empty():
+		return
+
+	var modules_by_type: Dictionary = {}
+	for entry in _commercial_shelves:
+		var t: Transform3D = entry["transform"]
+		var mods: int = entry.get("modules", 1)
+		var st: int = entry.get("style", 0)
+		var pre: int = entry.get("preset", 0)
+		var type_key := "%d_%d" % [st, pre]
+		if not modules_by_type.has(type_key):
+			modules_by_type[type_key] = []
+
+		var total_w := float(mods) * 1.0
+		var start_x := -total_w * 0.5 + 0.5
+		for m in range(mods):
+			var mod_offset := Vector3(start_x + float(m) * 1.0, 0.0, 0.0)
+			var mod_t := t * Transform3D(Basis.IDENTITY, mod_offset)
+			modules_by_type[type_key].append(mod_t)
+
+	var layer_idx := FurnitureTextureManagerScript.get_texture_layer("commercial_shelf")
+
+	for type_key in modules_by_type:
+		var transforms: Array = modules_by_type[type_key]
+		if transforms.is_empty():
+			continue
+		var type_key_str: String = str(type_key)
+		var parts: PackedStringArray = type_key_str.split("_")
+		var st: int = int(parts[0])
+		var pre: int = int(parts[1])
+		var unit_mesh := CommercialShelfModularScript.get_shared_unit_mesh(st, pre)
+
+		var mm := MultiMesh.new()
+		mm.transform_format = MultiMesh.TRANSFORM_3D
+		mm.use_colors = true
+		mm.mesh = unit_mesh
+		mm.instance_count = transforms.size()
+
+		for i in range(transforms.size()):
+			mm.set_instance_transform(i, transforms[i])
+			mm.set_instance_color(i, Color(float(layer_idx) / 255.0, 0.45, 0.15, 1.0))
+
+		var mmi := MultiMeshInstance3D.new()
+		mmi.name = "CommercialShelves_" + type_key + "_MultiMesh"
+		mmi.multimesh = mm
+		mmi.material_override = shared_mat
+		add_child(mmi)
+		_multimesh_nodes["commercial_shelves_" + type_key] = mmi
+
+
+## Construye las vitrinas refrigeradas comerciales en GPU Instancing
+func _build_commercial_coolers(shared_mat: ShaderMaterial) -> void:
+	if _commercial_coolers.is_empty():
+		return
+
+	var coolers_by_type: Dictionary = {}
+	for entry in _commercial_coolers:
+		var c_type: int = entry.get("type", 1)
+		var c_color: int = entry.get("color", 0)
+		var key := "%d_%d" % [c_type, c_color]
+		if not coolers_by_type.has(key):
+			coolers_by_type[key] = []
+		coolers_by_type[key].append(entry["transform"])
+
+	var layer_idx := FurnitureTextureManagerScript.get_texture_layer("commercial_cooler")
+
+	for key in coolers_by_type:
+		var transforms: Array = coolers_by_type[key]
+		if transforms.is_empty():
+			continue
+		var key_str: String = str(key)
+		var parts: PackedStringArray = key_str.split("_")
+		var c_type: int = int(parts[0])
+		var c_color: int = int(parts[1])
+		var w: float = 1.00 if c_type == 0 else 1.80
+		var cooler_mesh := CommercialRefrigeratorModularScript.get_shared_body_mesh(c_type, c_color, w, 0.90, 2.05)
+
+		var mm := MultiMesh.new()
+		mm.transform_format = MultiMesh.TRANSFORM_3D
+		mm.use_colors = true
+		mm.mesh = cooler_mesh
+		mm.instance_count = transforms.size()
+
+		for i in range(transforms.size()):
+			mm.set_instance_transform(i, transforms[i])
+			mm.set_instance_color(i, Color(float(layer_idx) / 255.0, 0.35, 0.15, 1.0))
+
+		var mmi := MultiMeshInstance3D.new()
+		mmi.name = "CommercialCoolers_" + key + "_MultiMesh"
+		mmi.multimesh = mm
+		mmi.material_override = shared_mat
+		add_child(mmi)
+		_multimesh_nodes["commercial_coolers_" + key] = mmi
 
 
 ## Construye las camas con sus variantes de ropa de cama (40 patrones), estados y suciedad

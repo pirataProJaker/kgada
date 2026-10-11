@@ -50,7 +50,7 @@ void fragment() {
 
 	vec4 blended_albedo = col_x * blend_weights.x + col_y * blend_weights.y + col_z * blend_weights.z;
 
-	ALBEDO = blended_albedo.rgb;
+	ALBEDO = blended_albedo.rgb * COLOR.rgb;
 	ROUGHNESS = roughness;
 	METALLIC = 0.02;
 	SPECULAR = 0.2;

@@ -234,6 +234,19 @@ text = "Vsync"
 layout_mode = 2
 button_pressed = true
 
+[node name="ShadowsRow" type="HBoxContainer" parent="Panel/VBox/Content/GraphicsPanel"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="ShadowsLabel" type="Label" parent="Panel/VBox/Content/GraphicsPanel/ShadowsRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Sombras"
+
+[node name="ShadowsOption" type="OptionButton" parent="Panel/VBox/Content/GraphicsPanel/ShadowsRow"]
+layout_mode = 2
+item_count = 2
+
 [node name="Buttons" type="HBoxContainer" parent="Panel/VBox"]
 layout_mode = 2
 theme_override_constants/separation = 12

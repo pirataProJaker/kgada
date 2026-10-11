@@ -11,6 +11,7 @@ pub struct HouseMeshingResult {
     pub floors: Vec<InstanceBox>,
     pub carpentry: Vec<InstanceBox>,
     pub glass: Vec<InstanceBox>,
+    pub columns: Vec<InstanceBox>,
     pub doors: Vec<DoorInstance>,
     pub windows: Vec<WindowInstance>,
     pub wall_details: Vec<WallDetailInstance>,
@@ -31,13 +32,14 @@ impl HouseMeshingResult {
 
     pub fn all_solid_boxes(&self) -> Vec<InstanceBox> {
         let mut all = Vec::with_capacity(
-            self.walls_ext.len() + self.walls_int.len() + self.roofs.len() + self.floors.len() + self.carpentry.len()
+            self.walls_ext.len() + self.walls_int.len() + self.roofs.len() + self.floors.len() + self.carpentry.len() + self.columns.len()
         );
         all.extend_from_slice(&self.floors);
         all.extend_from_slice(&self.walls_ext);
         all.extend_from_slice(&self.walls_int);
         all.extend_from_slice(&self.roofs);
         all.extend_from_slice(&self.carpentry);
+        all.extend_from_slice(&self.columns);
         all
     }
 }
@@ -113,6 +115,7 @@ impl HouseMesher {
         let mut floors = Vec::new();
         let mut carpentry = Vec::new();
         let mut glass = Vec::new();
+        let mut columns = Vec::new();
         let mut doors = Vec::new();
         let mut windows = Vec::new();
         let mut col_boxes = Vec::new();
@@ -205,6 +208,17 @@ impl HouseMesher {
             }
         }
 
+        // Banquetas perimetrales elevadas de comercios (CommercialConvenience)
+        if let Some(comm) = &blueprint.commercial_meta {
+            for sb in &comm.sidewalk_boxes {
+                floors.push(*sb);
+                col_boxes.push(HouseCollisionBox {
+                    position: sb.position,
+                    size: sb.size,
+                });
+            }
+        }
+
         // ====================================================================
         // 2. TECHOS Y AZOTEAS MONOLÍTICAS CONTINUAS (Zero Seams / Zero Gaps)
         // ====================================================================
@@ -237,6 +251,37 @@ impl HouseMesher {
                     let size = Vector3::new(x1 - x0, 0.20, z1 - z0);
                     roofs.push(InstanceBox { position: pos, size, color: pal.roof });
                     col_boxes.push(HouseCollisionBox { position: pos, size });
+
+                    if blueprint.zone == HouseZoneType::CommercialConvenience {
+                        // Marquesina totalmente roja perimetral OTXO (sin franjas amarillas)
+                        let fascia_h = 1.05f32;
+                        let fascia_th = 0.35f32;
+                        let y_mid = h1 + 0.35;
+
+                        // Marquesina frontal Norte (Z0)
+                        if ext_n {
+                            let f_pos = Vector3::new((x0 + x1) * 0.5, y_mid, z0 - fascia_th * 0.5);
+                            let f_size = Vector3::new((x1 - x0) + fascia_th * 2.0, fascia_h, fascia_th);
+                            carpentry.push(InstanceBox { position: f_pos, size: f_size, color: pal.trim });
+                            col_boxes.push(HouseCollisionBox { position: f_pos, size: f_size });
+                        }
+
+                        // Marquesina lateral Oeste (X0)
+                        if ext_w {
+                            let f_pos = Vector3::new(x0 - fascia_th * 0.5, y_mid, (z0 + z1) * 0.5);
+                            let f_size = Vector3::new(fascia_th, fascia_h, (z1 - z0) + fascia_th * 2.0);
+                            carpentry.push(InstanceBox { position: f_pos, size: f_size, color: pal.trim });
+                            col_boxes.push(HouseCollisionBox { position: f_pos, size: f_size });
+                        }
+
+                        // Marquesina lateral Este (X1)
+                        if ext_e {
+                            let f_pos = Vector3::new(x1 + fascia_th * 0.5, y_mid, (z0 + z1) * 0.5);
+                            let f_size = Vector3::new(fascia_th, fascia_h, (z1 - z0) + fascia_th * 2.0);
+                            carpentry.push(InstanceBox { position: f_pos, size: f_size, color: pal.trim });
+                            col_boxes.push(HouseCollisionBox { position: f_pos, size: f_size });
+                        }
+                    }
                 }
             }
 
@@ -436,61 +481,172 @@ impl HouseMesher {
                             let span_open_north = Self::is_true_open_north(blueprint, span_start, span_end, z);
 
                             if is_main_door_z && door_x >= span_start && door_x < span_end {
-                                let door_w = 0.95f32;
-                                let door_h = 2.20f32;
-                                let min_jamb = 0.50f32; // Mocheta mínima obligatoria de 50cm
+                                if blueprint.zone == HouseZoneType::CommercialConvenience {
+                                    let door_w = 2.00f32;
+                                    let door_h = 2.40f32;
+                                    let col_w = 0.55f32;
+                                    let corner_col_w = 0.55f32;
+                                    let min_door_c = span_start_w + corner_col_w + door_w * 0.5;
+                                    let max_door_c = span_end_w - corner_col_w - door_w * 0.5;
+                                    let door_center = to_world_x(door_x as f32 + 0.5).clamp(min_door_c, max_door_c);
 
-                                // Puerta principal con margen de esquina garantizado
-                                let raw_door_center = to_world_x(door_x as f32 + 0.5);
-                                let min_door_center = span_start_w + ext_th + door_w * 0.5 + 0.20;
-                                let max_door_center = span_end_w - ext_th - door_w * 0.5 - 0.20;
-                                let door_center = if min_door_center <= max_door_center {
-                                    raw_door_center.clamp(min_door_center, max_door_center)
+                                    openings.push(WallOpening {
+                                        center: door_center,
+                                        width: door_w,
+                                        y_bottom: y_bot,
+                                        height: door_h,
+                                        is_door: true,
+                                        door_style: 0,
+                                        is_main_door: true,
+                                    });
+
+                                    // Ventanales panorámicos de tienda de conveniencia divididos por columnas simétricas o asimétricas
+                                    if span_open_north {
+                                        let inter_col_w = 0.50f32;
+
+                                        // Helper para poblar vanos panorámicos en un tramo entre columnas
+                                        let mut add_panoramic_wing = |w_start: f32, w_end: f32, ops: &mut Vec<WallOpening>| {
+                                            let w_avail = w_end - w_start;
+                                            if w_avail >= 1.40 {
+                                                if w_avail <= 3.80 {
+                                                    ops.push(WallOpening {
+                                                        center: (w_start + w_end) * 0.5,
+                                                        width: w_avail,
+                                                        y_bottom: y_bot + 0.25,
+                                                        height: 2.35,
+                                                        is_door: false,
+                                                        door_style: 0,
+                                                        is_main_door: false,
+                                                    });
+                                                } else if w_avail <= 7.00 {
+                                                    let pan_w = (w_avail - inter_col_w) * 0.5;
+                                                    let c1 = w_start + pan_w * 0.5;
+                                                    let c2 = w_end - pan_w * 0.5;
+                                                    ops.push(WallOpening {
+                                                        center: c1,
+                                                        width: pan_w,
+                                                        y_bottom: y_bot + 0.25,
+                                                        height: 2.35,
+                                                        is_door: false,
+                                                        door_style: 0,
+                                                        is_main_door: false,
+                                                    });
+                                                    ops.push(WallOpening {
+                                                        center: c2,
+                                                        width: pan_w,
+                                                        y_bottom: y_bot + 0.25,
+                                                        height: 2.35,
+                                                        is_door: false,
+                                                        door_style: 0,
+                                                        is_main_door: false,
+                                                    });
+                                                } else {
+                                                    let pan_w = (w_avail - 2.0 * inter_col_w) / 3.0;
+                                                    let c1 = w_start + pan_w * 0.5;
+                                                    let c2 = w_start + pan_w + inter_col_w + pan_w * 0.5;
+                                                    let c3 = w_end - pan_w * 0.5;
+                                                    ops.push(WallOpening {
+                                                        center: c1,
+                                                        width: pan_w,
+                                                        y_bottom: y_bot + 0.25,
+                                                        height: 2.35,
+                                                        is_door: false,
+                                                        door_style: 0,
+                                                        is_main_door: false,
+                                                    });
+                                                    ops.push(WallOpening {
+                                                        center: c2,
+                                                        width: pan_w,
+                                                        y_bottom: y_bot + 0.25,
+                                                        height: 2.35,
+                                                        is_door: false,
+                                                        door_style: 0,
+                                                        is_main_door: false,
+                                                    });
+                                                    ops.push(WallOpening {
+                                                        center: c3,
+                                                        width: pan_w,
+                                                        y_bottom: y_bot + 0.25,
+                                                        height: 2.35,
+                                                        is_door: false,
+                                                        door_style: 0,
+                                                        is_main_door: false,
+                                                    });
+                                                }
+                                            }
+                                        };
+
+                                        // Ala izquierda (Oeste de la puerta)
+                                        let l_start = span_start_w + corner_col_w;
+                                        let l_end = door_center - door_w * 0.5 - col_w;
+                                        if l_end > l_start {
+                                            add_panoramic_wing(l_start, l_end, &mut openings);
+                                        }
+
+                                        // Ala derecha (Este de la puerta)
+                                        let r_start = door_center + door_w * 0.5 + col_w;
+                                        let r_end = span_end_w - corner_col_w;
+                                        if r_end > r_start {
+                                            add_panoramic_wing(r_start, r_end, &mut openings);
+                                        }
+                                    }
                                 } else {
-                                    raw_door_center
-                                };
+                                    let door_w = 0.95f32;
+                                    let door_h = 2.20f32;
+                                    let min_jamb = 0.50f32; // Mocheta mínima obligatoria de 50cm
 
-                                openings.push(WallOpening {
-                                    center: door_center,
-                                    width: door_w,
-                                    y_bottom: y_bot,
-                                    height: door_h,
-                                    is_door: true,
-                                    door_style: { let s = door_style_counter % 8; door_style_counter += 1; s },
-                                    is_main_door: true,
-                                });
+                                    // Puerta principal con margen de esquina garantizado
+                                    let raw_door_center = to_world_x(door_x as f32 + 0.5);
+                                    let min_door_center = span_start_w + ext_th + door_w * 0.5 + 0.20;
+                                    let max_door_center = span_end_w - ext_th - door_w * 0.5 - 0.20;
+                                    let door_center = if min_door_center <= max_door_center {
+                                        raw_door_center.clamp(min_door_center, max_door_center)
+                                    } else {
+                                        raw_door_center
+                                    };
 
-                                // Ventanal de Sala con separación garantizada (únicamente si da al exterior abierto)
-                                if span_open_north {
-                                    let door_left = door_center - door_w * 0.5;
-                                    let door_right = door_center + door_w * 0.5;
-                                    let space_right = (span_end_w - ext_th - min_jamb) - door_right;
-                                    let space_left = door_left - (span_start_w + ext_th + min_jamb);
+                                    openings.push(WallOpening {
+                                        center: door_center,
+                                        width: door_w,
+                                        y_bottom: y_bot,
+                                        height: door_h,
+                                        is_door: true,
+                                        door_style: { let s = door_style_counter % 8; door_style_counter += 1; s },
+                                        is_main_door: true,
+                                    });
 
-                                    if space_right >= 1.60 {
-                                        let win_w = space_right.min(1.60);
-                                        let win_center = (door_right + min_jamb) + win_w * 0.5;
-                                        openings.push(WallOpening {
-                                            center: win_center,
-                                            width: win_w,
-                                            y_bottom: y_bot + 0.90,
-                                            height: 1.30,
-                                            is_door: false,
-                                            door_style: 0,
-                                            is_main_door: false,
-                                        });
-                                    } else if space_left >= 1.60 {
-                                        let win_w = space_left.min(1.60);
-                                        let win_center = (door_left - min_jamb) - win_w * 0.5;
-                                        openings.push(WallOpening {
-                                            center: win_center,
-                                            width: win_w,
-                                            y_bottom: y_bot + 0.90,
-                                            height: 1.30,
-                                            is_door: false,
-                                            door_style: 0,
-                                            is_main_door: false,
-                                        });
+                                    // Ventanal de Sala con separación garantizada (únicamente si da al exterior abierto)
+                                    if span_open_north {
+                                        let door_left = door_center - door_w * 0.5;
+                                        let door_right = door_center + door_w * 0.5;
+                                        let space_right = (span_end_w - ext_th - min_jamb) - door_right;
+                                        let space_left = door_left - (span_start_w + ext_th + min_jamb);
+
+                                        if space_right >= 1.60 {
+                                            let win_w = space_right.min(1.60);
+                                            let win_center = (door_right + min_jamb) + win_w * 0.5;
+                                            openings.push(WallOpening {
+                                                center: win_center,
+                                                width: win_w,
+                                                y_bottom: y_bot + 0.90,
+                                                height: 1.30,
+                                                is_door: false,
+                                                door_style: 0,
+                                                is_main_door: false,
+                                            });
+                                        } else if space_left >= 1.60 {
+                                            let win_w = space_left.min(1.60);
+                                            let win_center = (door_left - min_jamb) - win_w * 0.5;
+                                            openings.push(WallOpening {
+                                                center: win_center,
+                                                width: win_w,
+                                                y_bottom: y_bot + 0.90,
+                                                height: 1.30,
+                                                is_door: false,
+                                                door_style: 0,
+                                                is_main_door: false,
+                                            });
+                                        }
                                     }
                                 }
                             } else if span_open_north && span_len >= 2.0 {
@@ -740,6 +896,7 @@ impl HouseMesher {
                         target_walls,
                         &mut carpentry,
                         &mut glass,
+                        &mut columns,
                         &mut doors,
                         &mut windows,
                         &mut col_boxes,
@@ -754,6 +911,7 @@ impl HouseMesher {
                         is_exterior,
                         norm,
                         fl as u8,
+                        blueprint.zone,
                     );
 
                     // Registrar tramo exterior en all_wall_spans para el sistema centralizado de detalles
@@ -974,7 +1132,86 @@ impl HouseMesher {
                                     });
                                 }
                             } else if span_is_open_outside {
-                                if r_type == RoomType::Bathroom {
+                                if blueprint.zone == HouseZoneType::CommercialConvenience {
+                                    if let Some(comm) = &blueprint.commercial_meta {
+                                        let is_target_lateral = (comm.lateral_parking_side == 1 && r_west == 0)
+                                            || (comm.lateral_parking_side == 2 && r_east == 0);
+                                        if is_target_lateral && comm.has_lateral_showcase && r_type == RoomType::StoreFloor {
+                                            // Ventanales panorámicos de vitrina lateral OTXO con columnas estructurales
+                                            let corner_col_w = 0.55f32;
+                                            let inter_col_w = 0.50f32;
+                                            let w_avail = span_len - corner_col_w * 2.0;
+                                            if w_avail >= 1.40 {
+                                                if w_avail <= 3.80 {
+                                                    openings.push(WallOpening {
+                                                        center: span_center,
+                                                        width: w_avail,
+                                                        y_bottom: y_bot + 0.25,
+                                                        height: 2.35,
+                                                        is_door: false,
+                                                        door_style: 0,
+                                                        is_main_door: false,
+                                                    });
+                                                } else if w_avail <= 7.00 {
+                                                    let pan_w = (w_avail - inter_col_w) * 0.5;
+                                                    let z1 = span_start_w + corner_col_w + pan_w * 0.5;
+                                                    let z2 = span_end_w - corner_col_w - pan_w * 0.5;
+                                                    openings.push(WallOpening {
+                                                        center: z1,
+                                                        width: pan_w,
+                                                        y_bottom: y_bot + 0.25,
+                                                        height: 2.35,
+                                                        is_door: false,
+                                                        door_style: 0,
+                                                        is_main_door: false,
+                                                    });
+                                                    openings.push(WallOpening {
+                                                        center: z2,
+                                                        width: pan_w,
+                                                        y_bottom: y_bot + 0.25,
+                                                        height: 2.35,
+                                                        is_door: false,
+                                                        door_style: 0,
+                                                        is_main_door: false,
+                                                    });
+                                                } else {
+                                                    let pan_w = (w_avail - 2.0 * inter_col_w) / 3.0;
+                                                    let z1 = span_start_w + corner_col_w + pan_w * 0.5;
+                                                    let z2 = span_start_w + corner_col_w + pan_w + inter_col_w + pan_w * 0.5;
+                                                    let z3 = span_end_w - corner_col_w - pan_w * 0.5;
+                                                    openings.push(WallOpening {
+                                                        center: z1,
+                                                        width: pan_w,
+                                                        y_bottom: y_bot + 0.25,
+                                                        height: 2.35,
+                                                        is_door: false,
+                                                        door_style: 0,
+                                                        is_main_door: false,
+                                                    });
+                                                    openings.push(WallOpening {
+                                                        center: z2,
+                                                        width: pan_w,
+                                                        y_bottom: y_bot + 0.25,
+                                                        height: 2.35,
+                                                        is_door: false,
+                                                        door_style: 0,
+                                                        is_main_door: false,
+                                                    });
+                                                    openings.push(WallOpening {
+                                                        center: z3,
+                                                        width: pan_w,
+                                                        y_bottom: y_bot + 0.25,
+                                                        height: 2.35,
+                                                        is_door: false,
+                                                        door_style: 0,
+                                                        is_main_door: false,
+                                                    });
+                                                }
+                                            }
+                                        }
+                                        // Si no es el lateral con vitrina o es cuarto frío/bodega, no colocamos ventana residencial (muro comercial ciego limpio).
+                                    }
+                                } else if r_type == RoomType::Bathroom {
                                     if span_len >= 1.5 {
                                         openings.push(WallOpening {
                                             center: span_center,
@@ -1100,6 +1337,7 @@ impl HouseMesher {
                         target_walls,
                         &mut carpentry,
                         &mut glass,
+                        &mut columns,
                         &mut doors,
                         &mut windows,
                         &mut col_boxes,
@@ -1114,6 +1352,7 @@ impl HouseMesher {
                         is_exterior,
                         norm,
                         fl as u8,
+                        blueprint.zone,
                     );
 
                     // Registrar tramo exterior en all_wall_spans para el sistema centralizado de detalles
@@ -1177,6 +1416,16 @@ impl HouseMesher {
                 let lid_pos = Vector3::new(x_c, ty + 1.55 + 0.05, z_c);
                 let lid_size = Vector3::new(0.60, 0.10, 0.60);
                 carpentry.push(InstanceBox { position: lid_pos, size: lid_size, color: pal.tinaco });
+
+                if blueprint.zone == HouseZoneType::CommercialConvenience {
+                    // Condensador de aire acondicionado 1
+                    let ac_pos1 = Vector3::new(x_c - 1.8, ty + 0.45, z_c);
+                    let ac_size = Vector3::new(1.30, 0.90, 1.00);
+                    carpentry.push(InstanceBox { position: ac_pos1, size: ac_size, color: Color::from_rgb(0.68, 0.68, 0.70) });
+                    // Condensador de aire acondicionado 2
+                    let ac_pos2 = Vector3::new(x_c + 1.8, ty + 0.45, z_c);
+                    carpentry.push(InstanceBox { position: ac_pos2, size: ac_size, color: Color::from_rgb(0.68, 0.68, 0.70) });
+                }
             }
         }
 
@@ -1197,6 +1446,7 @@ impl HouseMesher {
             floors,
             carpentry,
             glass,
+            columns,
             doors,
             windows,
             wall_details,
@@ -1324,6 +1574,7 @@ impl HouseMesher {
         walls: &mut Vec<InstanceBox>,
         carpentry: &mut Vec<InstanceBox>,
         glass: &mut Vec<InstanceBox>,
+        columns: &mut Vec<InstanceBox>,
         doors: &mut Vec<DoorInstance>,
         windows: &mut Vec<WindowInstance>,
         col_boxes: &mut Vec<HouseCollisionBox>,
@@ -1338,6 +1589,7 @@ impl HouseMesher {
         is_exterior: bool,
         wall_normal: Vector3,
         floor: u8,
+        zone: HouseZoneType,
     ) {
         if x_end <= x_start {
             return;
@@ -1353,10 +1605,58 @@ impl HouseMesher {
 
             if op_left > cur_x {
                 let seg_w = op_left - cur_x;
-                let center = Vector3::new(cur_x + seg_w * 0.5, y_bot + wall_h * 0.5, z_pos);
-                let size = Vector3::new(seg_w, wall_h, thick);
-                walls.push(InstanceBox { position: center, size, color: wall_color });
-                col_boxes.push(HouseCollisionBox { position: center, size });
+                let is_commercial_column = is_exterior && zone == HouseZoneType::CommercialConvenience && seg_w <= 1.35;
+                if is_commercial_column {
+                    let col_depth = thick + 0.12;
+                    let col_z = z_pos + wall_normal.z * 0.06;
+                    let col_cx = cur_x + seg_w * 0.5;
+
+                    // Altura del fuste de columna: bajo la viga continua amarilla (hasta 2.60m)
+                    let col_h = (wall_h - 0.60).max(2.40);
+
+                    // 1. Fuste principal de la columna (charcoal gray calibrado)
+                    columns.push(InstanceBox {
+                        position: Vector3::new(col_cx, y_bot + col_h * 0.5, col_z),
+                        size: Vector3::new(seg_w, col_h, col_depth),
+                        color: Color::from_rgb(0.48, 0.52, 0.55),
+                    });
+
+                    // 2. Basamento / Zócalo inferior (ancla sólida a la banqueta)
+                    let plinth_h = 0.32f32;
+                    columns.push(InstanceBox {
+                        position: Vector3::new(col_cx, y_bot + plinth_h * 0.5, col_z + wall_normal.z * 0.02),
+                        size: Vector3::new(seg_w + 0.06, plinth_h, col_depth + 0.04),
+                        color: Color::from_rgb(0.38, 0.42, 0.45),
+                    });
+
+                    // 3. Capitel superior (remate bajo la viga continua amarilla)
+                    let cap_h = 0.16f32;
+                    columns.push(InstanceBox {
+                        position: Vector3::new(col_cx, y_bot + col_h - cap_h * 0.5, col_z + wall_normal.z * 0.015),
+                        size: Vector3::new(seg_w + 0.04, cap_h, col_depth + 0.03),
+                        color: Color::from_rgb(0.42, 0.46, 0.50),
+                    });
+
+                    // 4. Viga continua exterior amarilla sobre la columna (unifica toda la franja superior)
+                    if wall_h > col_h {
+                        let beam_h = wall_h - col_h;
+                        walls.push(InstanceBox {
+                            position: Vector3::new(col_cx, y_bot + col_h + beam_h * 0.5, z_pos),
+                            size: Vector3::new(seg_w, beam_h, thick),
+                            color: wall_color,
+                        });
+                    }
+
+                    col_boxes.push(HouseCollisionBox {
+                        position: Vector3::new(col_cx, y_bot + col_h * 0.5, col_z),
+                        size: Vector3::new(seg_w, col_h, col_depth),
+                    });
+                } else {
+                    let center = Vector3::new(cur_x + seg_w * 0.5, y_bot + wall_h * 0.5, z_pos);
+                    let size = Vector3::new(seg_w, wall_h, thick);
+                    walls.push(InstanceBox { position: center, size, color: wall_color });
+                    col_boxes.push(HouseCollisionBox { position: center, size });
+                }
             }
 
             let op_w = op_right - op_left;
@@ -1365,10 +1665,24 @@ impl HouseMesher {
             // Antepecho inferior
             if op.y_bottom > y_bot {
                 let sill_h = op.y_bottom - y_bot;
-                let center = Vector3::new(op_center_x, y_bot + sill_h * 0.5, z_pos);
-                let size = Vector3::new(op_w, sill_h, thick);
-                walls.push(InstanceBox { position: center, size, color: wall_color });
-                col_boxes.push(HouseCollisionBox { position: center, size });
+                if is_exterior && zone == HouseZoneType::CommercialConvenience {
+                    let sill_depth = thick + 0.04;
+                    let sill_z = z_pos + wall_normal.z * 0.02;
+                    columns.push(InstanceBox {
+                        position: Vector3::new(op_center_x, y_bot + sill_h * 0.5, sill_z),
+                        size: Vector3::new(op_w, sill_h, sill_depth),
+                        color: Color::from_rgb(0.45, 0.48, 0.52),
+                    });
+                    col_boxes.push(HouseCollisionBox {
+                        position: Vector3::new(op_center_x, y_bot + sill_h * 0.5, sill_z),
+                        size: Vector3::new(op_w, sill_h, sill_depth),
+                    });
+                } else {
+                    let center = Vector3::new(op_center_x, y_bot + sill_h * 0.5, z_pos);
+                    let size = Vector3::new(op_w, sill_h, thick);
+                    walls.push(InstanceBox { position: center, size, color: wall_color });
+                    col_boxes.push(HouseCollisionBox { position: center, size });
+                }
             }
 
             // Dintel superior
@@ -1450,10 +1764,56 @@ impl HouseMesher {
 
         if cur_x < x_end {
             let seg_w = x_end - cur_x;
-            let center = Vector3::new(cur_x + seg_w * 0.5, y_bot + wall_h * 0.5, z_pos);
-            let size = Vector3::new(seg_w, wall_h, thick);
-            walls.push(InstanceBox { position: center, size, color: wall_color });
-            col_boxes.push(HouseCollisionBox { position: center, size });
+            let is_commercial_column = is_exterior && zone == HouseZoneType::CommercialConvenience && seg_w <= 1.35;
+            if is_commercial_column {
+                let col_depth = thick + 0.12;
+                let col_z = z_pos + wall_normal.z * 0.06;
+                let col_cx = cur_x + seg_w * 0.5;
+                let col_h = (wall_h - 0.60).max(2.40);
+
+                // 1. Fuste principal de la columna (charcoal gray calibrado)
+                columns.push(InstanceBox {
+                    position: Vector3::new(col_cx, y_bot + col_h * 0.5, col_z),
+                    size: Vector3::new(seg_w, col_h, col_depth),
+                    color: Color::from_rgb(0.48, 0.52, 0.55),
+                });
+
+                // 2. Basamento / Zócalo inferior (ancla sólida a la banqueta)
+                let plinth_h = 0.32f32;
+                columns.push(InstanceBox {
+                    position: Vector3::new(col_cx, y_bot + plinth_h * 0.5, col_z + wall_normal.z * 0.02),
+                    size: Vector3::new(seg_w + 0.06, plinth_h, col_depth + 0.04),
+                    color: Color::from_rgb(0.38, 0.42, 0.45),
+                });
+
+                // 3. Capitel superior (remate bajo la viga continua amarilla)
+                let cap_h = 0.16f32;
+                columns.push(InstanceBox {
+                    position: Vector3::new(col_cx, y_bot + col_h - cap_h * 0.5, col_z + wall_normal.z * 0.015),
+                    size: Vector3::new(seg_w + 0.04, cap_h, col_depth + 0.03),
+                    color: Color::from_rgb(0.42, 0.46, 0.50),
+                });
+
+                // 4. Viga continua exterior amarilla sobre la columna (unifica toda la franja superior)
+                if wall_h > col_h {
+                    let beam_h = wall_h - col_h;
+                    walls.push(InstanceBox {
+                        position: Vector3::new(col_cx, y_bot + col_h + beam_h * 0.5, z_pos),
+                        size: Vector3::new(seg_w, beam_h, thick),
+                        color: wall_color,
+                    });
+                }
+
+                col_boxes.push(HouseCollisionBox {
+                    position: Vector3::new(col_cx, y_bot + col_h * 0.5, col_z),
+                    size: Vector3::new(seg_w, col_h, col_depth),
+                });
+            } else {
+                let center = Vector3::new(cur_x + seg_w * 0.5, y_bot + wall_h * 0.5, z_pos);
+                let size = Vector3::new(seg_w, wall_h, thick);
+                walls.push(InstanceBox { position: center, size, color: wall_color });
+                col_boxes.push(HouseCollisionBox { position: center, size });
+            }
         }
     }
 
@@ -1462,6 +1822,7 @@ impl HouseMesher {
         walls: &mut Vec<InstanceBox>,
         carpentry: &mut Vec<InstanceBox>,
         glass: &mut Vec<InstanceBox>,
+        columns: &mut Vec<InstanceBox>,
         doors: &mut Vec<DoorInstance>,
         windows: &mut Vec<WindowInstance>,
         col_boxes: &mut Vec<HouseCollisionBox>,
@@ -1476,6 +1837,7 @@ impl HouseMesher {
         is_exterior: bool,
         wall_normal: Vector3,
         floor: u8,
+        zone: HouseZoneType,
     ) {
         if z_end <= z_start {
             return;
@@ -1491,10 +1853,56 @@ impl HouseMesher {
 
             if op_top > cur_z {
                 let seg_d = op_top - cur_z;
-                let center = Vector3::new(x_pos, y_bot + wall_h * 0.5, cur_z + seg_d * 0.5);
-                let size = Vector3::new(thick, wall_h, seg_d);
-                walls.push(InstanceBox { position: center, size, color: wall_color });
-                col_boxes.push(HouseCollisionBox { position: center, size });
+                let is_commercial_column = is_exterior && zone == HouseZoneType::CommercialConvenience && seg_d <= 1.35;
+                if is_commercial_column {
+                    let col_depth = thick + 0.12;
+                    let col_x = x_pos + wall_normal.x * 0.06;
+                    let col_cz = cur_z + seg_d * 0.5;
+                    let col_h = (wall_h - 0.60).max(2.40);
+
+                    // 1. Fuste principal de la columna (charcoal gray calibrado)
+                    columns.push(InstanceBox {
+                        position: Vector3::new(col_x, y_bot + col_h * 0.5, col_cz),
+                        size: Vector3::new(col_depth, wall_h, seg_d),
+                        color: Color::from_rgb(0.48, 0.52, 0.55),
+                    });
+
+                    // 2. Basamento / Zócalo inferior (ancla sólida a la banqueta)
+                    let plinth_h = 0.32f32;
+                    columns.push(InstanceBox {
+                        position: Vector3::new(col_x + wall_normal.x * 0.02, y_bot + plinth_h * 0.5, col_cz),
+                        size: Vector3::new(col_depth + 0.04, plinth_h, seg_d + 0.06),
+                        color: Color::from_rgb(0.38, 0.42, 0.45),
+                    });
+
+                    // 3. Capitel superior (remate bajo la viga continua amarilla)
+                    let cap_h = 0.16f32;
+                    columns.push(InstanceBox {
+                        position: Vector3::new(col_x + wall_normal.x * 0.015, y_bot + col_h - cap_h * 0.5, col_cz),
+                        size: Vector3::new(col_depth + 0.03, cap_h, seg_d + 0.04),
+                        color: Color::from_rgb(0.42, 0.46, 0.50),
+                    });
+
+                    // 4. Viga continua exterior amarilla sobre la columna (unifica toda la franja superior)
+                    if wall_h > col_h {
+                        let beam_h = wall_h - col_h;
+                        walls.push(InstanceBox {
+                            position: Vector3::new(x_pos, y_bot + col_h + beam_h * 0.5, col_cz),
+                            size: Vector3::new(thick, beam_h, seg_d),
+                            color: wall_color,
+                        });
+                    }
+
+                    col_boxes.push(HouseCollisionBox {
+                        position: Vector3::new(col_x, y_bot + col_h * 0.5, col_cz),
+                        size: Vector3::new(col_depth, wall_h, seg_d),
+                    });
+                } else {
+                    let center = Vector3::new(x_pos, y_bot + wall_h * 0.5, cur_z + seg_d * 0.5);
+                    let size = Vector3::new(thick, wall_h, seg_d);
+                    walls.push(InstanceBox { position: center, size, color: wall_color });
+                    col_boxes.push(HouseCollisionBox { position: center, size });
+                }
             }
 
             let op_d = op_bot - op_top;
@@ -1503,10 +1911,24 @@ impl HouseMesher {
             // Antepecho inferior
             if op.y_bottom > y_bot {
                 let sill_h = op.y_bottom - y_bot;
-                let center = Vector3::new(x_pos, y_bot + sill_h * 0.5, op_center_z);
-                let size = Vector3::new(thick, sill_h, op_d);
-                walls.push(InstanceBox { position: center, size, color: wall_color });
-                col_boxes.push(HouseCollisionBox { position: center, size });
+                if is_exterior && zone == HouseZoneType::CommercialConvenience {
+                    let sill_depth = thick + 0.04;
+                    let sill_x = x_pos + wall_normal.x * 0.02;
+                    columns.push(InstanceBox {
+                        position: Vector3::new(sill_x, y_bot + sill_h * 0.5, op_center_z),
+                        size: Vector3::new(sill_depth, sill_h, op_d),
+                        color: Color::from_rgb(0.45, 0.48, 0.52),
+                    });
+                    col_boxes.push(HouseCollisionBox {
+                        position: Vector3::new(sill_x, y_bot + sill_h * 0.5, op_center_z),
+                        size: Vector3::new(sill_depth, sill_h, op_d),
+                    });
+                } else {
+                    let center = Vector3::new(x_pos, y_bot + sill_h * 0.5, op_center_z);
+                    let size = Vector3::new(thick, sill_h, op_d);
+                    walls.push(InstanceBox { position: center, size, color: wall_color });
+                    col_boxes.push(HouseCollisionBox { position: center, size });
+                }
             }
 
             // Dintel superior
@@ -1585,10 +2007,56 @@ impl HouseMesher {
 
         if cur_z < z_end {
             let seg_d = z_end - cur_z;
-            let center = Vector3::new(x_pos, y_bot + wall_h * 0.5, cur_z + seg_d * 0.5);
-            let size = Vector3::new(thick, wall_h, seg_d);
-            walls.push(InstanceBox { position: center, size, color: wall_color });
-            col_boxes.push(HouseCollisionBox { position: center, size });
+            let is_commercial_column = is_exterior && zone == HouseZoneType::CommercialConvenience && seg_d <= 1.35;
+            if is_commercial_column {
+                let col_depth = thick + 0.12;
+                let col_x = x_pos + wall_normal.x * 0.06;
+                let col_cz = cur_z + seg_d * 0.5;
+                let col_h = (wall_h - 0.60).max(2.40);
+
+                // 1. Fuste principal de la columna (charcoal gray calibrado)
+                columns.push(InstanceBox {
+                    position: Vector3::new(col_x, y_bot + col_h * 0.5, col_cz),
+                    size: Vector3::new(col_depth, wall_h, seg_d),
+                    color: Color::from_rgb(0.48, 0.52, 0.55),
+                });
+
+                // 2. Basamento / Zócalo inferior (ancla sólida a la banqueta)
+                let plinth_h = 0.32f32;
+                columns.push(InstanceBox {
+                    position: Vector3::new(col_x + wall_normal.x * 0.02, y_bot + plinth_h * 0.5, col_cz),
+                    size: Vector3::new(col_depth + 0.04, plinth_h, seg_d + 0.06),
+                    color: Color::from_rgb(0.38, 0.42, 0.45),
+                });
+
+                // 3. Capitel superior (remate bajo la viga continua amarilla)
+                let cap_h = 0.16f32;
+                columns.push(InstanceBox {
+                    position: Vector3::new(col_x + wall_normal.x * 0.015, y_bot + col_h - cap_h * 0.5, col_cz),
+                    size: Vector3::new(col_depth + 0.03, cap_h, seg_d + 0.04),
+                    color: Color::from_rgb(0.42, 0.46, 0.50),
+                });
+
+                // 4. Viga continua exterior amarilla sobre la columna (unifica toda la franja superior)
+                if wall_h > col_h {
+                    let beam_h = wall_h - col_h;
+                    walls.push(InstanceBox {
+                        position: Vector3::new(x_pos, y_bot + col_h + beam_h * 0.5, col_cz),
+                        size: Vector3::new(thick, beam_h, seg_d),
+                        color: wall_color,
+                    });
+                }
+
+                col_boxes.push(HouseCollisionBox {
+                    position: Vector3::new(col_x, y_bot + col_h * 0.5, col_cz),
+                    size: Vector3::new(col_depth, wall_h, seg_d),
+                });
+            } else {
+                let center = Vector3::new(x_pos, y_bot + wall_h * 0.5, cur_z + seg_d * 0.5);
+                let size = Vector3::new(thick, wall_h, seg_d);
+                walls.push(InstanceBox { position: center, size, color: wall_color });
+                col_boxes.push(HouseCollisionBox { position: center, size });
+            }
         }
     }
 }

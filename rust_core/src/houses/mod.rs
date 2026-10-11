@@ -37,4 +37,36 @@ mod tests {
         assert!(total_2story > 0);
         assert!(with_stairs > 0);
     }
+
+    #[test]
+    fn test_commercial_convenience_otxo() {
+        for seed in 2000..2020 {
+            // Probar lote estándar (14x16)
+            let bp1 = HouseGeneratorCore::generate(14, 16, HouseZoneType::CommercialConvenience, seed);
+            assert_eq!(bp1.total_floors, 1);
+            assert!(bp1.commercial_meta.is_some());
+            let meta1 = bp1.commercial_meta.as_ref().unwrap();
+            assert!(!meta1.parking_bays.is_empty(), "Debe tener cajones de estacionamiento");
+            assert!(meta1.totem_sign.is_some(), "Debe tener tótem gigante exterior");
+            assert!(!meta1.fascia_signs.is_empty(), "Debe tener letrero de fachada");
+            assert!(!meta1.bollards.is_empty(), "Debe tener bolardos protectores");
+            assert!(bp1.rooms.iter().any(|r| r.room_type == RoomType::StoreFloor), "Debe tener piso de venta");
+            assert!(bp1.rooms.iter().any(|r| r.room_type == RoomType::ColdRoom), "Debe tener cuarto frío");
+            assert!(bp1.rooms.iter().any(|r| r.room_type == RoomType::Storage), "Debe tener bodega");
+
+            let mesh1 = HouseMesher::build_mesh(&bp1, true);
+            assert!(!mesh1.walls_ext.is_empty());
+            assert!(!mesh1.glass.is_empty(), "Debe tener ventanales de cristal al frente");
+            assert!(!mesh1.doors.is_empty(), "Debe tener puerta de acceso");
+
+            // Probar lote grande en esquina (18x18)
+            let bp2 = HouseGeneratorCore::generate(18, 18, HouseZoneType::CommercialConvenience, seed);
+            assert_eq!(bp2.total_floors, 1);
+            let meta2 = bp2.commercial_meta.as_ref().unwrap();
+            assert!(meta2.parking_bays.len() >= 3);
+            let mesh2 = HouseMesher::build_mesh(&bp2, true);
+            assert!(!mesh2.walls_ext.is_empty());
+        }
+    }
 }
+

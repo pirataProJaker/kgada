@@ -1,3 +1,14 @@
+// ==============================================================================
+// SHADER PRINCIPAL DE TERRENO Y SUELOS DEL MUNDO (WORLD GROUND / PIXEL TERRAIN)
+// ==============================================================================
+// Este es el shader del terreno oficial del mundo ('world'). Genera proceduralmente
+// las "texturas" retro PSX de ruido de pixel verde (pasto: grass_g1 a grass_g5)
+// y marrón (tierra/mantillo: dirt_d1 a dirt_d5) por GPU sin requerir archivos PNG.
+// Usado en:
+// - Chunks del mundo (world/chunk_manager.gd)
+// - Camellones, jardineras y bulevares (world/city/procedural_road_materials.gd)
+// ==============================================================================
+
 shader_type spatial;
 render_mode diffuse_lambert, specular_disabled, vertex_lighting, cull_disabled;
 
@@ -53,6 +64,8 @@ uniform vec4 dirt_d3 : source_color = vec4(0.30, 0.21, 0.13, 1.0); // Tierra med
 uniform vec4 dirt_d4 : source_color = vec4(0.38, 0.28, 0.17, 1.0); // Tierra ocre iluminada
 uniform vec4 dirt_d5 : source_color = vec4(0.47, 0.35, 0.22, 1.0); // Tierra seca / calva clara
 
+uniform bool force_dirt = false;                                      // Si es true, renderiza 100% tierra con ruido de píxel
+uniform bool force_grass = false;                                     // Si es true, renderiza 100% pasto con ruido de píxel
 uniform bool use_vertex_dirt = false;                                // Si es true, lee COLOR.r (usado en showcase)
 uniform bool use_procedural_biomes = true;                            // Si es true y use_vertex_dirt es false, calcula biomas por coordenadas de mundo
 
@@ -140,25 +153,31 @@ void fragment() {
 		}
 
 		// Transición de suelo (Césped vs Tierra) con dithering pixelado auténtico de PSX
-		float dirt_amount = 0.0;
-		if (use_vertex_dirt) {
-			dirt_amount = clamp(vertex_color.r, 0.0, 1.0);
-		} else if (use_procedural_biomes) {
-			// Escala macro regional (~2,000m por bioma extenso)
-			float b1 = sin(snapped_pos.x * 0.0031 + sin(snapped_pos.z * 0.0023) * 1.25);
-			float b2 = sin(snapped_pos.z * 0.0028 + sin(snapped_pos.x * 0.0021) * 1.25);
-			float biome_n = (b1 + b2) * 0.5;
-			dirt_amount = smoothstep(-0.05, 0.25, biome_n);
-		}
-
-		// El suelo es verde vivo y pastoso por defecto en todos los biomas.
-		// La tierra marrón aparece con muy baja probabilidad (solo pequeñas calvas y parches orgánicos sutiles).
 		vec3 ground_color = pixel_green;
-		if (dirt_amount > 0.001) {
-			float patch_noise = sin(snapped_pos.x * 0.07 + sin(snapped_pos.z * 0.05) * 1.5) * 0.5 + 0.5;
-			float dirt_chance = dirt_amount * 0.08 * patch_noise;
-			if (h < dirt_chance) {
-				ground_color = pixel_dirt;
+		if (force_dirt) {
+			ground_color = pixel_dirt;
+		} else if (force_grass) {
+			ground_color = pixel_green;
+		} else {
+			float dirt_amount = 0.0;
+			if (use_vertex_dirt) {
+				dirt_amount = clamp(vertex_color.r, 0.0, 1.0);
+			} else if (use_procedural_biomes) {
+				// Escala macro regional (~2,000m por bioma extenso)
+				float b1 = sin(snapped_pos.x * 0.0031 + sin(snapped_pos.z * 0.0023) * 1.25);
+				float b2 = sin(snapped_pos.z * 0.0028 + sin(snapped_pos.x * 0.0021) * 1.25);
+				float biome_n = (b1 + b2) * 0.5;
+				dirt_amount = smoothstep(-0.05, 0.25, biome_n);
+			}
+
+			// El suelo es verde vivo y pastoso por defecto en todos los biomas.
+			// La tierra marrón aparece con muy baja probabilidad (solo pequeñas calvas y parches orgánicos sutiles).
+			if (dirt_amount > 0.001) {
+				float patch_noise = sin(snapped_pos.x * 0.07 + sin(snapped_pos.z * 0.05) * 1.5) * 0.5 + 0.5;
+				float dirt_chance = dirt_amount * 0.08 * patch_noise;
+				if (h < dirt_chance) {
+					ground_color = pixel_dirt;
+				}
 			}
 		}
 
@@ -166,7 +185,7 @@ void fragment() {
 		float slope = abs(world_normal.y);
 		vec3 final_ground = ground_color;
 
-		if (slope < slope_cliff_threshold) {
+		if (!force_dirt && !force_grass && slope < slope_cliff_threshold) {
 			float cliff_t = smoothstep(slope_cliff_threshold * 0.7, slope_cliff_threshold, slope);
 			vec2 side_cell = floor(snapped_pos.xy / pixel_size) + floor(snapped_pos.zy / pixel_size);
 			float rock_rnd = hash_cell_2d(side_cell);

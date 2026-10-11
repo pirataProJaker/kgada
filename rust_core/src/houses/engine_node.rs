@@ -47,6 +47,7 @@ impl ProceduralHouseEngine {
         let solid_boxes = meshing.solid_interior_and_structure_boxes();
         let solid_mm = Self::build_multimesh(&solid_boxes);
         let glass_mm = Self::build_multimesh(&meshing.glass);
+        let columns_mm = Self::build_multimesh(&meshing.columns);
 
         // Cajas de colisión física para armar el StaticBody3D instantáneo
         let mut col_array = VarArray::new();
@@ -66,6 +67,9 @@ impl ProceduralHouseEngine {
         }
         if let Some(mm) = glass_mm {
             result.set("glass_multimesh", mm.to_variant());
+        }
+        if let Some(mm) = columns_mm {
+            result.set("columns_multimesh", mm.to_variant());
         }
 
         result.set("collision_boxes", col_array.to_variant());
@@ -174,6 +178,60 @@ impl ProceduralHouseEngine {
         pal_dict.set("window_glass", blueprint.palette.window_glass.to_variant());
         pal_dict.set("tinaco", blueprint.palette.tinaco.to_variant());
         result.set("palette", pal_dict.to_variant());
+
+        // Metadatos comerciales de tiendas y negocios (CommercialConvenience)
+        if let Some(comm) = &blueprint.commercial_meta {
+            let mut comm_dict = VarDictionary::new();
+
+            let mut bays_arr = VarArray::new();
+            for bay in &comm.parking_bays {
+                let mut bd = VarDictionary::new();
+                bd.set("position", bay.position.to_variant());
+                bd.set("size", bay.size.to_variant());
+                bd.set("rotation_y", bay.rotation_y.to_variant());
+                bays_arr.push(&bd.to_variant());
+            }
+            comm_dict.set("parking_bays", bays_arr.to_variant());
+
+            if let Some(totem) = &comm.totem_sign {
+                let mut td = VarDictionary::new();
+                td.set("position", totem.position.to_variant());
+                td.set("height", totem.height.to_variant());
+                td.set("rotation_y", totem.rotation_y.to_variant());
+                comm_dict.set("totem_sign", td.to_variant());
+            }
+
+            let mut signs_arr = VarArray::new();
+            for s in &comm.fascia_signs {
+                let mut sd = VarDictionary::new();
+                sd.set("position", s.position.to_variant());
+                sd.set("size", s.size.to_variant());
+                sd.set("rotation_y", s.rotation_y.to_variant());
+                signs_arr.push(&sd.to_variant());
+            }
+            comm_dict.set("fascia_signs", signs_arr.to_variant());
+
+            let mut bollards_arr = VarArray::new();
+            for &bol in &comm.bollards {
+                bollards_arr.push(&bol.to_variant());
+            }
+            comm_dict.set("bollards", bollards_arr.to_variant());
+
+            if let Some(ice) = comm.ice_freezer {
+                comm_dict.set("ice_freezer", ice.to_variant());
+            }
+            if let Some(trash) = comm.trash_bin {
+                comm_dict.set("trash_bin", trash.to_variant());
+            }
+
+            comm_dict.set("lateral_parking_side", (comm.lateral_parking_side as i32).to_variant());
+            comm_dict.set("has_lateral_showcase", comm.has_lateral_showcase.to_variant());
+            comm_dict.set("entrance_type", (comm.entrance_type as i32).to_variant());
+
+            result.set("commercial", comm_dict.to_variant());
+        }
+
+        result.set("zone_type", (blueprint.zone as i32).to_variant());
 
         result
     }

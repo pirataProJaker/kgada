@@ -16,9 +16,10 @@ const SIDEWALK_WIDTH_AVENUE: float = 3.0
 const SIDEWALK_WIDTH_COMMERCIAL: float = 4.0
 
 enum AvenueType {
-	DIVIDED_BOULEVARD, # Avenida con 2 calzadas unidireccionales (3 carriles de 4m c/u = 12.00m) y camellón arbolado central
-	STREAM_PARKWAY,    # Avenida dividida por un canal/arroyo natural (2 carriles de 4m c/u = 8.00m) con puentes en cruces
-	COMMERCIAL_MAIN    # Avenida amplia continua de alta capacidad comercial (4 carriles de 4m = 16.00m)
+	DIVIDED_BOULEVARD,    # Avenida con 2 calzadas unidireccionales (3 carriles de 4m c/u = 12.00m) y camellón arbolado central
+	STREAM_PARKWAY,       # Avenida dividida por un canal/arroyo natural (2 carriles de 4m c/u = 8.00m) con puentes en cruces
+	COMMERCIAL_MAIN,      # Avenida amplia continua de alta capacidad comercial (4 carriles de 4m = 16.00m)
+	DIVIDED_MEDIAN_3LANE, # Calle de 3 carriles con camellón/separador central integrado (2+1, calzada continua de 12.20m)
 }
 
 enum NeighborhoodPattern {
@@ -87,8 +88,8 @@ static func get_avenue_config(type: AvenueType) -> AvenueConfig:
 			cfg.lot_depth = 40.0
 
 		AvenueType.STREAM_PARKWAY:
-			cfg.roadway_width = 2.0 * LANE_WIDTH_AVENUE # 2 carriles de 4m por sentido = 8.00m
-			cfg.road_type = RoadTrajectorySystem.RoadType.AVENUE_ONEWAY_2LANE
+			cfg.roadway_width = 3.0 * LANE_WIDTH_AVENUE # 3 carriles de 4m por sentido = 12.00m
+			cfg.road_type = RoadTrajectorySystem.RoadType.AVENUE_ONEWAY_3LANE
 			cfg.median_width = 16.0       # Arroyo/canal central de 16m
 			cfg.outer_sidewalk_width = SIDEWALK_WIDTH_AVENUE # 3.0m
 			cfg.inner_sidewalk_width = 1.0
@@ -109,6 +110,17 @@ static func get_avenue_config(type: AvenueType) -> AvenueConfig:
 			cfg.crossover_interval = 120.0
 			cfg.has_stream = false
 			cfg.lot_depth = 42.0
+
+		AvenueType.DIVIDED_MEDIAN_3LANE:
+			cfg.roadway_width = RoadTrajectorySystem.STANDARD_WIDTH_DIVIDED_3LANE # 23.00m (10.5m + 2.0m + 10.5m)
+			cfg.road_type = RoadTrajectorySystem.RoadType.DIVIDED_MEDIAN_3LANE
+			cfg.median_width = RoadTrajectorySystem.MEDIAN_WIDTH_DIVIDED_3LANE   # 2.00m
+			cfg.outer_sidewalk_width = SIDEWALK_WIDTH_RESIDENTIAL                # 2.0m
+			cfg.inner_sidewalk_width = 0.0
+			cfg.tree_spacing = 16.0
+			cfg.crossover_interval = 90.0
+			cfg.has_stream = false
+			cfg.lot_depth = 34.0
 
 	return cfg
 

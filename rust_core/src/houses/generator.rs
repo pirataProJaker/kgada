@@ -16,6 +16,7 @@ pub struct HouseBlueprint {
     pub room_map_floor2: Vec<u8>,
     pub palette: HousePalette,
     pub stair: Option<StairData>,
+    pub commercial_meta: Option<CommercialMetadata>,
 }
 
 pub struct HouseGeneratorCore;
@@ -35,14 +36,28 @@ impl HouseGeneratorCore {
 
         let floor_h = match zone {
             HouseZoneType::ZonaX => 3.40,
+            HouseZoneType::CommercialConvenience => 3.20,
             _ => 2.80,
         };
 
         // 1. Generación Orgánica de Cuartos según Tipología
-        let (mut rooms, total_floors, main_door_pos) = match zone {
-            HouseZoneType::ColoniaVieja => Self::generate_colonia_vieja_rooms(width, depth, &mut rng),
-            HouseZoneType::ColoniaNueva => Self::generate_colonia_nueva_rooms(width, depth, &mut rng),
-            HouseZoneType::ZonaX => Self::generate_zona_x_rooms(width, depth, &mut rng),
+        let (mut rooms, total_floors, main_door_pos, comm_meta) = match zone {
+            HouseZoneType::ColoniaVieja => {
+                let (r, tf, dp) = Self::generate_colonia_vieja_rooms(width, depth, &mut rng);
+                (r, tf, dp, None)
+            }
+            HouseZoneType::ColoniaNueva => {
+                let (r, tf, dp) = Self::generate_colonia_nueva_rooms(width, depth, &mut rng);
+                (r, tf, dp, None)
+            }
+            HouseZoneType::ZonaX => {
+                let (r, tf, dp) = Self::generate_zona_x_rooms(width, depth, &mut rng);
+                (r, tf, dp, None)
+            }
+            HouseZoneType::CommercialConvenience => {
+                let (r, tf, dp, cm) = Self::generate_commercial_convenience_rooms(width, depth, &mut rng);
+                (r, tf, dp, Some(cm))
+            }
         };
 
         let mut map_f1 = vec![0u8; width * depth];
@@ -132,6 +147,7 @@ impl HouseGeneratorCore {
             room_map_floor2: map_f2,
             palette,
             stair,
+            commercial_meta: comm_meta,
         }
     }
 
@@ -960,6 +976,504 @@ impl HouseGeneratorCore {
         (rooms, total_floors, main_door_pos)
     }
 
+    /// Tienda de Conveniencia (OTXO):
+    /// Distribución comercial con retiro para estacionamiento frontal o en "L" (doble calle),
+    /// tótem gigante en la esquina de máxima visibilidad, marquesina perimetral,
+    /// amplio piso de venta abierto, cuarto frío de refrigeradores, bodega y baño.
+    fn generate_commercial_convenience_rooms(
+        w: usize,
+        d: usize,
+        rng: &mut StdRng,
+    ) -> (Vec<HouseRoom>, u8, (usize, usize), CommercialMetadata) {
+        let mut rooms = Vec::new();
+        let mut meta = CommercialMetadata::default();
+
+        let to_world_x = |x: f32| -> f32 { x - (w as f32 * 0.5) };
+        let to_world_z = |z: f32| -> f32 { z - (d as f32 * 0.5) };
+
+        // 1. Evaluar si el lote permite doble estacionamiento en "L" (en esquina)
+        // Se requieren al menos 16m x 16m para tener 5m de cajón + 1m de banqueta en ambos ejes
+        // sin ahogar el edificio de la tienda.
+        let allow_l_parking = w >= 16 && d >= 16;
+        let use_l_parking = allow_l_parking && rng.gen_bool(0.70);
+
+        let (b_xmin, b_xmax, b_zmin, b_zmax);
+        let door_pos: (usize, usize);
+        let corner_west = rng.gen_bool(0.5);
+
+        let rear_yard = if d >= 24 { rng.gen_range(1..=3) } else { 0 };
+        let lot_b_zmax = d.saturating_sub(rear_yard);
+
+        if use_l_parking {
+            // Caso Esquina con Doble Estacionamiento en "L"
+
+            let park_d = 5usize;
+            let park_w = 5usize;
+            let sw_d = 1usize; // Banqueta 1m
+            let sw_w = 1usize;
+
+            if corner_west {
+                // Estacionamiento al Sur (frente) y al Oeste (lateral)
+                b_xmin = park_w + sw_w; // e.g. 6
+                b_xmax = w;
+                b_zmin = park_d + sw_d; // e.g. 6
+                b_zmax = lot_b_zmax;
+
+                // A. Tótem gigante en la esquina extrema exterior (1.8, 1.8)
+                let totem_pos = Vector3::new(to_world_x(1.8), 0.0, to_world_z(1.8));
+                let totem_h = rng.gen_range(8.0..=10.0);
+                let totem_rot = std::f32::consts::PI * 0.25; // Ángulo hacia el cruce
+                meta.totem_sign = Some(TotemSignData {
+                    position: totem_pos,
+                    height: totem_h,
+                    rotation_y: totem_rot,
+                });
+
+                // B. Cajones Frontales (a lo largo de X, orientados al Norte)
+                let front_bays_start_x = b_xmin as f32;
+                let front_bays_end_x = b_xmax as f32;
+                let front_avail = front_bays_end_x - front_bays_start_x;
+                let num_front_bays = ((front_avail - 0.5) / 2.5).floor() as usize;
+                for i in 0..num_front_bays {
+                    let bay_cx = front_bays_start_x + 1.25 + (i as f32) * 2.5;
+                    let bay_cz = 2.5;
+                    meta.parking_bays.push(ParkingBayData {
+                        position: Vector3::new(to_world_x(bay_cx), 0.02, to_world_z(bay_cz)),
+                        size: Vector2::new(2.5, 5.0),
+                        rotation_y: 0.0,
+                    });
+                }
+
+                // C. Cajones Laterales Oeste (a lo largo de Z, orientados al Este)
+                let side_bays_start_z = b_zmin as f32;
+                let side_bays_end_z = b_zmax as f32;
+                let side_avail = side_bays_end_z - side_bays_start_z;
+                let num_side_bays = ((side_avail - 0.5) / 2.5).floor() as usize;
+                for i in 0..num_side_bays {
+                    let bay_cz = side_bays_start_z + 1.25 + (i as f32) * 2.5;
+                    let bay_cx = 2.5;
+                    meta.parking_bays.push(ParkingBayData {
+                        position: Vector3::new(to_world_x(bay_cx), 0.02, to_world_z(bay_cz)),
+                        size: Vector2::new(2.5, 5.0),
+                        rotation_y: std::f32::consts::FRAC_PI_2,
+                    });
+                }
+
+                // D. Bolardos amarillos protectores a lo largo del borde de banqueta
+                let mut bx = b_xmin as f32;
+                while bx <= b_xmax as f32 {
+                    meta.bollards.push(Vector3::new(to_world_x(bx), 0.0, to_world_z(5.0)));
+                    bx += 2.0;
+                }
+                let mut bz = b_zmin as f32;
+                while bz <= b_zmax as f32 {
+                    meta.bollards.push(Vector3::new(to_world_x(5.0), 0.0, to_world_z(bz)));
+                    bz += 2.0;
+                }
+
+                // E. Banqueta perimetral elevada (+0.16m) en la L con guarnición amarilla
+                let sw_y = 0.08f32;
+                let sw_col = Color::from_rgb(0.76, 0.76, 0.75);
+                let curb_col = Color::from_rgb(0.96, 0.78, 0.05);
+
+                let sw_front_pos = Vector3::new(
+                    to_world_x((b_xmin as f32 + b_xmax as f32) * 0.5),
+                    sw_y,
+                    to_world_z(5.4),
+                );
+                let sw_front_size = Vector3::new((b_xmax - b_xmin + 2) as f32, 0.16, 1.4);
+                meta.sidewalk_boxes.push(InstanceBox { position: sw_front_pos, size: sw_front_size, color: sw_col });
+                meta.sidewalk_boxes.push(InstanceBox {
+                    position: Vector3::new(to_world_x((b_xmin as f32 + b_xmax as f32) * 0.5), sw_y, to_world_z(4.65)),
+                    size: Vector3::new((b_xmax - b_xmin + 2) as f32, 0.16, 0.15),
+                    color: curb_col,
+                });
+
+                let sw_side_pos = Vector3::new(
+                    to_world_x(5.4),
+                    sw_y,
+                    to_world_z((b_zmin as f32 + b_zmax as f32) * 0.5),
+                );
+                let sw_side_size = Vector3::new(1.4, 0.16, (b_zmax - b_zmin + 1) as f32);
+                meta.sidewalk_boxes.push(InstanceBox { position: sw_side_pos, size: sw_side_size, color: sw_col });
+                meta.sidewalk_boxes.push(InstanceBox {
+                    position: Vector3::new(to_world_x(4.65), sw_y, to_world_z((b_zmin as f32 + b_zmax as f32) * 0.5)),
+                    size: Vector3::new(0.15, 0.16, (b_zmax - b_zmin + 1) as f32),
+                    color: curb_col,
+                });
+            } else {
+                // Estacionamiento al Sur y al Este
+                b_xmin = 0;
+                b_xmax = w - (park_w + sw_w);
+                b_zmin = park_d + sw_d;
+                b_zmax = lot_b_zmax;
+
+                let totem_pos = Vector3::new(to_world_x(w as f32 - 1.8), 0.0, to_world_z(1.8));
+                let totem_h = rng.gen_range(8.0..=10.0);
+                let totem_rot = -std::f32::consts::PI * 0.25;
+                meta.totem_sign = Some(TotemSignData {
+                    position: totem_pos,
+                    height: totem_h,
+                    rotation_y: totem_rot,
+                });
+
+                // Cajones frontales
+                let num_front_bays = ((b_xmax as f32 - 0.5) / 2.5).floor() as usize;
+                for i in 0..num_front_bays {
+                    let bay_cx = 1.25 + (i as f32) * 2.5;
+                    let bay_cz = 2.5;
+                    meta.parking_bays.push(ParkingBayData {
+                        position: Vector3::new(to_world_x(bay_cx), 0.02, to_world_z(bay_cz)),
+                        size: Vector2::new(2.5, 5.0),
+                        rotation_y: 0.0,
+                    });
+                }
+
+                // Cajones laterales Este
+                let side_cx = w as f32 - 2.5;
+                let num_side_bays = (((b_zmax - b_zmin) as f32 - 0.5) / 2.5).floor() as usize;
+                for i in 0..num_side_bays {
+                    let bay_cz = b_zmin as f32 + 1.25 + (i as f32) * 2.5;
+                    meta.parking_bays.push(ParkingBayData {
+                        position: Vector3::new(to_world_x(side_cx), 0.02, to_world_z(bay_cz)),
+                        size: Vector2::new(2.5, 5.0),
+                        rotation_y: -std::f32::consts::FRAC_PI_2,
+                    });
+                }
+
+                // Bolardos
+                let mut bx = b_xmin as f32;
+                while bx <= b_xmax as f32 {
+                    meta.bollards.push(Vector3::new(to_world_x(bx), 0.0, to_world_z(5.0)));
+                    bx += 2.0;
+                }
+                let mut bz = b_zmin as f32;
+                while bz <= b_zmax as f32 {
+                    meta.bollards.push(Vector3::new(to_world_x(b_xmax as f32), 0.0, to_world_z(bz)));
+                    bz += 2.0;
+                }
+
+                // Banqueta en L con guarnición amarilla
+                let sw_y = 0.08f32;
+                let sw_col = Color::from_rgb(0.76, 0.76, 0.75);
+                let curb_col = Color::from_rgb(0.96, 0.78, 0.05);
+
+                let sw_front_pos = Vector3::new(
+                    to_world_x((b_xmin as f32 + b_xmax as f32) * 0.5),
+                    sw_y,
+                    to_world_z(5.4),
+                );
+                let sw_front_size = Vector3::new((b_xmax - b_xmin + 2) as f32, 0.16, 1.4);
+                meta.sidewalk_boxes.push(InstanceBox { position: sw_front_pos, size: sw_front_size, color: sw_col });
+                meta.sidewalk_boxes.push(InstanceBox {
+                    position: Vector3::new(to_world_x((b_xmin as f32 + b_xmax as f32) * 0.5), sw_y, to_world_z(4.65)),
+                    size: Vector3::new((b_xmax - b_xmin + 2) as f32, 0.16, 0.15),
+                    color: curb_col,
+                });
+
+                let sw_side_pos = Vector3::new(
+                    to_world_x(b_xmax as f32 + 0.7),
+                    sw_y,
+                    to_world_z((b_zmin as f32 + b_zmax as f32) * 0.5),
+                );
+                let sw_side_size = Vector3::new(1.4, 0.16, (b_zmax - b_zmin + 1) as f32);
+                meta.sidewalk_boxes.push(InstanceBox { position: sw_side_pos, size: sw_side_size, color: sw_col });
+                meta.sidewalk_boxes.push(InstanceBox {
+                    position: Vector3::new(to_world_x(b_xmax as f32 + 1.45), sw_y, to_world_z((b_zmin as f32 + b_zmax as f32) * 0.5)),
+                    size: Vector3::new(0.15, 0.16, (b_zmax - b_zmin + 1) as f32),
+                    color: curb_col,
+                });
+            }
+        } else {
+            // Caso Estacionamiento Simple Frontal (Lotes regulares estándar: 15x20 a 15x30m, 300-450m²)
+            let park_d = 5usize;
+            let sw_d = 1usize;
+
+            b_xmin = if w >= 15 { 1 } else { 0 };
+            b_xmax = if w >= 15 { w - 1 } else { w };
+            b_zmin = park_d + sw_d;
+            b_zmax = lot_b_zmax;
+
+            // Tótem en la esquina frontal izquierda del estacionamiento
+            let totem_pos = Vector3::new(to_world_x(1.4), 0.0, to_world_z(1.4));
+            let totem_h = rng.gen_range(8.0..=10.0);
+            meta.totem_sign = Some(TotemSignData {
+                position: totem_pos,
+                height: totem_h,
+                rotation_y: 0.0,
+            });
+
+            // Cajones de estacionamiento frontales en batería (estándar OTXO: 4 a 5 autos)
+            let totem_margin = 2.40f32;
+            let curb_margin = 0.50f32;
+            let avail_w = (w as f32) - totem_margin - curb_margin;
+            let target_bays = if avail_w >= 11.8 { 5 } else if avail_w >= 9.4 { 4 } else { 3 };
+            let bay_w = (avail_w / target_bays as f32).min(2.50);
+            for i in 0..target_bays {
+                let bay_cx = totem_margin + (i as f32 * bay_w) + (bay_w * 0.5);
+                meta.parking_bays.push(ParkingBayData {
+                    position: Vector3::new(to_world_x(bay_cx), 0.02, to_world_z(2.5)),
+                    size: Vector2::new(bay_w, 5.0),
+                    rotation_y: 0.0,
+                });
+            }
+
+            // Bolardos a lo largo del frente
+            let mut bx = b_xmin as f32;
+            while bx <= b_xmax as f32 {
+                meta.bollards.push(Vector3::new(to_world_x(bx), 0.0, to_world_z(4.8)));
+                bx += 2.0;
+            }
+
+            // Banqueta perimetral elevada que rodea toda la orilla del OTXO
+            let sw_y = 0.08f32; // Altura de banqueta (0.16m total)
+            let sw_col = Color::from_rgb(0.76, 0.76, 0.75); // Concreto claro
+            let curb_col = Color::from_rgb(0.96, 0.78, 0.05); // Guarnición amarilla tráfico
+
+            // 1. Banqueta frontal (a lo largo de toda la fachada y ventanales)
+            let sw_f_pos = Vector3::new(
+                to_world_x((b_xmin as f32 + b_xmax as f32) * 0.5),
+                sw_y,
+                to_world_z(5.4),
+            );
+            let sw_f_size = Vector3::new((b_xmax - b_xmin + 2) as f32, 0.16, 1.4);
+            meta.sidewalk_boxes.push(InstanceBox { position: sw_f_pos, size: sw_f_size, color: sw_col });
+
+            // Guarnición amarilla frontal hacia los cajones de estacionamiento
+            let curb_f_pos = Vector3::new(
+                to_world_x((b_xmin as f32 + b_xmax as f32) * 0.5),
+                sw_y,
+                to_world_z(4.65),
+            );
+            let curb_f_size = Vector3::new((b_xmax - b_xmin + 2) as f32, 0.16, 0.15);
+            meta.sidewalk_boxes.push(InstanceBox { position: curb_f_pos, size: curb_f_size, color: curb_col });
+
+            // 2. Banqueta lateral Oeste envolvente (dobla en la esquina)
+            let sw_s_pos = Vector3::new(
+                to_world_x(b_xmin as f32 - 0.7),
+                sw_y,
+                to_world_z((b_zmin as f32 + b_zmax as f32) * 0.5),
+            );
+            let sw_s_size = Vector3::new(1.4, 0.16, (b_zmax - b_zmin + 1) as f32);
+            meta.sidewalk_boxes.push(InstanceBox { position: sw_s_pos, size: sw_s_size, color: sw_col });
+
+            // Guarnición amarilla lateral
+            let curb_s_pos = Vector3::new(
+                to_world_x(b_xmin as f32 - 1.45),
+                sw_y,
+                to_world_z((b_zmin as f32 + b_zmax as f32) * 0.5),
+            );
+            let curb_s_size = Vector3::new(0.15, 0.16, (b_zmax - b_zmin + 1) as f32);
+            meta.sidewalk_boxes.push(InstanceBox { position: curb_s_pos, size: curb_s_size, color: curb_col });
+
+            // 3. Banqueta lateral Este si hay espacio perimetral abierto
+            if b_xmax < w {
+                let sw_e_pos = Vector3::new(
+                    to_world_x(b_xmax as f32 + 0.7),
+                    sw_y,
+                    to_world_z((b_zmin as f32 + b_zmax as f32) * 0.5),
+                );
+                let sw_e_size = Vector3::new(1.4, 0.16, (b_zmax - b_zmin + 1) as f32);
+                meta.sidewalk_boxes.push(InstanceBox { position: sw_e_pos, size: sw_e_size, color: sw_col });
+
+                let curb_e_pos = Vector3::new(
+                    to_world_x(b_xmax as f32 + 1.45),
+                    sw_y,
+                    to_world_z((b_zmin as f32 + b_zmax as f32) * 0.5),
+                );
+                let curb_e_size = Vector3::new(0.15, 0.16, (b_zmax - b_zmin + 1) as f32);
+                meta.sidewalk_boxes.push(InstanceBox { position: curb_e_pos, size: curb_e_size, color: curb_col });
+            }
+        }
+
+        // ====================================================================
+        // METADATOS DE ACCESO PROCEDURAL Y VENTANALES LATERALES
+        // ====================================================================
+        let b_w = b_xmax.saturating_sub(b_xmin);
+        let b_d = b_zmax.saturating_sub(b_zmin);
+        let back_depth = if b_d >= 14 { 5 } else if b_d >= 10 { 4 } else { 3 };
+        let sales_z_end = b_zmax.saturating_sub(back_depth);
+
+        // Lado lateral expuesto al estacionamiento / calle
+        meta.lateral_parking_side = if use_l_parking {
+            if corner_west { 1 } else { 2 }
+        } else {
+            0
+        };
+
+        // Regla procedural de ventanales en fachada lateral:
+        // Si está en una esquina con estacionamiento en L, 65% de probabilidad de tener vitrales panorámicos.
+        // Si no (35%), muro sólido amarillo continuo con anuncios, anaqueles o refrigeradores.
+        let has_lateral_showcase = if use_l_parking {
+            rng.gen_bool(0.65)
+        } else {
+            false
+        };
+        meta.has_lateral_showcase = has_lateral_showcase;
+        meta.lateral_window_span = (b_zmin, sales_z_end);
+
+        // Variabilidad en el punto de acceso frontal (Puerta principal):
+        // En esquinas comerciales, los OXXOs frecuentemente tienen su acceso:
+        // 1. En la esquina del edificio que da al estacionamiento y al tótem (Corner access).
+        // 2. Al centro de la fachada.
+        // 3. Desplazado al tercio opuesto.
+        let entrance_roll: u32 = rng.gen_range(0..100);
+        let (entrance_type, door_x) = if use_l_parking {
+            if corner_west {
+                if entrance_roll < 45 {
+                    // Acceso en esquina Oeste (cercano al estacionamiento lateral y tótem)
+                    let dx = (b_xmin + 2).min(b_xmax.saturating_sub(2));
+                    (1u8, dx)
+                } else if entrance_roll < 80 {
+                    // Acceso centrado
+                    (0u8, b_xmin + b_w / 2)
+                } else {
+                    // Acceso desplazado al Este
+                    let dx = b_xmax.saturating_sub(2).max(b_xmin + 2);
+                    (2u8, dx)
+                }
+            } else {
+                if entrance_roll < 45 {
+                    // Acceso en esquina Este (cercano al estacionamiento lateral Este y tótem)
+                    let dx = b_xmax.saturating_sub(2).max(b_xmin + 2);
+                    (1u8, dx)
+                } else if entrance_roll < 80 {
+                    // Acceso centrado
+                    (0u8, b_xmin + b_w / 2)
+                } else {
+                    // Acceso desplazado al Oeste
+                    let dx = (b_xmin + 2).min(b_xmax.saturating_sub(2));
+                    (2u8, dx)
+                }
+            }
+        } else {
+            if entrance_roll < 60 {
+                (0u8, b_xmin + b_w / 2)
+            } else if entrance_roll < 80 {
+                let dx = (b_xmin + 2).min(b_xmax.saturating_sub(2));
+                (1u8, dx)
+            } else {
+                let dx = b_xmax.saturating_sub(2).max(b_xmin + 2);
+                (2u8, dx)
+            }
+        };
+
+        door_pos = (door_x, b_zmin);
+        meta.entrance_type = entrance_type;
+
+        // ====================================================================
+        // PROPS DE ENTRADA Y MARQUESINA (Hielera, Bote de Basura, Letrero Fascia)
+        // ====================================================================
+        let door_wx = to_world_x(door_pos.0 as f32 + 0.5);
+        let door_wz = to_world_z(door_pos.1 as f32);
+
+        // Letrero de Fachada en la Marquesina OTXO alineado con el acceso (únicamente en la entrada)
+        meta.fascia_signs.push(FasciaSignData {
+            position: Vector3::new(door_wx, 3.35, door_wz - 0.48),
+            size: Vector2::new(2.95, 1.80),
+            rotation_y: 0.0,
+        });
+
+        // Bote de basura doble al costado de la puerta con más holgura
+        let trash_x = if door_x > b_xmin + 2 { door_wx - 1.6 } else { door_wx + 1.6 };
+        meta.trash_bin = Some(Vector3::new(trash_x, 0.16, door_wz - 0.55));
+
+        // Hielera exterior en el extremo frontal opuesto al acceso
+        let ice_x = if door_x < b_xmin + b_w / 2 {
+            to_world_x(b_xmax as f32 - 1.3)
+        } else {
+            to_world_x(b_xmin as f32 + 1.3)
+        };
+        meta.ice_freezer = Some(Vector3::new(ice_x, 0.16, door_wz - 0.55));
+
+        // ====================================================================
+        // DISTRIBUCIÓN INTERIOR DE LA TIENDA OTXO
+        // ====================================================================
+        // 1. Piso de Venta (StoreFloor) - Amplio, abierto y luminoso
+        rooms.push(HouseRoom {
+            id: 1,
+            room_type: RoomType::StoreFloor,
+            floor: 1,
+            x_min: b_xmin,
+            z_min: b_zmin,
+            x_max: b_xmax,
+            z_max: sales_z_end,
+        });
+
+        // 2. Zona Trasera de Servicio: Cuarto Frío, Bodega y Baño
+        // En tiendas de esquina, el cuarto frío se ubica del lado ciego para jamás
+        // obstruir los ventanales de exhibición que dan a la calle lateral.
+        let cold_w = (b_w * 45 / 100).max(3).min(b_w.saturating_sub(4));
+        let bath_w = 2usize.min(b_w.saturating_sub(cold_w + 2));
+        let store_w = b_w.saturating_sub(cold_w + bath_w);
+
+        if use_l_parking && corner_west {
+            // Lateral Oeste da a la calle: cuarto frío al Este (ciego)
+            rooms.push(HouseRoom {
+                id: 2,
+                room_type: RoomType::ColdRoom,
+                floor: 1,
+                x_min: b_xmax.saturating_sub(cold_w),
+                z_min: sales_z_end,
+                x_max: b_xmax,
+                z_max: b_zmax,
+            });
+            rooms.push(HouseRoom {
+                id: 3,
+                room_type: RoomType::Storage,
+                floor: 1,
+                x_min: b_xmin + bath_w,
+                z_min: sales_z_end,
+                x_max: b_xmax.saturating_sub(cold_w),
+                z_max: b_zmax,
+            });
+            if bath_w > 0 {
+                rooms.push(HouseRoom {
+                    id: 4,
+                    room_type: RoomType::Bathroom,
+                    floor: 1,
+                    x_min: b_xmin,
+                    z_min: sales_z_end,
+                    x_max: b_xmin + bath_w,
+                    z_max: b_zmax,
+                });
+            }
+        } else {
+            // Cuarto frío al Oeste
+            rooms.push(HouseRoom {
+                id: 2,
+                room_type: RoomType::ColdRoom,
+                floor: 1,
+                x_min: b_xmin,
+                z_min: sales_z_end,
+                x_max: b_xmin + cold_w,
+                z_max: b_zmax,
+            });
+            rooms.push(HouseRoom {
+                id: 3,
+                room_type: RoomType::Storage,
+                floor: 1,
+                x_min: b_xmin + cold_w,
+                z_min: sales_z_end,
+                x_max: b_xmin + cold_w + store_w,
+                z_max: b_zmax,
+            });
+            if bath_w > 0 {
+                rooms.push(HouseRoom {
+                    id: 4,
+                    room_type: RoomType::Bathroom,
+                    floor: 1,
+                    x_min: b_xmin + cold_w + store_w,
+                    z_min: sales_z_end,
+                    x_max: b_xmax,
+                    z_max: b_zmax,
+                });
+            }
+        }
+
+        (rooms, 1, door_pos, meta)
+    }
+
     /// Paletas de color arquitectónicas calibradas.
     fn pick_palette(zone: HouseZoneType, rng: &mut StdRng) -> HousePalette {
         match zone {
@@ -1019,6 +1533,19 @@ impl HouseGeneratorCore {
                     window_frame: Color::from_rgb(0.12, 0.12, 0.14), // Cancelería negra mate
                     window_glass: Color::from_rgba(0.20, 0.35, 0.50, 0.85),
                     tinaco: Color::from_rgb(0.70, 0.68, 0.62), // Beige oculto
+                }
+            }
+            HouseZoneType::CommercialConvenience => {
+                HousePalette {
+                    wall_ext: Color::from_rgb(0.96, 0.78, 0.15), // Muro amarillo institucional OTXO
+                    wall_int: Color::from_rgb(0.92, 0.92, 0.90), // Blanco interior
+                    floor: Color::from_rgb(0.85, 0.85, 0.82),    // Loseta comercial clara
+                    roof: Color::from_rgb(0.30, 0.30, 0.32),     // Azotea industrial
+                    trim: Color::from_rgb(0.85, 0.08, 0.08),     // Rojo OTXO
+                    door: Color::from_rgb(0.20, 0.20, 0.22),     // Cancelería aluminio
+                    window_frame: Color::from_rgb(0.18, 0.18, 0.20), // Marcos de ventanal oscuro
+                    window_glass: Color::from_rgba(0.25, 0.45, 0.65, 0.65), // Vidrio comercial
+                    tinaco: Color::from_rgb(0.15, 0.15, 0.15),   // Tinaco / condensadores
                 }
             }
         }
