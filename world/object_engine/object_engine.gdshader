@@ -15,8 +15,8 @@ render_mode blend_mix, depth_draw_opaque, cull_disabled, diffuse_burley, specula
 
 uniform sampler2DArray texture_array : source_color, filter_nearest_mipmap, repeat_enable;
 uniform float uv_scale : hint_range(0.1, 10.0) = 1.0;
-uniform float default_roughness : hint_range(0.0, 1.0) = 0.55;
-uniform float default_metallic : hint_range(0.0, 1.0) = 0.02;
+uniform float default_roughness : hint_range(0.0, 1.0) = 0.75;
+uniform float default_metallic : hint_range(0.0, 1.0) = 0.0;
 
 varying flat int v_layer;
 varying float v_roughness;
@@ -26,7 +26,7 @@ varying vec4 v_uv_rect; // (min_x, min_y, size_x, size_y)
 void vertex() {
 	v_layer = int(round(COLOR.r * 255.0));
 	v_roughness = COLOR.g > 0.001 ? COLOR.g : default_roughness;
-	v_metallic = COLOR.b > 0.001 ? COLOR.b : default_metallic;
+	v_metallic = COLOR.b;
 
 	// Si INSTANCE_CUSTOM define una sub-región válida (tamaño > 0), remapeamos UV
 	if (INSTANCE_CUSTOM.z > 0.0001 && INSTANCE_CUSTOM.w > 0.0001) {
@@ -59,5 +59,5 @@ void fragment() {
 	ALBEDO = tex_col;
 	ROUGHNESS = v_roughness;
 	METALLIC = v_metallic;
-	SPECULAR = 0.35;
+	SPECULAR = mix(0.05, 0.35, clamp(1.0 - v_roughness, 0.0, 1.0));
 }

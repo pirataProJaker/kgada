@@ -71,8 +71,8 @@ func _init() -> void:
 		print("✓ Captura general de asientos guardada en res://tests/showcase_furniture2_seating.png")
 
 	# 2a. Primer plano: Los 4 Sofás (Damask Gold, Floral Cottage, Wood Minimal, Chesterfield Red)
-	cam.fov = 54.0
-	cam.global_position = Vector3(-8.7, 2.3, 4.6)
+	cam.fov = 64.0
+	cam.global_position = Vector3(-8.7, 1.8, 4.4)
 	cam.look_at(Vector3(-8.7, 0.55, 0.0), Vector3.UP)
 	for i in range(6):
 		await process_frame
@@ -82,9 +82,9 @@ func _init() -> void:
 		print("✓ Primer plano de sofás guardado en res://tests/showcase_seating_sofas.png")
 
 	# 2b. Primer plano: Los 5 Sillones individuales (Chesterfield, Wingback, Charcoal, SkyBlue, Mustard)
-	cam.fov = 55.0
-	cam.global_position = Vector3(1.1, 2.2, 4.5)
-	cam.look_at(Vector3(1.1, 0.55, 0.0), Vector3.UP)
+	cam.fov = 68.0
+	cam.global_position = Vector3(1.2, 1.8, 4.4)
+	cam.look_at(Vector3(1.2, 0.55, 0.0), Vector3.UP)
 	for i in range(6):
 		await process_frame
 	img = vp.get_texture().get_image()
@@ -94,7 +94,7 @@ func _init() -> void:
 
 	# 2c. Primer plano: Las 3 Sillas de acento (Dining Cream, Baroque Oval, Louis XV Blue)
 	cam.fov = 48.0
-	cam.global_position = Vector3(10.0, 1.9, 3.8)
+	cam.global_position = Vector3(10.0, 1.6, 3.2)
 	cam.look_at(Vector3(10.0, 0.55, 0.0), Vector3.UP)
 	for i in range(6):
 		await process_frame

@@ -40,15 +40,15 @@ func _setup_lighting_and_environment() -> void:
 	env.background_mode = Environment.BG_COLOR
 	env.background_color = Color(0.12, 0.14, 0.18)
 	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	env.ambient_light_color = Color(0.82, 0.84, 0.92)
-	env.ambient_light_energy = 1.05
+	env.ambient_light_color = Color(0.85, 0.86, 0.92)
+	env.ambient_light_energy = 0.90
 	env_node.environment = env
 	add_child(env_node)
 
 	var sun := DirectionalLight3D.new()
 	sun.name = "StudioSun"
 	sun.rotation_degrees = Vector3(-42.0, 32.0, 0.0)
-	sun.light_energy = 1.15
+	sun.light_energy = 0.85
 	sun.light_color = Color(1.0, 0.98, 0.95)
 	sun.shadow_enabled = true
 	add_child(sun)
@@ -56,7 +56,7 @@ func _setup_lighting_and_environment() -> void:
 	var fill := DirectionalLight3D.new()
 	fill.name = "FillLight"
 	fill.rotation_degrees = Vector3(25.0, -145.0, 0.0)
-	fill.light_energy = 0.55
+	fill.light_energy = 0.35
 	fill.light_color = Color(0.75, 0.85, 0.98)
 	add_child(fill)
 
@@ -103,14 +103,14 @@ func _rebuild_collection(drawers_open: bool) -> void:
 	]
 	_place_row(builder, seating, -12.0, 0.0, 2.2)
 
-	# 2. Camas (5 modelos) - Fila Z = 4.0
+	# 2. Camas (5 modelos) - Fila Z = 5.0
 	var beds := [
 		"bed_single_plaid", "bed_double_iron_arabesque", "bed_double_grey_duvet",
 		"bed_double_rustic_band", "bed_double_rustic_wrinkled"
 	]
-	_place_row(builder, beds, -6.0, 4.0, 2.8)
+	_place_row(builder, beds, -6.0, 5.0, 2.8)
 
-	# 3. Almacenamiento (16 modelos) - Fila Z = 8.0
+	# 3. Almacenamiento (16 modelos) - Fila Z = 10.0
 	var storage := [
 		"chest_drawers_tall_5", "chest_drawers_light_4", "chest_drawers_white_3",
 		"nightstand_tapered_legs_3", "nightstand_tapered_legs_2", "sideboard_buffet_3drawers",
@@ -119,18 +119,18 @@ func _rebuild_collection(drawers_open: bool) -> void:
 		"bookcase_full_books_tall_01", "bookcase_books_low", "wardrobe_open_clothes",
 		"wardrobe_open_coats"
 	]
-	_place_row(builder, storage, -15.0, 8.0, 2.0, {"is_open": drawers_open})
+	_place_row(builder, storage, -15.0, 10.0, 2.0, {"is_open": drawers_open})
 
-	# 4. Cocina y Comedor (12 modelos) - Fila Z = 12.0
+	# 4. Cocina y Comedor (12 modelos) - Fila Z = 15.0
 	var kitchen := [
 		"kitchen_corner_wall_cabinet", "kitchen_base_counter_sink", "kitchen_island",
 		"kitchen_stove_gas_white", "kitchen_refrigerator_beige", "table_hex_gingham_rack",
 		"table_rect_gingham", "table_rect_lace_floral", "kitchen_hanging_utensils",
 		"chair_kitchen_slat", "chair_kitchen_spindle", "chair_kitchen_upholstered"
 	]
-	_place_row(builder, kitchen, -12.0, 12.0, 2.2)
+	_place_row(builder, kitchen, -12.0, 15.0, 2.2)
 
-	# 5. Props, Lámparas, Radios y Comida (36 modelos) - Filas Z = 16.0 y Z = 18.0
+	# 5. Props, Lámparas, Radios y Comida (36 modelos) - Filas Z = 20.0 y Z = 22.5
 	var props_row1 := [
 		"fan_pedestal_tall", "fan_desk_table", "fan_ceiling", "lamp_table_shade",
 		"lamp_banker_green", "lamp_desk_gooseneck_black", "lamp_desk_gooseneck_white",
@@ -139,7 +139,7 @@ func _rebuild_collection(drawers_open: bool) -> void:
 		"phone_rotary_black", "phone_pushbutton_beige", "paintings_wall_canvas",
 		"magazines_books_stack", "trash_can_liner"
 	]
-	_place_row(builder, props_row1, -12.0, 16.0, 1.4)
+	_place_row(builder, props_row1, -12.0, 20.0, 1.4)
 
 	var props_row2 := [
 		"garbage_bag_full", "vase_flower_rose", "vase_flower_lavender",
@@ -149,7 +149,7 @@ func _rebuild_collection(drawers_open: bool) -> void:
 		"food_ice_cream_tub", "food_popsicle_red", "drink_soda_bottle",
 		"drink_milk_jug", "drink_milk_strawberry", "drink_can"
 	]
-	_place_row(builder, props_row2, -12.0, 18.0, 1.4)
+	_place_row(builder, props_row2, -12.0, 22.5, 1.4)
 
 	_engine.commit(builder)
 

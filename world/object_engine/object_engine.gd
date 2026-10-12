@@ -15,8 +15,8 @@ const FurnitureTextureManagerScript = preload("res://world/furniture/furniture_t
 const OBJECT_SHADER: Shader = preload("res://world/object_engine/object_engine.gdshader")
 
 @export var generate_collisions: bool = true
-@export var default_roughness: float = 0.55
-@export var default_metallic: float = 0.02
+@export var default_roughness: float = 0.75
+@export var default_metallic: float = 0.0
 
 var _builder: ObjectBuilder = null
 var _shared_material: ShaderMaterial = null
