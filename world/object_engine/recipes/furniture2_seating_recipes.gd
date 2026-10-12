@@ -1,11 +1,11 @@
 class_name Furniture2SeatingRecipes
 extends RefCounted
 
-## Recetas Oficiales: Sofás, Sillones y Sillas de Acento (Furniture 2.0 - Imagen 5)
+## Recetas Oficiales: Sofás, Sillones y Sillas de Acento (Colección Furniture 2.0)
 ## Para el Motor de Objetos de Play Sector X
 ## =========================================================================
 ## Arquitectura: +0 Draw Calls (Hardware Instancing en ObjectEngine)
-## Mapeo preciso de sub-regiones UV del Atlas Inteligente
+## Mapeo preciso de sub-regiones UV del Atlas Inteligente y proporciones realistas.
 
 const ObjectAtlasScript = preload("res://world/object_engine/object_atlas.gd")
 
@@ -15,43 +15,20 @@ const ObjectAtlasScript = preload("res://world/object_engine/object_atlas.gd")
 # =========================================================================
 class SofaDamaskGoldRecipe extends ObjectRecipeBase:
 	static func build(builder: Variant, base_t: Transform3D, params: Dictionary = {}) -> void:
-		var w: float = params.get("width", 1.95)
-		var d: float = params.get("depth", 0.85)
+		var w: float = params.get("width", 2.10)
+		var d: float = params.get("depth", 0.86)
 		var h: float = params.get("height", 0.88)
 		var texture_key: String = params.get("texture_key", "armchair_08")
 
 		var leg_h := 0.12
-		var seat_h := 0.42
-		var arm_w := 0.16
-		var cushion_w := (w - arm_w * 2.0) / 3.0
+		var apron_h := 0.16
+		var arm_w := 0.18
+		var arm_h := 0.68
+		var usable_w := w - arm_w * 2.0
+		var cushion_w := usable_w / 3.0
 		var cushion_d := d - 0.22
 
-		# 1. Base inferior con faldón y moldura
-		var base_box_t := base_t * Transform3D(Basis.IDENTITY, Vector3(0.0, leg_h + 0.12, 0.0))
-		builder.add_smart_box(base_box_t, Vector3(w - 0.06, 0.24, d - 0.08), texture_key, "satin_base", 0.55, 0.15)
-
-		# 2. 3 Cojines de asiento damasco
-		for i in range(3):
-			var cx := -w * 0.5 + arm_w + float(i) * cushion_w + cushion_w * 0.5
-			var c_pos := Vector3(cx, seat_h, 0.06)
-			var c_t := base_t * Transform3D(Basis.IDENTITY, c_pos)
-			builder.add_smart_box(c_t, Vector3(cushion_w - 0.02, 0.14, cushion_d), texture_key, "damask", 0.50, 0.15)
-
-		# 3. Respaldo acolchado alto
-		var back_h := h - seat_h
-		var back_t := base_t * Transform3D(Basis.IDENTITY, Vector3(0.0, seat_h + back_h * 0.5, -d * 0.5 + 0.12))
-		builder.add_smart_box(back_t, Vector3(w - arm_w * 2.0, back_h, 0.20), texture_key, "damask", 0.50, 0.15)
-
-		# 4. Brazos laterales con curvas en voluta
-		for side: float in [-1.0, 1.0]:
-			var arm_x := side * (w * 0.5 - arm_w * 0.5)
-			var arm_t := base_t * Transform3D(Basis.IDENTITY, Vector3(arm_x, (seat_h + 0.20) * 0.5 + 0.08, 0.02))
-			builder.add_smart_box(arm_t, Vector3(arm_w, seat_h + 0.24, d - 0.10), texture_key, "damask", 0.45, 0.20)
-			# Frontal tallado del reposabrazos con moldura barroca dorada
-			var face_t := base_t * Transform3D(Basis.IDENTITY, Vector3(arm_x, seat_h + 0.10, d * 0.5 - 0.04))
-			builder.add_smart_box(face_t, Vector3(arm_w - 0.02, 0.38, 0.05), texture_key, "trim_gold", 0.40, 0.30, false)
-
-		# 5. 4 Patas talladas doradas
+		# 1. Cuatro patas talladas doradas
 		var leg_rect := ObjectAtlasScript.get_region(texture_key, "wood_leg")
 		for sx: float in [-1.0, 1.0]:
 			for sz: float in [-1.0, 1.0]:
@@ -59,89 +36,171 @@ class SofaDamaskGoldRecipe extends ObjectRecipeBase:
 				var leg_t := base_t * Transform3D(Basis.IDENTITY, leg_pos)
 				builder.add_cylinder(leg_t, 0.035, leg_h, texture_key, leg_rect, 0.40, 0.30, false)
 
+		# 2. Zócalo base / faldón con moldura dorada en el frente
+		var apron_y := leg_h + apron_h * 0.5
+		var apron_t := base_t * Transform3D(Basis.IDENTITY, Vector3(0.0, apron_y, 0.0))
+		builder.add_panel_box(apron_t, Vector3(w - 0.04, apron_h, d - 0.06), texture_key, "trim_gold", "satin_base", 0.55, 0.10)
+
+		# 3. Tres cojines de asiento damasco
+		for i in range(3):
+			var cx := -usable_w * 0.5 + float(i) * cushion_w + cushion_w * 0.5
+			var c_pos := Vector3(cx, leg_h + apron_h + 0.06, 0.04)
+			var c_t := base_t * Transform3D(Basis.IDENTITY, c_pos)
+			builder.add_top_panel_box(c_t, Vector3(cushion_w - 0.02, 0.12, cushion_d), texture_key, "damask", "satin_base", 0.65, 0.05)
+
+		# 4. Respaldo alto acolchado en damasco brocado (3 paneles continuos para proporción perfecta)
+		var back_h := h - (leg_h + apron_h)
+		var back_z := -d * 0.5 + 0.10
+		var back_y := leg_h + apron_h + back_h * 0.5
+		for i in range(3):
+			var bx := -usable_w * 0.5 + float(i) * cushion_w + cushion_w * 0.5
+			var back_t := base_t * Transform3D(Basis.IDENTITY, Vector3(bx, back_y, back_z))
+			builder.add_panel_box(back_t, Vector3(cushion_w - 0.01, back_h, 0.18), texture_key, "damask", "satin_base", 0.65, 0.05)
+
+		# Moldura superior dorada del respaldo
+		var crest_t := base_t * Transform3D(Basis.IDENTITY, Vector3(0.0, h - 0.02, back_z + 0.04))
+		builder.add_smart_box(crest_t, Vector3(usable_w, 0.04, 0.10), texture_key, "trim_gold", 0.40, 0.30, false)
+
+		# 5. Brazos acolchados con frente tallado dorado y rollo superior
+		var arm_len := d - 0.06
+		var roll_radius := arm_w * 0.5
+		for side: float in [-1.0, 1.0]:
+			var arm_x := side * (w * 0.5 - arm_w * 0.5)
+			# Cuerpo del brazo (satén)
+			var arm_body_h := arm_h - leg_h - roll_radius
+			var arm_body_y := leg_h + arm_body_h * 0.5
+			var arm_body_t := base_t * Transform3D(Basis.IDENTITY, Vector3(arm_x, arm_body_y, -0.01))
+			builder.add_smart_box(arm_body_t, Vector3(arm_w, arm_body_h, arm_len - 0.02), texture_key, "satin_base", 0.65, 0.05)
+
+			# Rollo cilíndrico superior horizontal
+			var roll_y := leg_h + arm_body_h
+			var roll_basis := Basis(Vector3.RIGHT, deg_to_rad(90))
+			var roll_t := base_t * Transform3D(roll_basis, Vector3(arm_x, roll_y, -0.01))
+			builder.add_cylinder(roll_t, roll_radius, arm_len - 0.02, texture_key, ObjectAtlasScript.get_region(texture_key, "satin_base"), 0.65, 0.05, false)
+
+			# Frontal tallado barroco en el reposabrazos (+Z) visible y destacado
+			var face_t := base_t * Transform3D(Basis.IDENTITY, Vector3(arm_x, leg_h + (arm_h - leg_h) * 0.5, d * 0.5 - 0.01))
+			builder.add_panel_box(face_t, Vector3(arm_w, arm_h - leg_h, 0.03), texture_key, "trim_gold", "satin_base", 0.40, 0.30, false)
+
 
 # =========================================================================
 # 2. SOFÁ FLORAL COTTAGE 2 PLAZAS (ARMCHAIR_06)
 # =========================================================================
 class SofaFloralCottageRecipe extends ObjectRecipeBase:
 	static func build(builder: Variant, base_t: Transform3D, params: Dictionary = {}) -> void:
-		var w: float = params.get("width", 1.50)
-		var d: float = params.get("depth", 0.82)
-		var h: float = params.get("height", 0.84)
+		var w: float = params.get("width", 1.62)
+		var d: float = params.get("depth", 0.84)
+		var h: float = params.get("height", 0.85)
 		var texture_key: String = params.get("texture_key", "armchair_06")
 
-		var seat_h := 0.40
-		var arm_w := 0.16
-		var cushion_w := (w - arm_w * 2.0) / 2.0
+		var leg_h := 0.10
+		var apron_h := 0.16
+		var arm_w := 0.18
+		var arm_h := 0.64
+		var usable_w := w - arm_w * 2.0
+		var cushion_w := usable_w / 2.0
+		var cushion_d := d - 0.22
 
-		# 1. Zócalo base inferior de madera tallada
-		var skirt_t := base_t * Transform3D(Basis.IDENTITY, Vector3(0.0, seat_h * 0.5, 0.0))
-		builder.add_smart_box(skirt_t, Vector3(w - 0.04, seat_h, d - 0.06), texture_key, "wood_base", 0.60, 0.02)
+		# 1. Patas y faldón de madera tallada oscura
+		var wood_rect := ObjectAtlasScript.get_region(texture_key, "wood_base")
+		for sx: float in [-1.0, 1.0]:
+			for sz: float in [-1.0, 1.0]:
+				var leg_pos := Vector3(sx * (w * 0.5 - 0.09), leg_h * 0.5, sz * (d * 0.5 - 0.09))
+				var leg_t := base_t * Transform3D(Basis.IDENTITY, leg_pos)
+				builder.add_cylinder(leg_t, 0.032, leg_h, texture_key, wood_rect, 0.60, 0.02, false)
 
-		# 2. 2 Cojines de asiento esponjosos florales
+		var apron_y := leg_h + apron_h * 0.5
+		var apron_t := base_t * Transform3D(Basis.IDENTITY, Vector3(0.0, apron_y, 0.0))
+		builder.add_panel_box(apron_t, Vector3(w - 0.04, apron_h, d - 0.06), texture_key, "wood_base", "wood_base", 0.60, 0.02)
+
+		# 2. Dos cojines de asiento estampados florales
 		for i in range(2):
-			var cx := -w * 0.5 + arm_w + float(i) * cushion_w + cushion_w * 0.5
-			var c_t := base_t * Transform3D(Basis.IDENTITY, Vector3(cx, seat_h + 0.06, 0.05))
-			builder.add_smart_box(c_t, Vector3(cushion_w - 0.02, 0.14, d - 0.24), texture_key, "cushion", 0.65, 0.01)
+			var cx := -usable_w * 0.5 + float(i) * cushion_w + cushion_w * 0.5
+			var c_pos := Vector3(cx, leg_h + apron_h + 0.06, 0.04)
+			var c_t := base_t * Transform3D(Basis.IDENTITY, c_pos)
+			builder.add_top_panel_box(c_t, Vector3(cushion_w - 0.02, 0.13, cushion_d), texture_key, "cushion", "floral", 0.65, 0.01)
 
-		# 3. Respaldo con flores pastel
-		var back_h := h - seat_h
-		var back_t := base_t * Transform3D(Basis.IDENTITY, Vector3(0.0, seat_h + back_h * 0.5, -d * 0.5 + 0.12))
-		builder.add_smart_box(back_t, Vector3(w - arm_w * 2.0, back_h, 0.20), texture_key, "floral", 0.65, 0.01)
+		# 3. Respaldo acolchado floral en 2 secciones para proporción natural
+		var back_h := h - (leg_h + apron_h)
+		var back_z := -d * 0.5 + 0.10
+		var back_y := leg_h + apron_h + back_h * 0.5
+		for i in range(2):
+			var bx := -usable_w * 0.5 + float(i) * cushion_w + cushion_w * 0.5
+			var back_t := base_t * Transform3D(Basis.IDENTITY, Vector3(bx, back_y, back_z))
+			builder.add_panel_box(back_t, Vector3(cushion_w - 0.02, back_h, 0.18), texture_key, "cushion", "floral", 0.65, 0.01)
 
-		# 4. Brazos acampanados con tela floral
+		# 4. Brazos redondeados con tela floral
+		var arm_len := d - 0.06
+		var roll_radius := arm_w * 0.5
+		var arm_roll_rect := ObjectAtlasScript.get_region(texture_key, "arm_roll")
 		for side: float in [-1.0, 1.0]:
 			var arm_x := side * (w * 0.5 - arm_w * 0.5)
-			var arm_t := base_t * Transform3D(Basis.IDENTITY, Vector3(arm_x, seat_h + 0.12, 0.02))
-			builder.add_smart_box(arm_t, Vector3(arm_w, 0.32, d - 0.10), texture_key, "floral", 0.65, 0.01)
+			var arm_body_h := arm_h - leg_h - roll_radius
+			var arm_body_y := leg_h + arm_body_h * 0.5
+			var arm_body_t := base_t * Transform3D(Basis.IDENTITY, Vector3(arm_x, arm_body_y, -0.01))
+			builder.add_smart_box(arm_body_t, Vector3(arm_w, arm_body_h, arm_len - 0.02), texture_key, "floral", 0.65, 0.01)
+
+			var roll_y := leg_h + arm_body_h
+			var roll_basis := Basis(Vector3.RIGHT, deg_to_rad(90))
+			var roll_t := base_t * Transform3D(roll_basis, Vector3(arm_x, roll_y, -0.01))
+			builder.add_cylinder(roll_t, roll_radius, arm_len - 0.02, texture_key, arm_roll_rect, 0.65, 0.01, false)
+
+			# Frontal del brazo
+			var face_t := base_t * Transform3D(Basis.IDENTITY, Vector3(arm_x, leg_h + (arm_h - leg_h) * 0.5, d * 0.5 - 0.01))
+			builder.add_panel_box(face_t, Vector3(arm_w, arm_h - leg_h, 0.03), texture_key, "floral", "floral", 0.65, 0.01, false)
 
 
 # =========================================================================
-# 3. SOFÁ DE MADERA MINIMALISTA CON COJINES LISOS (ARMCHAIR_07)
+# 3. SOFÁ DE MADERA MINIMALISTA CON COJINES DE LINO (ARMCHAIR_07)
 # =========================================================================
 class SofaWoodMinimalRecipe extends ObjectRecipeBase:
 	static func build(builder: Variant, base_t: Transform3D, params: Dictionary = {}) -> void:
-		var w: float = params.get("width", 1.85)
-		var d: float = params.get("depth", 0.78)
-		var h: float = params.get("height", 0.76)
+		var w: float = params.get("width", 1.90)
+		var d: float = params.get("depth", 0.80)
+		var h: float = params.get("height", 0.78)
 		var texture_key: String = params.get("texture_key", "armchair_07")
 
-		var leg_h := 0.18
-		var frame_thick := 0.05
-		var arm_h := h - 0.10
+		var leg_h := 0.20
+		var frame_thick := 0.045
+		var arm_h := 0.60
+		var usable_w := w - frame_thick * 2.0
+		var cushion_w := usable_w / 3.0
+		var cushion_d := d - 0.18
 
-		# 1. Marco perimetral de madera en los laterales (Brazos abiertos)
+		# 1. Estructura lateral de madera de roble visto (Brazos abiertos en marco)
 		for side: float in [-1.0, 1.0]:
 			var px := side * (w * 0.5 - frame_thick * 0.5)
 			# Pata delantera
-			var f_leg_t := base_t * Transform3D(Basis.IDENTITY, Vector3(px, arm_h * 0.5, d * 0.5 - frame_thick * 0.5))
-			builder.add_smart_box(f_leg_t, Vector3(frame_thick, arm_h, frame_thick), texture_key, "wood_frame")
+			var f_leg_t := base_t * Transform3D(Basis.IDENTITY, Vector3(px, arm_h * 0.5, d * 0.5 - frame_thick * 0.5 - 0.02))
+			builder.add_smart_box(f_leg_t, Vector3(frame_thick, arm_h, frame_thick), texture_key, "wood_frame", 0.60, 0.02)
 			# Pata trasera
-			var b_leg_t := base_t * Transform3D(Basis.IDENTITY, Vector3(px, arm_h * 0.5, -d * 0.5 + frame_thick * 0.5))
-			builder.add_smart_box(b_leg_t, Vector3(frame_thick, arm_h, frame_thick), texture_key, "wood_frame")
-			# Reposabrazos superior
+			var b_leg_t := base_t * Transform3D(Basis.IDENTITY, Vector3(px, arm_h * 0.5, -d * 0.5 + frame_thick * 0.5 + 0.02))
+			builder.add_smart_box(b_leg_t, Vector3(frame_thick, arm_h, frame_thick), texture_key, "wood_frame", 0.60, 0.02)
+			# Reposabrazos superior plano
 			var arm_t := base_t * Transform3D(Basis.IDENTITY, Vector3(px, arm_h - frame_thick * 0.5, 0.0))
-			builder.add_smart_box(arm_t, Vector3(frame_thick, frame_thick, d), texture_key, "wood_frame")
+			builder.add_smart_box(arm_t, Vector3(frame_thick * 1.4, frame_thick, d - 0.04), texture_key, "wood_frame", 0.60, 0.02)
 
-		# 2. Somier / Base de asiento de madera
+		# 2. Somier / marco inferior de soporte
 		var seat_base_t := base_t * Transform3D(Basis.IDENTITY, Vector3(0.0, leg_h, 0.0))
-		builder.add_smart_box(seat_base_t, Vector3(w - frame_thick * 2.0, frame_thick, d - 0.08), texture_key, "wood_frame")
+		builder.add_smart_box(seat_base_t, Vector3(usable_w, frame_thick, d - 0.06), texture_key, "wood_frame", 0.60, 0.02)
 
-		# 3. 3 Cojines de asiento de lino beige
-		var cushion_w := (w - frame_thick * 2.0 - 0.04) / 3.0
+		# 3. Respaldo trasero de roble (tablero soporte)
+		var back_frame_t := base_t * Transform3D(Basis.IDENTITY, Vector3(0.0, leg_h + (h - leg_h) * 0.5, -d * 0.5 + 0.06))
+		builder.add_smart_box(back_frame_t, Vector3(usable_w, h - leg_h, frame_thick), texture_key, "wood_back", 0.60, 0.02)
+
+		# 4. Tres cojines de asiento en lino marfil
 		var c_thick := 0.12
-		var c_d := d - 0.18
 		for i in range(3):
-			var cx := -(w * 0.5 - frame_thick) + 0.02 + float(i) * cushion_w + cushion_w * 0.5
-			var c_t := base_t * Transform3D(Basis.IDENTITY, Vector3(cx, leg_h + frame_thick + c_thick * 0.5, 0.05))
-			builder.add_smart_box(c_t, Vector3(cushion_w - 0.015, c_thick, c_d), texture_key, "cushion", 0.70, 0.01)
+			var cx := -usable_w * 0.5 + float(i) * cushion_w + cushion_w * 0.5
+			var c_t := base_t * Transform3D(Basis.IDENTITY, Vector3(cx, leg_h + frame_thick + c_thick * 0.5, 0.04))
+			builder.add_smart_box(c_t, Vector3(cushion_w - 0.02, c_thick, cushion_d), texture_key, "cushion", 0.70, 0.01)
 
-		# 4. 3 Cojines de respaldo inclinados
-		var back_c_h := h - leg_h - frame_thick - c_thick - 0.05
+		# 5. Tres cojines de respaldo en lino
+		var back_c_h := h - (leg_h + frame_thick + c_thick) - 0.04
 		for i in range(3):
-			var cx := -(w * 0.5 - frame_thick) + 0.02 + float(i) * cushion_w + cushion_w * 0.5
-			var b_t := base_t * Transform3D(Basis.IDENTITY, Vector3(cx, leg_h + frame_thick + c_thick + back_c_h * 0.5, -d * 0.5 + 0.12))
-			builder.add_smart_box(b_t, Vector3(cushion_w - 0.02, back_c_h, 0.14), texture_key, "cushion", 0.70, 0.01)
+			var cx := -usable_w * 0.5 + float(i) * cushion_w + cushion_w * 0.5
+			var b_t := base_t * Transform3D(Basis.IDENTITY, Vector3(cx, leg_h + frame_thick + c_thick + back_c_h * 0.5, -d * 0.5 + 0.14))
+			builder.add_smart_box(b_t, Vector3(cushion_w - 0.02, back_c_h, 0.12), texture_key, "cushion", 0.70, 0.01)
 
 
 # =========================================================================
@@ -149,44 +208,76 @@ class SofaWoodMinimalRecipe extends ObjectRecipeBase:
 # =========================================================================
 class SofaChesterfieldRedRecipe extends ObjectRecipeBase:
 	static func build(builder: Variant, base_t: Transform3D, params: Dictionary = {}) -> void:
-		var w: float = params.get("width", 2.10)
+		var w: float = params.get("width", 2.15)
 		var d: float = params.get("depth", 0.88)
-		var h: float = params.get("height", 0.78)
+		var h: float = params.get("height", 0.80)
 		var texture_key: String = params.get("texture_key", "armchair_03")
 
-		var bun_h := 0.08
-		var seat_h := 0.40
+		var foot_h := 0.08
+		var apron_h := 0.16
 		var arm_w := 0.22
 		var usable_w := w - arm_w * 2.0
 		var cushion_w := usable_w / 3.0
+		var cushion_d := d - 0.24
 
-		# 1. Base inferior con cuero capitoné
-		var base_t_pos := Vector3(0.0, bun_h + 0.10, 0.0)
-		builder.add_smart_box(base_t * Transform3D(Basis.IDENTITY, base_t_pos), Vector3(w - 0.08, 0.20, d - 0.08), texture_key, "tufted_back", 0.45, 0.10)
-
-		# 2. 3 Cojines profundos de cuero suave
-		for i in range(3):
-			var cx := -w * 0.5 + arm_w + float(i) * cushion_w + cushion_w * 0.5
-			var c_t := base_t * Transform3D(Basis.IDENTITY, Vector3(cx, seat_h, 0.08))
-			builder.add_smart_box(c_t, Vector3(cushion_w - 0.02, 0.15, d - 0.26), texture_key, "cushion", 0.40, 0.10)
-
-		# 3. Respaldo capitoné continuo
-		var back_h := h - seat_h
-		var back_t := base_t * Transform3D(Basis.IDENTITY, Vector3(0.0, seat_h + back_h * 0.5, -d * 0.5 + 0.16))
-		builder.add_smart_box(back_t, Vector3(usable_w + 0.04, back_h, 0.24), texture_key, "tufted_back", 0.45, 0.10)
-
-		# 4. Brazos enrollados en voluta
-		for side: float in [-1.0, 1.0]:
-			var arm_x := side * (w * 0.5 - arm_w * 0.5)
-			var arm_t := base_t * Transform3D(Basis.IDENTITY, Vector3(arm_x, bun_h + (h - bun_h) * 0.5, 0.02))
-			builder.add_smart_box(arm_t, Vector3(arm_w, h - bun_h, d - 0.06), texture_key, "arm_scroll", 0.40, 0.10)
-
-		# 5. 4 Patas esféricas torneadas
+		# 1. Cuatro patas torneadas de madera oscura
 		var foot_rect := ObjectAtlasScript.get_region(texture_key, "bun_foot")
 		for sx: float in [-1.0, 1.0]:
 			for sz: float in [-1.0, 1.0]:
-				var foot_t := base_t * Transform3D(Basis.IDENTITY, Vector3(sx * (w * 0.5 - 0.12), bun_h * 0.5, sz * (d * 0.5 - 0.12)))
-				builder.add_cylinder(foot_t, 0.045, bun_h, texture_key, foot_rect, 0.50, 0.05, false)
+				var foot_t := base_t * Transform3D(Basis.IDENTITY, Vector3(sx * (w * 0.5 - 0.12), foot_h * 0.5, sz * (d * 0.5 - 0.12)))
+				builder.add_cylinder(foot_t, 0.045, foot_h, texture_key, foot_rect, 0.50, 0.05, false)
+
+		# 2. Zócalo inferior frontal capitoné dividido en 3 secciones
+		var apron_y := foot_h + apron_h * 0.5
+		var base_box_t := base_t * Transform3D(Basis.IDENTITY, Vector3(0.0, apron_y, -0.02))
+		builder.add_smart_box(base_box_t, Vector3(w - 0.06, apron_h, d - 0.08), texture_key, "smooth_leather", 0.45, 0.08)
+
+		for i in range(3):
+			var bx := -usable_w * 0.5 + float(i) * cushion_w + cushion_w * 0.5
+			var ap_t := base_t * Transform3D(Basis.IDENTITY, Vector3(bx, apron_y, d * 0.5 - 0.04))
+			builder.add_panel_box(ap_t, Vector3(cushion_w - 0.02, apron_h, 0.04), texture_key, "tufted_back", "smooth_leather", 0.45, 0.08, false)
+
+		# 3. Tres cojines profundos de cuero suave
+		for i in range(3):
+			var cx := -usable_w * 0.5 + float(i) * cushion_w + cushion_w * 0.5
+			var c_pos := Vector3(cx, foot_h + apron_h + 0.06, 0.06)
+			var c_t := base_t * Transform3D(Basis.IDENTITY, c_pos)
+			builder.add_top_panel_box(c_t, Vector3(cushion_w - 0.02, 0.13, cushion_d), texture_key, "cushion", "smooth_leather", 0.45, 0.08)
+
+		# 4. Respaldo continuo capitoné en 3 secciones perfectamente proporcionadas
+		var back_h := h - (foot_h + apron_h)
+		var back_z := -d * 0.5 + 0.14
+		var back_y := foot_h + apron_h + back_h * 0.5
+		for i in range(3):
+			var bx := -usable_w * 0.5 + float(i) * cushion_w + cushion_w * 0.5
+			var back_t := base_t * Transform3D(Basis.IDENTITY, Vector3(bx, back_y, back_z))
+			builder.add_panel_box(back_t, Vector3(cushion_w - 0.02, back_h, 0.22), texture_key, "tufted_back", "smooth_leather", 0.45, 0.08)
+
+		# Rollo superior del respaldo
+		var crest_t := base_t * Transform3D(Basis.IDENTITY, Vector3(0.0, h - 0.04, back_z + 0.04))
+		builder.add_smart_box(crest_t, Vector3(usable_w, 0.08, 0.12), texture_key, "smooth_leather", 0.45, 0.08, false)
+
+		# 5. Brazos enrollados Chesterfield con voluta en espiral y tachuelas
+		var arm_len := d - 0.06
+		var roll_radius := arm_w * 0.5
+		var leather_rect := ObjectAtlasScript.get_region(texture_key, "smooth_leather")
+		for side: float in [-1.0, 1.0]:
+			var arm_x := side * (w * 0.5 - arm_w * 0.5)
+			# Cuerpo sólido del brazo (cuero liso)
+			var arm_body_h := h - foot_h - roll_radius
+			var arm_body_y := foot_h + arm_body_h * 0.5
+			var arm_body_t := base_t * Transform3D(Basis.IDENTITY, Vector3(arm_x, arm_body_y, -0.01))
+			builder.add_smart_box(arm_body_t, Vector3(arm_w, arm_body_h, arm_len - 0.02), texture_key, "smooth_leather", 0.45, 0.08)
+
+			# Rollo cilíndrico superior horizontal
+			var roll_y := foot_h + arm_body_h
+			var roll_basis := Basis(Vector3.RIGHT, deg_to_rad(90))
+			var roll_t := base_t * Transform3D(roll_basis, Vector3(arm_x, roll_y, -0.01))
+			builder.add_cylinder(roll_t, roll_radius, arm_len - 0.02, texture_key, leather_rect, 0.45, 0.08, false)
+
+			# Frontal del brazo en cuero capitoné / cuero liso limpio
+			var face_t := base_t * Transform3D(Basis.IDENTITY, Vector3(arm_x, foot_h + (h - foot_h) * 0.5, d * 0.5 - 0.01))
+			builder.add_smart_box(face_t, Vector3(arm_w, h - foot_h, 0.03), texture_key, "smooth_leather", 0.45, 0.08, false)
 
 
 # =========================================================================
@@ -194,41 +285,62 @@ class SofaChesterfieldRedRecipe extends ObjectRecipeBase:
 # =========================================================================
 class ArmchairChesterfieldRedRecipe extends ObjectRecipeBase:
 	static func build(builder: Variant, base_t: Transform3D, params: Dictionary = {}) -> void:
-		var w: float = params.get("width", 1.05)
+		var w: float = params.get("width", 1.06)
 		var d: float = params.get("depth", 0.88)
-		var h: float = params.get("height", 0.78)
+		var h: float = params.get("height", 0.80)
 		var texture_key: String = params.get("texture_key", "armchair_04")
 
-		var bun_h := 0.08
-		var seat_h := 0.40
+		var foot_h := 0.08
+		var apron_h := 0.16
 		var arm_w := 0.22
 		var cushion_w := w - arm_w * 2.0
+		var cushion_d := d - 0.24
 
-		# 1. Base inferior capitoné
-		var base_t_pos := Vector3(0.0, bun_h + 0.10, 0.0)
-		builder.add_smart_box(base_t * Transform3D(Basis.IDENTITY, base_t_pos), Vector3(w - 0.08, 0.20, d - 0.08), texture_key, "tufted_back", 0.45, 0.10)
-
-		# 2. Cojín único de asiento
-		var c_t := base_t * Transform3D(Basis.IDENTITY, Vector3(0.0, seat_h, 0.08))
-		builder.add_smart_box(c_t, Vector3(cushion_w, 0.15, d - 0.26), texture_key, "cushion", 0.40, 0.10)
-
-		# 3. Respaldo capitoné
-		var back_h := h - seat_h
-		var back_t := base_t * Transform3D(Basis.IDENTITY, Vector3(0.0, seat_h + back_h * 0.5, -d * 0.5 + 0.16))
-		builder.add_smart_box(back_t, Vector3(cushion_w + 0.04, back_h, 0.24), texture_key, "tufted_back", 0.45, 0.10)
-
-		# 4. Brazos en voluta
-		for side: float in [-1.0, 1.0]:
-			var arm_x := side * (w * 0.5 - arm_w * 0.5)
-			var arm_t := base_t * Transform3D(Basis.IDENTITY, Vector3(arm_x, bun_h + (h - bun_h) * 0.5, 0.02))
-			builder.add_smart_box(arm_t, Vector3(arm_w, h - bun_h, d - 0.06), texture_key, "arm_scroll", 0.40, 0.10)
-
-		# 5. Patas
+		# 1. Cuatro patas torneadas
 		var foot_rect := ObjectAtlasScript.get_region(texture_key, "bun_foot")
 		for sx: float in [-1.0, 1.0]:
 			for sz: float in [-1.0, 1.0]:
-				var foot_t := base_t * Transform3D(Basis.IDENTITY, Vector3(sx * (w * 0.5 - 0.10), bun_h * 0.5, sz * (d * 0.5 - 0.10)))
-				builder.add_cylinder(foot_t, 0.045, bun_h, texture_key, foot_rect, 0.50, 0.05, false)
+				var foot_t := base_t * Transform3D(Basis.IDENTITY, Vector3(sx * (w * 0.5 - 0.10), foot_h * 0.5, sz * (d * 0.5 - 0.10)))
+				builder.add_cylinder(foot_t, 0.045, foot_h, texture_key, foot_rect, 0.50, 0.05, false)
+
+		# 2. Zócalo frontal capitoné
+		var apron_y := foot_h + apron_h * 0.5
+		var apron_t := base_t * Transform3D(Basis.IDENTITY, Vector3(0.0, apron_y, 0.0))
+		builder.add_panel_box(apron_t, Vector3(w - 0.06, apron_h, d - 0.08), texture_key, "tufted_back", "smooth_leather", 0.45, 0.08)
+
+		# 3. Cojín único de asiento
+		var c_t := base_t * Transform3D(Basis.IDENTITY, Vector3(0.0, foot_h + apron_h + 0.06, 0.06))
+		builder.add_top_panel_box(c_t, Vector3(cushion_w, 0.13, cushion_d), texture_key, "cushion", "smooth_leather", 0.45, 0.08)
+
+		# 4. Respaldo capitoné
+		var back_h := h - (foot_h + apron_h)
+		var back_z := -d * 0.5 + 0.14
+		var back_y := foot_h + apron_h + back_h * 0.5
+		var back_t := base_t * Transform3D(Basis.IDENTITY, Vector3(0.0, back_y, back_z))
+		builder.add_panel_box(back_t, Vector3(cushion_w, back_h, 0.22), texture_key, "tufted_back", "smooth_leather", 0.45, 0.08)
+
+		# Rollo superior
+		var crest_t := base_t * Transform3D(Basis.IDENTITY, Vector3(0.0, h - 0.04, back_z + 0.04))
+		builder.add_smart_box(crest_t, Vector3(cushion_w, 0.08, 0.12), texture_key, "smooth_leather", 0.45, 0.08, false)
+
+		# 5. Brazos enrollados en voluta con tachuelas
+		var arm_len := d - 0.06
+		var roll_radius := arm_w * 0.5
+		var leather_rect := ObjectAtlasScript.get_region(texture_key, "smooth_leather")
+		for side: float in [-1.0, 1.0]:
+			var arm_x := side * (w * 0.5 - arm_w * 0.5)
+			var arm_body_h := h - foot_h - roll_radius
+			var arm_body_y := foot_h + arm_body_h * 0.5
+			var arm_body_t := base_t * Transform3D(Basis.IDENTITY, Vector3(arm_x, arm_body_y, -0.01))
+			builder.add_smart_box(arm_body_t, Vector3(arm_w, arm_body_h, arm_len - 0.02), texture_key, "smooth_leather", 0.45, 0.08)
+
+			var roll_y := foot_h + arm_body_h
+			var roll_basis := Basis(Vector3.RIGHT, deg_to_rad(90))
+			var roll_t := base_t * Transform3D(roll_basis, Vector3(arm_x, roll_y, -0.01))
+			builder.add_cylinder(roll_t, roll_radius, arm_len - 0.02, texture_key, leather_rect, 0.45, 0.08, false)
+
+			var face_t := base_t * Transform3D(Basis.IDENTITY, Vector3(arm_x, foot_h + (h - foot_h) * 0.5, d * 0.5 - 0.01))
+			builder.add_smart_box(face_t, Vector3(arm_w, h - foot_h, 0.03), texture_key, "smooth_leather", 0.45, 0.08, false)
 
 
 # =========================================================================
@@ -236,46 +348,71 @@ class ArmchairChesterfieldRedRecipe extends ObjectRecipeBase:
 # =========================================================================
 class ArmchairWingbackLeatherRecipe extends ObjectRecipeBase:
 	static func build(builder: Variant, base_t: Transform3D, params: Dictionary = {}) -> void:
-		var w: float = params.get("width", 0.86)
-		var d: float = params.get("depth", 0.82)
-		var h: float = params.get("height", 0.98)
+		var w: float = params.get("width", 0.88)
+		var d: float = params.get("depth", 0.84)
+		var h: float = params.get("height", 1.02)
 		var texture_key: String = params.get("texture_key", "armchair")
 
 		var leg_h := 0.14
-		var seat_h := 0.42
-		var arm_w := 0.14
+		var apron_h := 0.14
+		var arm_w := 0.15
+		var arm_h := 0.62
+		var cushion_w := w - arm_w * 2.0
+		var cushion_d := d - 0.22
 
-		# 1. Base del asiento
-		var seat_base_t := base_t * Transform3D(Basis.IDENTITY, Vector3(0.0, leg_h + 0.08, 0.0))
-		builder.add_smart_box(seat_base_t, Vector3(w - 0.06, 0.16, d - 0.08), texture_key, "tufted_back", 0.45, 0.10)
-
-		# 2. Cojín de cuero desgastado
-		var c_t := base_t * Transform3D(Basis.IDENTITY, Vector3(0.0, seat_h + 0.04, 0.06))
-		builder.add_smart_box(c_t, Vector3(w - arm_w * 2.0 - 0.02, 0.12, d - 0.24), texture_key, "cushion", 0.40, 0.10)
-
-		# 3. Respaldo alto capitoné
-		var back_h := h - seat_h
-		var back_t := base_t * Transform3D(Basis.IDENTITY, Vector3(0.0, seat_h + back_h * 0.5, -d * 0.5 + 0.10))
-		builder.add_smart_box(back_t, Vector3(w - arm_w * 2.0, back_h, 0.16), texture_key, "tufted_back", 0.45, 0.10)
-
-		# 4. Orejeras laterales (*wings*)
-		for side: float in [-1.0, 1.0]:
-			var wing_x := side * (w * 0.5 - arm_w * 0.5)
-			var wing_t := base_t * Transform3D(Basis.IDENTITY, Vector3(wing_x, h - 0.20, -d * 0.5 + 0.22))
-			builder.add_smart_box(wing_t, Vector3(0.08, 0.36, 0.24), texture_key, "arm_roll", 0.45, 0.10)
-
-		# 5. Brazos acolchados
-		for side: float in [-1.0, 1.0]:
-			var arm_x := side * (w * 0.5 - arm_w * 0.5)
-			var arm_t := base_t * Transform3D(Basis.IDENTITY, Vector3(arm_x, seat_h + 0.10, 0.02))
-			builder.add_smart_box(arm_t, Vector3(arm_w, 0.28, d - 0.14), texture_key, "arm_roll", 0.45, 0.10)
-
-		# 6. 4 Patas de madera
+		# 1. Cuatro patas cónicas de madera oscura
 		var leg_rect := ObjectAtlasScript.get_region(texture_key, "wood_leg")
 		for sx: float in [-1.0, 1.0]:
 			for sz: float in [-1.0, 1.0]:
 				var leg_t := base_t * Transform3D(Basis.IDENTITY, Vector3(sx * (w * 0.5 - 0.08), leg_h * 0.5, sz * (d * 0.5 - 0.08)))
-				builder.add_cylinder(leg_t, 0.03, leg_h, texture_key, leg_rect, 0.55, 0.02, false)
+				builder.add_cylinder(leg_t, 0.032, leg_h, texture_key, leg_rect, 0.55, 0.02, false)
+
+		# 2. Base y faldón de cuero envejecido
+		var apron_y := leg_h + apron_h * 0.5
+		var apron_t := base_t * Transform3D(Basis.IDENTITY, Vector3(0.0, apron_y, 0.0))
+		builder.add_smart_box(apron_t, Vector3(w - 0.06, apron_h, d - 0.06), texture_key, "smooth_leather", 0.50, 0.08)
+
+		# 3. Cojín de cuero grueso desgastado
+		var c_t := base_t * Transform3D(Basis.IDENTITY, Vector3(0.0, leg_h + apron_h + 0.06, 0.05))
+		builder.add_top_panel_box(c_t, Vector3(cushion_w, 0.12, cushion_d), texture_key, "cushion", "smooth_leather", 0.45, 0.08)
+
+		# 4. Respaldo alto capitoné sin esquinas negras
+		var back_h := h - (leg_h + apron_h)
+		var back_z := -d * 0.5 + 0.10
+		var back_y := leg_h + apron_h + back_h * 0.5
+		var back_t := base_t * Transform3D(Basis.IDENTITY, Vector3(0.0, back_y, back_z))
+		builder.add_panel_box(back_t, Vector3(cushion_w, back_h, 0.16), texture_key, "tufted_back", "smooth_leather", 0.50, 0.08)
+
+		# 5. Orejeras laterales curvadas superiores ("Wings")
+		var wing_h := 0.38
+		var wing_w := 0.06
+		var wing_d := 0.22
+		var wing_y := h - wing_h * 0.5 - 0.02
+		for side: float in [-1.0, 1.0]:
+			var wing_x := side * (cushion_w * 0.5 + wing_w * 0.5 - 0.01)
+			var wing_rot := deg_to_rad(-side * 14.0)
+			var wing_basis := Basis(Vector3.UP, wing_rot)
+			var wing_t := base_t * Transform3D(wing_basis, Vector3(wing_x, wing_y, back_z + wing_d * 0.5 + 0.04))
+			builder.add_panel_box(wing_t, Vector3(wing_w, wing_h, wing_d), texture_key, "tufted_back", "smooth_leather", 0.50, 0.08)
+
+		# 6. Brazos redondeados con frente de cuero sólido
+		var arm_len := d - 0.06
+		var roll_radius := arm_w * 0.5
+		var leather_rect := ObjectAtlasScript.get_region(texture_key, "smooth_leather")
+		for side: float in [-1.0, 1.0]:
+			var arm_x := side * (w * 0.5 - arm_w * 0.5)
+			var arm_body_h := arm_h - leg_h - roll_radius
+			var arm_body_y := leg_h + arm_body_h * 0.5
+			var arm_body_t := base_t * Transform3D(Basis.IDENTITY, Vector3(arm_x, arm_body_y, -0.01))
+			builder.add_smart_box(arm_body_t, Vector3(arm_w, arm_body_h, arm_len - 0.02), texture_key, "smooth_leather", 0.50, 0.08)
+
+			var roll_y := leg_h + arm_body_h
+			var roll_basis := Basis(Vector3.RIGHT, deg_to_rad(90))
+			var roll_t := base_t * Transform3D(roll_basis, Vector3(arm_x, roll_y, -0.01))
+			builder.add_cylinder(roll_t, roll_radius, arm_len - 0.02, texture_key, leather_rect, 0.50, 0.08, false)
+
+			var face_t := base_t * Transform3D(Basis.IDENTITY, Vector3(arm_x, leg_h + (arm_h - leg_h) * 0.5, d * 0.5 - 0.01))
+			builder.add_smart_box(face_t, Vector3(arm_w, arm_h - leg_h, 0.03), texture_key, "smooth_leather", 0.50, 0.08, false)
 
 
 # =========================================================================
@@ -283,36 +420,64 @@ class ArmchairWingbackLeatherRecipe extends ObjectRecipeBase:
 # =========================================================================
 class ArmchairTuftedCharcoalRecipe extends ObjectRecipeBase:
 	static func build(builder: Variant, base_t: Transform3D, params: Dictionary = {}) -> void:
-		var w: float = params.get("width", 0.84)
-		var d: float = params.get("depth", 0.80)
+		var w: float = params.get("width", 0.86)
+		var d: float = params.get("depth", 0.82)
 		var h: float = params.get("height", 0.90)
 		var texture_key: String = params.get("texture_key", "armchair_01")
 
-		var leg_h := 0.12
-		var seat_h := 0.42
-		var arm_w := 0.14
+		var leg_h := 0.14
+		var apron_h := 0.14
+		var arm_w := 0.15
+		var arm_h := 0.62
+		var cushion_w := w - arm_w * 2.0
+		var cushion_d := d - 0.22
 
-		# 1. Base y asiento
-		var seat_t := base_t * Transform3D(Basis.IDENTITY, Vector3(0.0, seat_h, 0.04))
-		builder.add_smart_box(seat_t, Vector3(w - arm_w * 2.0, 0.16, d - 0.22), texture_key, "cushion", 0.50, 0.05)
-
-		# 2. Respaldo capitoné
-		var back_h := h - seat_h
-		var back_t := base_t * Transform3D(Basis.IDENTITY, Vector3(0.0, seat_h + back_h * 0.5, -d * 0.5 + 0.12))
-		builder.add_smart_box(back_t, Vector3(w - arm_w * 2.0, back_h, 0.18), texture_key, "tufted_back", 0.55, 0.05)
-
-		# 3. Brazos cuadrados
-		for side: float in [-1.0, 1.0]:
-			var arm_x := side * (w * 0.5 - arm_w * 0.5)
-			var arm_t := base_t * Transform3D(Basis.IDENTITY, Vector3(arm_x, seat_h + 0.10, 0.0))
-			builder.add_smart_box(arm_t, Vector3(arm_w, 0.32, d - 0.12), texture_key, "arm", 0.50, 0.05)
-
-		# 4. 4 Patas
-		var leg_rect := ObjectAtlasScript.get_region(texture_key, "arm")
+		# 1. Cuatro patas cónicas oscuras
+		var leg_rect := ObjectAtlasScript.get_region(texture_key, "wood_leg")
 		for sx: float in [-1.0, 1.0]:
 			for sz: float in [-1.0, 1.0]:
 				var leg_t := base_t * Transform3D(Basis.IDENTITY, Vector3(sx * (w * 0.5 - 0.08), leg_h * 0.5, sz * (d * 0.5 - 0.08)))
-				builder.add_cylinder(leg_t, 0.028, leg_h, texture_key, leg_rect, 0.50, 0.10, false)
+				builder.add_cylinder(leg_t, 0.03, leg_h, texture_key, leg_rect, 0.55, 0.02, false)
+
+		# 2. Base inferior tapizada
+		var apron_y := leg_h + apron_h * 0.5
+		var apron_t := base_t * Transform3D(Basis.IDENTITY, Vector3(0.0, apron_y, 0.0))
+		builder.add_smart_box(apron_t, Vector3(w - 0.06, apron_h, d - 0.06), texture_key, "smooth_fabric", 0.60, 0.02)
+
+		# 3. Cojín suave gris marengo
+		var c_t := base_t * Transform3D(Basis.IDENTITY, Vector3(0.0, leg_h + apron_h + 0.06, 0.05))
+		builder.add_top_panel_box(c_t, Vector3(cushion_w, 0.12, cushion_d), texture_key, "cushion", "smooth_fabric", 0.55, 0.02)
+
+		# 4. Respaldo capitoné marengo
+		var back_h := h - (leg_h + apron_h)
+		var back_z := -d * 0.5 + 0.10
+		var back_y := leg_h + apron_h + back_h * 0.5
+		var back_t := base_t * Transform3D(Basis.IDENTITY, Vector3(0.0, back_y, back_z))
+		builder.add_panel_box(back_t, Vector3(cushion_w, back_h, 0.16), texture_key, "tufted_back", "smooth_fabric", 0.60, 0.02)
+
+		# 5. Brazos redondeados con tachuelas plateadas sin bordes negros
+		var arm_len := d - 0.06
+		var roll_radius := arm_w * 0.5
+		var fabric_rect := ObjectAtlasScript.get_region(texture_key, "smooth_fabric")
+		for side: float in [-1.0, 1.0]:
+			var arm_x := side * (w * 0.5 - arm_w * 0.5)
+			var arm_body_h := arm_h - leg_h - roll_radius
+			var arm_body_y := leg_h + arm_body_h * 0.5
+			var arm_body_t := base_t * Transform3D(Basis.IDENTITY, Vector3(arm_x, arm_body_y, -0.01))
+			builder.add_smart_box(arm_body_t, Vector3(arm_w, arm_body_h, arm_len - 0.02), texture_key, "smooth_fabric", 0.60, 0.02)
+
+			var roll_y := leg_h + arm_body_h
+			var roll_basis := Basis(Vector3.RIGHT, deg_to_rad(90))
+			var roll_t := base_t * Transform3D(roll_basis, Vector3(arm_x, roll_y, -0.01))
+			builder.add_cylinder(roll_t, roll_radius, arm_len - 0.02, texture_key, fabric_rect, 0.60, 0.02, false)
+
+			# Frontal acolchado de tela base
+			var face_t := base_t * Transform3D(Basis.IDENTITY, Vector3(arm_x, leg_h + (arm_h - leg_h) * 0.5, d * 0.5 - 0.01))
+			builder.add_smart_box(face_t, Vector3(arm_w, arm_h - leg_h, 0.03), texture_key, "smooth_fabric", 0.60, 0.02, false)
+
+			# Línea vertical frontal de tachuelas plateadas centrada
+			var strip_t := base_t * Transform3D(Basis.IDENTITY, Vector3(arm_x, leg_h + (arm_h - leg_h) * 0.5, d * 0.5 + 0.006))
+			builder.add_smart_box(strip_t, Vector3(arm_w * 0.55, arm_h - leg_h - 0.02, 0.005), texture_key, "studded_arm", 0.40, 0.20, false)
 
 
 # =========================================================================
@@ -320,36 +485,64 @@ class ArmchairTuftedCharcoalRecipe extends ObjectRecipeBase:
 # =========================================================================
 class ArmchairTuftedSkyBlueRecipe extends ObjectRecipeBase:
 	static func build(builder: Variant, base_t: Transform3D, params: Dictionary = {}) -> void:
-		var w: float = params.get("width", 0.84)
-		var d: float = params.get("depth", 0.80)
-		var h: float = params.get("height", 0.92)
+		var w: float = params.get("width", 0.86)
+		var d: float = params.get("depth", 0.82)
+		var h: float = params.get("height", 0.90)
 		var texture_key: String = params.get("texture_key", "armchair_02")
 
-		var leg_h := 0.12
-		var seat_h := 0.42
-		var arm_w := 0.14
+		var leg_h := 0.14
+		var apron_h := 0.14
+		var arm_w := 0.15
+		var arm_h := 0.62
+		var cushion_w := w - arm_w * 2.0
+		var cushion_d := d - 0.22
 
-		# 1. Base y asiento azul
-		var seat_t := base_t * Transform3D(Basis.IDENTITY, Vector3(0.0, seat_h, 0.04))
-		builder.add_smart_box(seat_t, Vector3(w - arm_w * 2.0, 0.16, d - 0.22), texture_key, "cushion", 0.45, 0.08)
-
-		# 2. Respaldo alto capitoné azul
-		var back_h := h - seat_h
-		var back_t := base_t * Transform3D(Basis.IDENTITY, Vector3(0.0, seat_h + back_h * 0.5, -d * 0.5 + 0.12))
-		builder.add_smart_box(back_t, Vector3(w - arm_w * 2.0, back_h, 0.18), texture_key, "tufted_back", 0.50, 0.08)
-
-		# 3. Brazos con tachuelas plateadas
-		for side: float in [-1.0, 1.0]:
-			var arm_x := side * (w * 0.5 - arm_w * 0.5)
-			var arm_t := base_t * Transform3D(Basis.IDENTITY, Vector3(arm_x, seat_h + 0.10, 0.0))
-			builder.add_smart_box(arm_t, Vector3(arm_w, 0.32, d - 0.12), texture_key, "studded_arm", 0.40, 0.20)
-
-		# 4. Patas oscuras
-		var leg_rect := ObjectAtlasScript.get_region(texture_key, "studded_arm")
+		# 1. Cuatro patas cónicas
+		var leg_rect := ObjectAtlasScript.get_region(texture_key, "wood_leg")
 		for sx: float in [-1.0, 1.0]:
 			for sz: float in [-1.0, 1.0]:
 				var leg_t := base_t * Transform3D(Basis.IDENTITY, Vector3(sx * (w * 0.5 - 0.08), leg_h * 0.5, sz * (d * 0.5 - 0.08)))
-				builder.add_cylinder(leg_t, 0.028, leg_h, texture_key, leg_rect, 0.40, 0.10, false)
+				builder.add_cylinder(leg_t, 0.03, leg_h, texture_key, leg_rect, 0.55, 0.02, false)
+
+		# 2. Base inferior tapizada en azul
+		var apron_y := leg_h + apron_h * 0.5
+		var apron_t := base_t * Transform3D(Basis.IDENTITY, Vector3(0.0, apron_y, 0.0))
+		builder.add_smart_box(apron_t, Vector3(w - 0.06, apron_h, d - 0.06), texture_key, "smooth_fabric", 0.55, 0.05)
+
+		# 3. Cojín azul cielo pastel
+		var c_t := base_t * Transform3D(Basis.IDENTITY, Vector3(0.0, leg_h + apron_h + 0.06, 0.05))
+		builder.add_top_panel_box(c_t, Vector3(cushion_w, 0.12, cushion_d), texture_key, "cushion", "smooth_fabric", 0.50, 0.05)
+
+		# 4. Respaldo alto capitoné azul
+		var back_h := h - (leg_h + apron_h)
+		var back_z := -d * 0.5 + 0.10
+		var back_y := leg_h + apron_h + back_h * 0.5
+		var back_t := base_t * Transform3D(Basis.IDENTITY, Vector3(0.0, back_y, back_z))
+		builder.add_panel_box(back_t, Vector3(cushion_w, back_h, 0.16), texture_key, "tufted_back", "smooth_fabric", 0.55, 0.05)
+
+		# 5. Brazos con tachuelas plateadas en el frontal
+		var arm_len := d - 0.06
+		var roll_radius := arm_w * 0.5
+		var fabric_rect := ObjectAtlasScript.get_region(texture_key, "smooth_fabric")
+		for side: float in [-1.0, 1.0]:
+			var arm_x := side * (w * 0.5 - arm_w * 0.5)
+			var arm_body_h := arm_h - leg_h - roll_radius
+			var arm_body_y := leg_h + arm_body_h * 0.5
+			var arm_body_t := base_t * Transform3D(Basis.IDENTITY, Vector3(arm_x, arm_body_y, -0.01))
+			builder.add_smart_box(arm_body_t, Vector3(arm_w, arm_body_h, arm_len - 0.02), texture_key, "smooth_fabric", 0.55, 0.05)
+
+			var roll_y := leg_h + arm_body_h
+			var roll_basis := Basis(Vector3.RIGHT, deg_to_rad(90))
+			var roll_t := base_t * Transform3D(roll_basis, Vector3(arm_x, roll_y, -0.01))
+			builder.add_cylinder(roll_t, roll_radius, arm_len - 0.02, texture_key, fabric_rect, 0.55, 0.05, false)
+
+			# Frontal acolchado de tela base
+			var face_t := base_t * Transform3D(Basis.IDENTITY, Vector3(arm_x, leg_h + (arm_h - leg_h) * 0.5, d * 0.5 - 0.01))
+			builder.add_smart_box(face_t, Vector3(arm_w, arm_h - leg_h, 0.03), texture_key, "smooth_fabric", 0.55, 0.05, false)
+
+			# Línea vertical frontal de tachuelas plateadas centrada
+			var strip_t := base_t * Transform3D(Basis.IDENTITY, Vector3(arm_x, leg_h + (arm_h - leg_h) * 0.5, d * 0.5 + 0.006))
+			builder.add_smart_box(strip_t, Vector3(arm_w * 0.55, arm_h - leg_h - 0.02, 0.005), texture_key, "studded_arm", 0.40, 0.20, false)
 
 
 # =========================================================================
@@ -357,36 +550,59 @@ class ArmchairTuftedSkyBlueRecipe extends ObjectRecipeBase:
 # =========================================================================
 class ArmchairVelvetMustardRecipe extends ObjectRecipeBase:
 	static func build(builder: Variant, base_t: Transform3D, params: Dictionary = {}) -> void:
-		var w: float = params.get("width", 0.88)
+		var w: float = params.get("width", 0.90)
 		var d: float = params.get("depth", 0.84)
-		var h: float = params.get("height", 0.82)
+		var h: float = params.get("height", 0.84)
 		var texture_key: String = params.get("texture_key", "armchair_05")
 
-		var leg_h := 0.10
-		var seat_h := 0.38
+		var leg_h := 0.12
+		var apron_h := 0.14
 		var arm_w := 0.16
+		var arm_h := 0.60
+		var cushion_w := w - arm_w * 2.0
+		var cushion_d := d - 0.22
 
-		# 1. Base y asiento mostaza
-		var seat_t := base_t * Transform3D(Basis.IDENTITY, Vector3(0.0, seat_h, 0.04))
-		builder.add_smart_box(seat_t, Vector3(w - arm_w * 2.0, 0.18, d - 0.22), texture_key, "cushion", 0.70, 0.02)
-
-		# 2. Respaldo capitoné envolvente
-		var back_h := h - seat_h
-		var back_t := base_t * Transform3D(Basis.IDENTITY, Vector3(0.0, seat_h + back_h * 0.5, -d * 0.5 + 0.14))
-		builder.add_smart_box(back_t, Vector3(w - arm_w * 2.0, back_h, 0.22), texture_key, "tufted_back", 0.70, 0.02)
-
-		# 3. Brazos anchos
-		for side: float in [-1.0, 1.0]:
-			var arm_x := side * (w * 0.5 - arm_w * 0.5)
-			var arm_t := base_t * Transform3D(Basis.IDENTITY, Vector3(arm_x, seat_h + 0.08, 0.0))
-			builder.add_smart_box(arm_t, Vector3(arm_w, 0.30, d - 0.10), texture_key, "arm", 0.70, 0.02)
-
-		# 4. Patas
-		var leg_rect := ObjectAtlasScript.get_region(texture_key, "arm")
+		# 1. Cuatro patas oscuras
+		var leg_rect := ObjectAtlasScript.get_region(texture_key, "wood_leg")
 		for sx: float in [-1.0, 1.0]:
 			for sz: float in [-1.0, 1.0]:
 				var leg_t := base_t * Transform3D(Basis.IDENTITY, Vector3(sx * (w * 0.5 - 0.08), leg_h * 0.5, sz * (d * 0.5 - 0.08)))
-				builder.add_cylinder(leg_t, 0.03, leg_h, texture_key, leg_rect, 0.40, 0.10, false)
+				builder.add_cylinder(leg_t, 0.03, leg_h, texture_key, leg_rect, 0.55, 0.02, false)
+
+		# 2. Base de terciopelo mostaza
+		var apron_y := leg_h + apron_h * 0.5
+		var apron_t := base_t * Transform3D(Basis.IDENTITY, Vector3(0.0, apron_y, 0.0))
+		builder.add_smart_box(apron_t, Vector3(w - 0.06, apron_h, d - 0.06), texture_key, "smooth_velvet", 0.70, 0.02)
+
+		# 3. Cojín de terciopelo amarillo mostaza
+		var c_t := base_t * Transform3D(Basis.IDENTITY, Vector3(0.0, leg_h + apron_h + 0.06, 0.05))
+		builder.add_top_panel_box(c_t, Vector3(cushion_w, 0.13, cushion_d), texture_key, "cushion", "smooth_velvet", 0.70, 0.02)
+
+		# 4. Respaldo capitoné envolvente
+		var back_h := h - (leg_h + apron_h)
+		var back_z := -d * 0.5 + 0.12
+		var back_y := leg_h + apron_h + back_h * 0.5
+		var back_t := base_t * Transform3D(Basis.IDENTITY, Vector3(0.0, back_y, back_z))
+		builder.add_panel_box(back_t, Vector3(cushion_w, back_h, 0.18), texture_key, "tufted_back", "smooth_velvet", 0.70, 0.02)
+
+		# 5. Brazos redondeados acolchados en terciopelo continuo
+		var arm_len := d - 0.06
+		var roll_radius := arm_w * 0.5
+		var velvet_rect := ObjectAtlasScript.get_region(texture_key, "smooth_velvet")
+		for side: float in [-1.0, 1.0]:
+			var arm_x := side * (w * 0.5 - arm_w * 0.5)
+			var arm_body_h := arm_h - leg_h - roll_radius
+			var arm_body_y := leg_h + arm_body_h * 0.5
+			var arm_body_t := base_t * Transform3D(Basis.IDENTITY, Vector3(arm_x, arm_body_y, -0.01))
+			builder.add_smart_box(arm_body_t, Vector3(arm_w, arm_body_h, arm_len - 0.02), texture_key, "arm_side", 0.70, 0.02)
+
+			var roll_y := leg_h + arm_body_h
+			var roll_basis := Basis(Vector3.RIGHT, deg_to_rad(90))
+			var roll_t := base_t * Transform3D(roll_basis, Vector3(arm_x, roll_y, -0.01))
+			builder.add_cylinder(roll_t, roll_radius, arm_len - 0.02, texture_key, velvet_rect, 0.70, 0.02, false)
+
+			var face_t := base_t * Transform3D(Basis.IDENTITY, Vector3(arm_x, leg_h + (arm_h - leg_h) * 0.5, d * 0.5 - 0.01))
+			builder.add_panel_box(face_t, Vector3(arm_w, arm_h - leg_h, 0.03), texture_key, "arm_side", "smooth_velvet", 0.70, 0.02, false)
 
 
 # =========================================================================
@@ -394,30 +610,51 @@ class ArmchairVelvetMustardRecipe extends ObjectRecipeBase:
 # =========================================================================
 class ChairDiningCreamRecipe extends ObjectRecipeBase:
 	static func build(builder: Variant, base_t: Transform3D, params: Dictionary = {}) -> void:
-		var w: float = params.get("width", 0.46)
-		var d: float = params.get("depth", 0.48)
-		var h: float = params.get("height", 0.92)
+		var w: float = params.get("width", 0.48)
+		var d: float = params.get("depth", 0.50)
+		var h: float = params.get("height", 0.95)
 		var texture_key: String = params.get("texture_key", "chair_02")
 
 		var seat_h := 0.46
-		var leg_sz := 0.035
+		var leg_sz := 0.038
+		var back_thick := 0.035
 
-		# 1. 4 Patas de madera
+		# 1. Cuatro patas de caoba oscura
 		for sx: float in [-1.0, 1.0]:
 			for sz: float in [-1.0, 1.0]:
 				var px := sx * (w * 0.5 - leg_sz * 0.5 - 0.01)
 				var pz := sz * (d * 0.5 - leg_sz * 0.5 - 0.01)
 				var leg_t := base_t * Transform3D(Basis.IDENTITY, Vector3(px, seat_h * 0.5, pz))
-				builder.add_smart_box(leg_t, Vector3(leg_sz, seat_h, leg_sz), texture_key, "wood_frame")
+				builder.add_smart_box(leg_t, Vector3(leg_sz, seat_h, leg_sz), texture_key, "wood_leg", 0.55, 0.02)
 
-		# 2. Asiento acolchado crema de lunares
-		var seat_t := base_t * Transform3D(Basis.IDENTITY, Vector3(0.0, seat_h + 0.025, 0.0))
-		builder.add_smart_box(seat_t, Vector3(w, 0.05, d), texture_key, "polka_seat", 0.60, 0.02)
+		# 2. Marco / faldón perimetral de caoba bajo el asiento
+		var apron_t := base_t * Transform3D(Basis.IDENTITY, Vector3(0.0, seat_h - 0.03, 0.0))
+		builder.add_smart_box(apron_t, Vector3(w - 0.02, 0.06, d - 0.02), texture_key, "wood_frame", 0.55, 0.02)
 
-		# 3. Respaldo vertical con marco y centro tapizado
+		# 3. Asiento acolchado crema de lunares / jacquard
+		var seat_t := base_t * Transform3D(Basis.IDENTITY, Vector3(0.0, seat_h + 0.025, 0.01))
+		builder.add_top_panel_box(seat_t, Vector3(w, 0.05, d), texture_key, "polka_seat", "wood_frame", 0.60, 0.02)
+
+		# 4. Respaldo alto de caoba con panel tapizado central
 		var back_h := h - seat_h - 0.05
-		var back_t := base_t * Transform3D(Basis.IDENTITY, Vector3(0.0, seat_h + 0.05 + back_h * 0.5, -d * 0.5 + 0.02))
-		builder.add_smart_box(back_t, Vector3(w - 0.04, back_h, 0.03), texture_key, "polka_back", 0.60, 0.02)
+		var back_z := -d * 0.5 + back_thick * 0.5 + 0.01
+		var back_y := seat_h + 0.05 + back_h * 0.5
+
+		# Montantes laterales de madera del respaldo
+		for side: float in [-1.0, 1.0]:
+			var post_x := side * (w * 0.5 - leg_sz * 0.5)
+			var post_t := base_t * Transform3D(Basis.IDENTITY, Vector3(post_x, back_y, back_z))
+			builder.add_smart_box(post_t, Vector3(leg_sz, back_h, back_thick), texture_key, "wood_frame", 0.55, 0.02)
+
+		# Travesaño superior de madera
+		var top_rail_t := base_t * Transform3D(Basis.IDENTITY, Vector3(0.0, h - 0.025, back_z))
+		builder.add_smart_box(top_rail_t, Vector3(w, 0.05, back_thick), texture_key, "wood_frame", 0.55, 0.02)
+
+		# Panel tapizado central crema
+		var panel_w := w - leg_sz * 2.0
+		var panel_h := back_h - 0.06
+		var panel_t := base_t * Transform3D(Basis.IDENTITY, Vector3(0.0, back_y - 0.01, back_z))
+		builder.add_panel_box(panel_t, Vector3(panel_w, panel_h, back_thick * 0.9), texture_key, "polka_back", "wood_frame", 0.60, 0.02)
 
 
 # =========================================================================
@@ -425,31 +662,49 @@ class ChairDiningCreamRecipe extends ObjectRecipeBase:
 # =========================================================================
 class ChairBaroqueOvalRecipe extends ObjectRecipeBase:
 	static func build(builder: Variant, base_t: Transform3D, params: Dictionary = {}) -> void:
-		var w: float = params.get("width", 0.50)
-		var d: float = params.get("depth", 0.50)
+		var w: float = params.get("width", 0.52)
+		var d: float = params.get("depth", 0.52)
 		var h: float = params.get("height", 0.96)
 		var texture_key: String = params.get("texture_key", "chair_01")
 
 		var seat_h := 0.46
-		var leg_rect := ObjectAtlasScript.get_region(texture_key, "carved_wood")
+		var wood_rect := ObjectAtlasScript.get_region(texture_key, "carved_wood")
 
-		# 1. 4 Patas doradas/talladas
+		# 1. Cuatro patas doradas talladas estilo cabriolé
 		for sx: float in [-1.0, 1.0]:
 			for sz: float in [-1.0, 1.0]:
 				var px := sx * (w * 0.5 - 0.04)
 				var pz := sz * (d * 0.5 - 0.04)
 				var leg_t := base_t * Transform3D(Basis.IDENTITY, Vector3(px, seat_h * 0.5, pz))
-				builder.add_cylinder(leg_t, 0.024, seat_h, texture_key, leg_rect, 0.50, 0.05, false)
+				builder.add_cylinder(leg_t, 0.024, seat_h, texture_key, wood_rect, 0.50, 0.05, false)
 
-		# 2. Asiento redondeado con tela adamascada
-		var seat_t := base_t * Transform3D(Basis.IDENTITY, Vector3(0.0, seat_h + 0.03, 0.0))
-		builder.add_smart_box(seat_t, Vector3(w, 0.06, d), texture_key, "damask_seat", 0.55, 0.05)
+		# 2. Faldón tallado dorado bajo el asiento
+		var apron_t := base_t * Transform3D(Basis.IDENTITY, Vector3(0.0, seat_h - 0.03, 0.0))
+		builder.add_smart_box(apron_t, Vector3(w - 0.04, 0.06, d - 0.04), texture_key, "carved_wood", 0.50, 0.05)
 
-		# 3. Respaldo ovalado medallón
-		var back_h := 0.45
-		var back_w := 0.40
-		var back_t := base_t * Transform3D(Basis.IDENTITY, Vector3(0.0, seat_h + 0.06 + back_h * 0.5 + 0.04, -d * 0.5 + 0.04))
-		builder.add_smart_box(back_t, Vector3(back_w, back_h, 0.035), texture_key, "damask_back", 0.55, 0.05)
+		# 3. Asiento redondeado con tela adamascada dorada/crema
+		var seat_t := base_t * Transform3D(Basis.IDENTITY, Vector3(0.0, seat_h + 0.03, 0.01))
+		builder.add_top_panel_box(seat_t, Vector3(w, 0.06, d), texture_key, "damask_seat", "carved_wood", 0.55, 0.05)
+
+		# 4. Soportes del respaldo
+		var post_h := 0.12
+		for side: float in [-1.0, 1.0]:
+			var px := side * 0.14
+			var post_t := base_t * Transform3D(Basis.IDENTITY, Vector3(px, seat_h + 0.06 + post_h * 0.5, -d * 0.5 + 0.04))
+			builder.add_cylinder(post_t, 0.018, post_h, texture_key, wood_rect, 0.50, 0.05, false)
+
+		# 5. Respaldo ovalado medallón barroco
+		var back_h := 0.44
+		var back_w := 0.38
+		var back_y := seat_h + 0.06 + post_h + back_h * 0.5 - 0.02
+
+		# Marco de madera tallada dorada
+		var frame_t := base_t * Transform3D(Basis.IDENTITY, Vector3(0.0, back_y, -d * 0.5 + 0.035))
+		builder.add_smart_box(frame_t, Vector3(back_w + 0.04, back_h + 0.04, 0.03), texture_key, "carved_wood", 0.50, 0.05, false)
+
+		# Centro tapizado de damasco sin esquinas negras
+		var panel_t := base_t * Transform3D(Basis.IDENTITY, Vector3(0.0, back_y, -d * 0.5 + 0.045))
+		builder.add_panel_box(panel_t, Vector3(back_w, back_h, 0.02), texture_key, "damask_back", "carved_wood", 0.55, 0.05)
 
 
 # =========================================================================
@@ -457,35 +712,58 @@ class ChairBaroqueOvalRecipe extends ObjectRecipeBase:
 # =========================================================================
 class ArmchairLouisXVBlueRecipe extends ObjectRecipeBase:
 	static func build(builder: Variant, base_t: Transform3D, params: Dictionary = {}) -> void:
-		var w: float = params.get("width", 0.62)
-		var d: float = params.get("depth", 0.58)
-		var h: float = params.get("height", 0.94)
+		var w: float = params.get("width", 0.64)
+		var d: float = params.get("depth", 0.60)
+		var h: float = params.get("height", 0.96)
 		var texture_key: String = params.get("texture_key", "chair")
 
 		var seat_h := 0.44
 		var wood_rect := ObjectAtlasScript.get_region(texture_key, "carved_wood")
 
-		# 1. 4 Patas estilo cabriolé
+		# 1. Cuatro patas estilo cabriolé talladas
 		for sx: float in [-1.0, 1.0]:
 			for sz: float in [-1.0, 1.0]:
 				var leg_t := base_t * Transform3D(Basis.IDENTITY, Vector3(sx * (w * 0.5 - 0.05), seat_h * 0.5, sz * (d * 0.5 - 0.05)))
-				builder.add_cylinder(leg_t, 0.025, seat_h, texture_key, wood_rect, 0.50, 0.05, false)
+				builder.add_cylinder(leg_t, 0.024, seat_h, texture_key, wood_rect, 0.50, 0.05, false)
 
-		# 2. Asiento azul Toile de Jouy
+		# 2. Faldón tallado bajo el asiento
+		var apron_t := base_t * Transform3D(Basis.IDENTITY, Vector3(0.0, seat_h - 0.03, 0.01))
+		builder.add_smart_box(apron_t, Vector3(w - 0.04, 0.06, d - 0.04), texture_key, "carved_wood", 0.50, 0.05)
+
+		# 3. Asiento acolchado Toile de Jouy azul
 		var seat_t := base_t * Transform3D(Basis.IDENTITY, Vector3(0.0, seat_h + 0.03, 0.02))
-		builder.add_smart_box(seat_t, Vector3(w - 0.06, 0.07, d - 0.06), texture_key, "toile_seat", 0.60, 0.02)
+		builder.add_top_panel_box(seat_t, Vector3(w - 0.04, 0.07, d - 0.04), texture_key, "toile_seat", "carved_wood", 0.60, 0.02)
 
-		# 3. Respaldo ovalado con marco y tapizado azul
+		# 4. Soportes del respaldo
+		var post_h := 0.12
+		for side: float in [-1.0, 1.0]:
+			var px := side * 0.16
+			var post_t := base_t * Transform3D(Basis.IDENTITY, Vector3(px, seat_h + 0.07 + post_h * 0.5, -d * 0.5 + 0.04))
+			builder.add_cylinder(post_t, 0.020, post_h, texture_key, wood_rect, 0.50, 0.05, false)
+
+		# 5. Respaldo ovalado medallón con marco tallado y Toile de Jouy azul
 		var back_h := 0.44
-		var back_t := base_t * Transform3D(Basis.IDENTITY, Vector3(0.0, seat_h + 0.07 + back_h * 0.5, -d * 0.5 + 0.05))
-		builder.add_smart_box(back_t, Vector3(w - 0.12, back_h, 0.035), texture_key, "toile_back", 0.60, 0.02)
+		var back_w := 0.40
+		var back_y := seat_h + 0.07 + post_h + back_h * 0.5 - 0.02
 
-		# 4. Brazos curvados con coderas acolchadas
+		var frame_t := base_t * Transform3D(Basis.IDENTITY, Vector3(0.0, back_y, -d * 0.5 + 0.035))
+		builder.add_smart_box(frame_t, Vector3(back_w + 0.04, back_h + 0.04, 0.03), texture_key, "carved_wood", 0.50, 0.05, false)
+
+		var panel_t := base_t * Transform3D(Basis.IDENTITY, Vector3(0.0, back_y, -d * 0.5 + 0.045))
+		builder.add_panel_box(panel_t, Vector3(back_w, back_h, 0.02), texture_key, "toile_back", "carved_wood", 0.60, 0.02)
+
+		# 6. Brazos curvados franceses con coderas acolchadas (Manchettes)
+		var arm_h := 0.22
 		for side: float in [-1.0, 1.0]:
 			var arm_x := side * (w * 0.5 - 0.04)
-			# Soporte vertical curvo
-			var post_t := base_t * Transform3D(Basis.IDENTITY, Vector3(arm_x, seat_h + 0.14, 0.08))
-			builder.add_cylinder(post_t, 0.018, 0.24, texture_key, wood_rect, 0.50, 0.05, false)
-			# Codera acolchada azul
-			var pad_t := base_t * Transform3D(Basis.IDENTITY, Vector3(arm_x, seat_h + 0.26, -0.02))
-			builder.add_smart_box(pad_t, Vector3(0.04, 0.03, 0.18), texture_key, "toile_seat", 0.60, 0.02)
+			# Poste vertical tallado
+			var arm_post_t := base_t * Transform3D(Basis.IDENTITY, Vector3(arm_x, seat_h + 0.07 + arm_h * 0.5, 0.06))
+			builder.add_cylinder(arm_post_t, 0.018, arm_h, texture_key, wood_rect, 0.50, 0.05, false)
+
+			# Reposabrazos horizontal de madera
+			var arm_rail_t := base_t * Transform3D(Basis.IDENTITY, Vector3(arm_x, seat_h + 0.07 + arm_h, -0.04))
+			builder.add_smart_box(arm_rail_t, Vector3(0.035, 0.025, 0.26), texture_key, "carved_wood", 0.50, 0.05)
+
+			# Codera acolchada azul (Manchette)
+			var pad_t := base_t * Transform3D(Basis.IDENTITY, Vector3(arm_x, seat_h + 0.07 + arm_h + 0.02, -0.04))
+			builder.add_smart_box(pad_t, Vector3(0.045, 0.025, 0.16), texture_key, "arm_pad", 0.60, 0.02)

@@ -38,17 +38,17 @@ func _setup_lighting_and_environment() -> void:
 	var env_node := WorldEnvironment.new()
 	var env := Environment.new()
 	env.background_mode = Environment.BG_COLOR
-	env.background_color = Color(0.06, 0.07, 0.10)
+	env.background_color = Color(0.12, 0.14, 0.18)
 	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	env.ambient_light_color = Color(0.70, 0.72, 0.80)
-	env.ambient_light_energy = 0.90
+	env.ambient_light_color = Color(0.82, 0.84, 0.92)
+	env.ambient_light_energy = 1.05
 	env_node.environment = env
 	add_child(env_node)
 
 	var sun := DirectionalLight3D.new()
 	sun.name = "StudioSun"
 	sun.rotation_degrees = Vector3(-42.0, 32.0, 0.0)
-	sun.light_energy = 0.95
+	sun.light_energy = 1.15
 	sun.light_color = Color(1.0, 0.98, 0.95)
 	sun.shadow_enabled = true
 	add_child(sun)
@@ -56,9 +56,22 @@ func _setup_lighting_and_environment() -> void:
 	var fill := DirectionalLight3D.new()
 	fill.name = "FillLight"
 	fill.rotation_degrees = Vector3(25.0, -145.0, 0.0)
-	fill.light_energy = 0.45
-	fill.light_color = Color(0.70, 0.80, 0.95)
+	fill.light_energy = 0.55
+	fill.light_color = Color(0.75, 0.85, 0.98)
 	add_child(fill)
+
+	# Suelo de estudio neutral para que los objetos no floten en la oscuridad
+	var floor_mesh := PlaneMesh.new()
+	floor_mesh.size = Vector2(80.0, 60.0)
+	var floor_mat := StandardMaterial3D.new()
+	floor_mat.albedo_color = Color(0.18, 0.20, 0.24)
+	floor_mat.roughness = 0.90
+	var floor_node := MeshInstance3D.new()
+	floor_node.name = "StudioFloor"
+	floor_node.mesh = floor_mesh
+	floor_node.material_override = floor_mat
+	floor_node.position = Vector3(0.0, -0.005, 10.0)
+	add_child(floor_node)
 
 
 func _setup_camera() -> void:

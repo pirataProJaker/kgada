@@ -59,15 +59,49 @@ func _init() -> void:
 		img.save_png("res://tests/showcase_furniture2_overall.png")
 		print("✓ Captura general guardada en res://tests/showcase_furniture2_overall.png")
 
-	# 2. Captura Detallada: Asientos y Sofás
-	cam.global_position = Vector3(0.0, 3.2, 5.5)
-	cam.look_at(Vector3(0.0, 0.8, 0.0), Vector3.UP)
+	# 2. Captura Detallada: Asientos y Sofás (Panorámica completa de 12 modelos)
+	cam.fov = 72.0
+	cam.global_position = Vector3(0.0, 4.8, 13.5)
+	cam.look_at(Vector3(0.0, 0.6, 0.0), Vector3.UP)
 	for i in range(6):
 		await process_frame
 	img = vp.get_texture().get_image()
 	if img:
 		img.save_png("res://tests/showcase_furniture2_seating.png")
-		print("✓ Captura de asientos guardada en res://tests/showcase_furniture2_seating.png")
+		print("✓ Captura general de asientos guardada en res://tests/showcase_furniture2_seating.png")
+
+	# 2a. Primer plano: Los 4 Sofás (Damask Gold, Floral Cottage, Wood Minimal, Chesterfield Red)
+	cam.fov = 54.0
+	cam.global_position = Vector3(-8.7, 2.3, 4.6)
+	cam.look_at(Vector3(-8.7, 0.55, 0.0), Vector3.UP)
+	for i in range(6):
+		await process_frame
+	img = vp.get_texture().get_image()
+	if img:
+		img.save_png("res://tests/showcase_seating_sofas.png")
+		print("✓ Primer plano de sofás guardado en res://tests/showcase_seating_sofas.png")
+
+	# 2b. Primer plano: Los 5 Sillones individuales (Chesterfield, Wingback, Charcoal, SkyBlue, Mustard)
+	cam.fov = 55.0
+	cam.global_position = Vector3(1.1, 2.2, 4.5)
+	cam.look_at(Vector3(1.1, 0.55, 0.0), Vector3.UP)
+	for i in range(6):
+		await process_frame
+	img = vp.get_texture().get_image()
+	if img:
+		img.save_png("res://tests/showcase_seating_armchairs.png")
+		print("✓ Primer plano de sillones guardado en res://tests/showcase_seating_armchairs.png")
+
+	# 2c. Primer plano: Las 3 Sillas de acento (Dining Cream, Baroque Oval, Louis XV Blue)
+	cam.fov = 48.0
+	cam.global_position = Vector3(10.0, 1.9, 3.8)
+	cam.look_at(Vector3(10.0, 0.55, 0.0), Vector3.UP)
+	for i in range(6):
+		await process_frame
+	img = vp.get_texture().get_image()
+	if img:
+		img.save_png("res://tests/showcase_seating_chairs.png")
+		print("✓ Primer plano de sillas guardado en res://tests/showcase_seating_chairs.png")
 
 	# 3. Captura Detallada: Camas
 	cam.global_position = Vector3(0.0, 3.5, 9.5)

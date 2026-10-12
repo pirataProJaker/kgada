@@ -1144,69 +1144,91 @@ static var _REGIONS: Dictionary = {
 		"pillow": { "rect": Rect2(0.100, 0.268, 0.130, 0.200), "roughness": 0.85, "metallic": 0.01, "desc": "Almohada blanca arrugada" }
 	},
 	"armchair_08": {
-		"damask": { "rect": Rect2(0.450, 0.460, 0.370, 0.520), "roughness": 0.50, "metallic": 0.15, "desc": "Brocado de damasco floral dorado refinado" },
-		"trim_gold": { "rect": Rect2(0.880, 0.380, 0.110, 0.570), "roughness": 0.40, "metallic": 0.30, "desc": "Moldura perimetral barroca dorada tallada" },
-		"satin_base": { "rect": Rect2(0.005, 0.360, 0.230, 0.620), "roughness": 0.55, "metallic": 0.15, "desc": "Satén satinado para base y laterales" },
-		"wood_leg": { "rect": Rect2(0.020, 0.050, 0.180, 0.250), "roughness": 0.40, "metallic": 0.30, "desc": "Pata tallada dorada" }
+		"damask": { "rect": Rect2(0.461, 0.461, 0.359, 0.523), "roughness": 0.65, "metallic": 0.05, "desc": "Brocado de damasco floral dorado refinado" },
+		"trim_gold": { "rect": Rect2(0.883, 0.391, 0.109, 0.547), "roughness": 0.40, "metallic": 0.30, "desc": "Moldura perimetral barroca dorada tallada" },
+		"satin_base": { "rect": Rect2(0.016, 0.367, 0.219, 0.617), "roughness": 0.65, "metallic": 0.05, "desc": "Satén para base y laterales" },
+		"wood_leg": { "rect": Rect2(0.312, 0.117, 0.117, 0.234), "roughness": 0.40, "metallic": 0.30, "desc": "Pata tallada dorada" }
 	},
 	"armchair_06": {
-		"floral": { "rect": Rect2(0.610, 0.450, 0.190, 0.530), "roughness": 0.65, "metallic": 0.01, "desc": "Estampado floral cottage estilo provenzal" },
-		"cushion": { "rect": Rect2(0.610, 0.450, 0.190, 0.530), "roughness": 0.65, "metallic": 0.01, "desc": "Cojín acolchado floral" },
-		"wood_base": { "rect": Rect2(0.005, 0.460, 0.210, 0.530), "roughness": 0.60, "metallic": 0.02, "desc": "Zócalo base de madera oscura tallada" },
-		"wood_leg": { "rect": Rect2(0.005, 0.460, 0.210, 0.530), "roughness": 0.60, "metallic": 0.02, "desc": "Patas de madera oscura" }
+		"floral": { "rect": Rect2(0.609, 0.438, 0.188, 0.547), "roughness": 0.65, "metallic": 0.01, "desc": "Estampado floral cottage estilo provenzal" },
+		"cushion": { "rect": Rect2(0.609, 0.438, 0.188, 0.547), "roughness": 0.65, "metallic": 0.01, "desc": "Cojín acolchado floral" },
+		"wood_base": { "rect": Rect2(0.016, 0.453, 0.195, 0.531), "roughness": 0.60, "metallic": 0.02, "desc": "Zócalo base de madera oscura tallada" },
+		"wood_leg": { "rect": Rect2(0.016, 0.453, 0.195, 0.531), "roughness": 0.60, "metallic": 0.02, "desc": "Patas de madera oscura" },
+		"arm_roll": { "rect": Rect2(0.430, 0.438, 0.070, 0.547), "roughness": 0.65, "metallic": 0.01, "desc": "Rollo de reposabrazos floral" }
 	},
 	"armchair_07": {
-		"cushion": { "rect": Rect2(0.780, 0.510, 0.200, 0.485), "roughness": 0.70, "metallic": 0.01, "desc": "Tapizado de lino marfil texturizado" },
-		"fabric_linen": { "rect": Rect2(0.780, 0.510, 0.200, 0.485), "roughness": 0.70, "metallic": 0.01, "desc": "Lino marfil de asiento y respaldo" },
-		"wood_frame": { "rect": Rect2(0.060, 0.480, 0.370, 0.500), "roughness": 0.60, "metallic": 0.02, "desc": "Estructura vista de madera de roble claro" }
+		"cushion": { "rect": Rect2(0.781, 0.516, 0.195, 0.469), "roughness": 0.70, "metallic": 0.01, "desc": "Tapizado de lino marfil texturizado" },
+		"fabric_linen": { "rect": Rect2(0.781, 0.516, 0.195, 0.469), "roughness": 0.70, "metallic": 0.01, "desc": "Lino marfil de asiento y respaldo" },
+		"wood_frame": { "rect": Rect2(0.078, 0.492, 0.344, 0.492), "roughness": 0.60, "metallic": 0.02, "desc": "Estructura vista de madera de roble claro" },
+		"wood_back": { "rect": Rect2(0.547, 0.508, 0.195, 0.477), "roughness": 0.60, "metallic": 0.02, "desc": "Tablero trasero de roble" },
+		"wood_leg": { "rect": Rect2(0.078, 0.492, 0.150, 0.492), "roughness": 0.60, "metallic": 0.02, "desc": "Patas cuadradas de roble" }
 	},
 	"armchair_03": {
-		"cushion": { "rect": Rect2(0.240, 0.300, 0.260, 0.310), "roughness": 0.40, "metallic": 0.10, "desc": "Cuero granate suave para cojín de asiento" },
-		"tufted_back": { "rect": Rect2(0.710, 0.100, 0.120, 0.220), "roughness": 0.45, "metallic": 0.10, "desc": "Cuero capitoné con botones en rombo" },
-		"arm_scroll": { "rect": Rect2(0.005, 0.230, 0.230, 0.370), "roughness": 0.40, "metallic": 0.10, "desc": "Brazo curvo enrollado Chesterfield" },
-		"bun_foot": { "rect": Rect2(0.050, 0.050, 0.200, 0.200), "roughness": 0.50, "metallic": 0.05, "desc": "Pata redonda de madera oscura torneada" }
+		"cushion": { "rect": Rect2(0.242, 0.297, 0.258, 0.305), "roughness": 0.45, "metallic": 0.08, "desc": "Cuero granate suave para cojín de asiento" },
+		"tufted_back": { "rect": Rect2(0.750, 0.760, 0.133, 0.225), "roughness": 0.45, "metallic": 0.08, "desc": "Cuero capitoné con botones en rombo" },
+		"arm_scroll": { "rect": Rect2(0.008, 0.227, 0.219, 0.375), "roughness": 0.45, "metallic": 0.08, "desc": "Brazo curvo enrollado Chesterfield" },
+		"smooth_leather": { "rect": Rect2(0.516, 0.391, 0.188, 0.219), "roughness": 0.45, "metallic": 0.08, "desc": "Cuero granate liso para cuerpo y laterales" },
+		"bun_foot": { "rect": Rect2(0.352, 0.195, 0.078, 0.094), "roughness": 0.50, "metallic": 0.05, "desc": "Pata redonda de madera oscura torneada" },
+		"wood_leg": { "rect": Rect2(0.352, 0.195, 0.078, 0.094), "roughness": 0.50, "metallic": 0.05, "desc": "Pata redonda torneada" }
 	},
 	"armchair_04": {
-		"cushion": { "rect": Rect2(0.240, 0.300, 0.260, 0.310), "roughness": 0.40, "metallic": 0.10, "desc": "Cuero marrón cognac suave para asiento" },
-		"tufted_back": { "rect": Rect2(0.710, 0.100, 0.120, 0.220), "roughness": 0.45, "metallic": 0.10, "desc": "Cuero cognac capitoné" },
-		"arm_scroll": { "rect": Rect2(0.005, 0.230, 0.230, 0.370), "roughness": 0.40, "metallic": 0.10, "desc": "Brazo enrollado en espiral" },
-		"bun_foot": { "rect": Rect2(0.050, 0.050, 0.200, 0.200), "roughness": 0.50, "metallic": 0.05, "desc": "Pata torneada" }
+		"cushion": { "rect": Rect2(0.016, 0.258, 0.180, 0.195), "roughness": 0.45, "metallic": 0.08, "desc": "Cuero marrón cognac suave para asiento" },
+		"tufted_back": { "rect": Rect2(0.211, 0.234, 0.188, 0.219), "roughness": 0.45, "metallic": 0.08, "desc": "Cuero cognac capitoné" },
+		"arm_scroll": { "rect": Rect2(0.641, 0.461, 0.188, 0.516), "roughness": 0.45, "metallic": 0.08, "desc": "Brazo enrollado en espiral" },
+		"smooth_leather": { "rect": Rect2(0.453, 0.508, 0.172, 0.477), "roughness": 0.45, "metallic": 0.08, "desc": "Cuero cognac liso para cuerpo y laterales" },
+		"bun_foot": { "rect": Rect2(0.080, 0.080, 0.060, 0.080), "roughness": 0.50, "metallic": 0.05, "desc": "Pata torneada" },
+		"wood_leg": { "rect": Rect2(0.080, 0.080, 0.060, 0.080), "roughness": 0.50, "metallic": 0.05, "desc": "Pata torneada" }
 	},
 	"armchair": {
-		"tufted_back": { "rect": Rect2(0.005, 0.260, 0.320, 0.320), "roughness": 0.45, "metallic": 0.10, "desc": "Respaldo alto capitoné con orejas" },
-		"cushion": { "rect": Rect2(0.005, 0.580, 0.320, 0.415), "roughness": 0.40, "metallic": 0.10, "desc": "Cojín de cuero grueso envejecido" },
-		"arm_roll": { "rect": Rect2(0.620, 0.080, 0.180, 0.340), "roughness": 0.45, "metallic": 0.10, "desc": "Orejas laterales y reposabrazos" },
-		"wood_leg": { "rect": Rect2(0.620, 0.080, 0.180, 0.340), "roughness": 0.55, "metallic": 0.02, "desc": "Patas de madera oscura" }
+		"tufted_back": { "rect": Rect2(0.024, 0.328, 0.280, 0.250), "roughness": 0.50, "metallic": 0.08, "desc": "Respaldo capitoné central sin esquinas negras" },
+		"cushion": { "rect": Rect2(0.016, 0.594, 0.296, 0.390), "roughness": 0.45, "metallic": 0.08, "desc": "Cojín de cuero grueso envejecido" },
+		"arm_scroll": { "rect": Rect2(0.712, 0.140, 0.108, 0.230), "roughness": 0.45, "metallic": 0.08, "desc": "Frontal de reposabrazos con tachuelas sin bordes negros" },
+		"arm_roll": { "rect": Rect2(0.712, 0.140, 0.108, 0.230), "roughness": 0.45, "metallic": 0.08, "desc": "Frontal de reposabrazos sin bordes negros" },
+		"smooth_leather": { "rect": Rect2(0.641, 0.438, 0.344, 0.234), "roughness": 0.50, "metallic": 0.08, "desc": "Cuero marrón liso para cuerpo y respaldo" },
+		"wood_leg": { "rect": Rect2(0.094, 0.118, 0.125, 0.136), "roughness": 0.55, "metallic": 0.02, "desc": "Patas cónicas de madera oscura" }
 	},
 	"armchair_01": {
-		"tufted_back": { "rect": Rect2(0.640, 0.650, 0.290, 0.345), "roughness": 0.55, "metallic": 0.05, "desc": "Respaldo capitoné gris carbón / marengo" },
-		"cushion": { "rect": Rect2(0.005, 0.280, 0.340, 0.670), "roughness": 0.50, "metallic": 0.05, "desc": "Cojín suave gris marengo" },
-		"arm": { "rect": Rect2(0.005, 0.280, 0.340, 0.670), "roughness": 0.50, "metallic": 0.05, "desc": "Laterales acolchados" }
+		"tufted_back": { "rect": Rect2(0.672, 0.734, 0.242, 0.242), "roughness": 0.60, "metallic": 0.02, "desc": "Respaldo capitoné gris marengo puro sin bordes negros" },
+		"cushion": { "rect": Rect2(0.656, 0.047, 0.297, 0.258), "roughness": 0.55, "metallic": 0.02, "desc": "Cojín suave gris marengo" },
+		"studded_arm": { "rect": Rect2(0.738, 0.352, 0.095, 0.250), "roughness": 0.40, "metallic": 0.20, "desc": "Línea de tachuelas plateadas sin borde negro" },
+		"smooth_fabric": { "rect": Rect2(0.039, 0.293, 0.273, 0.684), "roughness": 0.60, "metallic": 0.02, "desc": "Tela marengo para cuerpo, laterales y respaldo" },
+		"arm": { "rect": Rect2(0.039, 0.293, 0.273, 0.684), "roughness": 0.60, "metallic": 0.02, "desc": "Laterales acolchados" },
+		"wood_leg": { "rect": Rect2(0.391, 0.109, 0.102, 0.125), "roughness": 0.55, "metallic": 0.02, "desc": "Patas cónicas de madera" }
 	},
 	"armchair_02": {
-		"tufted_back": { "rect": Rect2(0.640, 0.680, 0.290, 0.315), "roughness": 0.50, "metallic": 0.08, "desc": "Respaldo capitoné azul cielo" },
-		"cushion": { "rect": Rect2(0.005, 0.250, 0.340, 0.730), "roughness": 0.45, "metallic": 0.08, "desc": "Cojín azul cielo pastel" },
-		"studded_arm": { "rect": Rect2(0.640, 0.320, 0.210, 0.360), "roughness": 0.40, "metallic": 0.20, "desc": "Reposabrazos con tachuelas plateadas" }
+		"tufted_back": { "rect": Rect2(0.672, 0.740, 0.230, 0.220), "roughness": 0.55, "metallic": 0.05, "desc": "Respaldo capitoné azul cielo puro sin bordes negros" },
+		"cushion": { "rect": Rect2(0.656, 0.047, 0.297, 0.258), "roughness": 0.50, "metallic": 0.05, "desc": "Cojín azul cielo pastel" },
+		"studded_arm": { "rect": Rect2(0.735, 0.352, 0.095, 0.250), "roughness": 0.40, "metallic": 0.20, "desc": "Línea de tachuelas plateadas sin borde negro" },
+		"smooth_fabric": { "rect": Rect2(0.039, 0.260, 0.273, 0.720), "roughness": 0.55, "metallic": 0.05, "desc": "Tela azul cielo para cuerpo y respaldo" },
+		"arm": { "rect": Rect2(0.039, 0.260, 0.273, 0.720), "roughness": 0.55, "metallic": 0.05, "desc": "Laterales acolchados" },
+		"wood_leg": { "rect": Rect2(0.391, 0.109, 0.102, 0.125), "roughness": 0.55, "metallic": 0.02, "desc": "Patas cónicas de madera" }
 	},
 	"armchair_05": {
-		"tufted_back": { "rect": Rect2(0.005, 0.280, 0.280, 0.240), "roughness": 0.70, "metallic": 0.02, "desc": "Respaldo capitoné terciopelo mostaza" },
-		"cushion": { "rect": Rect2(0.005, 0.600, 0.640, 0.395), "roughness": 0.70, "metallic": 0.02, "desc": "Cojín de terciopelo amarillo mostaza" },
-		"arm": { "rect": Rect2(0.005, 0.600, 0.640, 0.395), "roughness": 0.70, "metallic": 0.02, "desc": "Brazos de terciopelo" }
+		"tufted_back": { "rect": Rect2(0.020, 0.290, 0.250, 0.230), "roughness": 0.70, "metallic": 0.02, "desc": "Respaldo capitoné terciopelo mostaza puro" },
+		"cushion": { "rect": Rect2(0.040, 0.620, 0.550, 0.350), "roughness": 0.70, "metallic": 0.02, "desc": "Terciopelo mostaza puro continuo sin recortes" },
+		"arm_side": { "rect": Rect2(0.040, 0.620, 0.550, 0.350), "roughness": 0.70, "metallic": 0.02, "desc": "Terciopelo mostaza puro para laterales y brazos" },
+		"arm": { "rect": Rect2(0.040, 0.620, 0.550, 0.350), "roughness": 0.70, "metallic": 0.02, "desc": "Brazos de terciopelo" },
+		"smooth_velvet": { "rect": Rect2(0.040, 0.620, 0.550, 0.350), "roughness": 0.70, "metallic": 0.02, "desc": "Terciopelo liso amarillo" },
+		"wood_leg": { "rect": Rect2(0.289, 0.258, 0.100, 0.100), "roughness": 0.55, "metallic": 0.02, "desc": "Patas de madera oscura" }
 	},
 	"chair": {
-		"toile_back": { "rect": Rect2(0.290, 0.640, 0.230, 0.355), "roughness": 0.60, "metallic": 0.02, "desc": "Respaldo oval Toile de Jouy azul" },
-		"toile_seat": { "rect": Rect2(0.520, 0.760, 0.240, 0.235), "roughness": 0.60, "metallic": 0.02, "desc": "Asiento acolchado Toile de Jouy azul" },
-		"carved_wood": { "rect": Rect2(0.005, 0.360, 0.250, 0.280), "roughness": 0.50, "metallic": 0.05, "desc": "Madera tallada estilo Luis XV" }
+		"toile_back": { "rect": Rect2(0.380, 0.770, 0.120, 0.180), "roughness": 0.60, "metallic": 0.02, "desc": "Tela Toile de Jouy azul pura para medallón sin esquinas negras" },
+		"toile_seat": { "rect": Rect2(0.530, 0.770, 0.210, 0.210), "roughness": 0.60, "metallic": 0.02, "desc": "Asiento acolchado Toile de Jouy azul" },
+		"carved_wood": { "rect": Rect2(0.098, 0.801, 0.078, 0.156), "roughness": 0.55, "metallic": 0.05, "desc": "Madera tallada estilo Luis XV pura sin esquinas negras" },
+		"wood_leg": { "rect": Rect2(0.098, 0.801, 0.078, 0.156), "roughness": 0.55, "metallic": 0.05, "desc": "Pata cabriolé tallada" },
+		"arm_pad": { "rect": Rect2(0.760, 0.770, 0.065, 0.210), "roughness": 0.60, "metallic": 0.02, "desc": "Codera acolchada azul" }
 	},
 	"chair_01": {
-		"damask_back": { "rect": Rect2(0.280, 0.640, 0.280, 0.355), "roughness": 0.55, "metallic": 0.05, "desc": "Respaldo barroco damasco dorado/rojo" },
-		"damask_seat": { "rect": Rect2(0.610, 0.280, 0.270, 0.280), "roughness": 0.55, "metallic": 0.05, "desc": "Asiento adamascado" },
-		"carved_wood": { "rect": Rect2(0.005, 0.360, 0.250, 0.280), "roughness": 0.50, "metallic": 0.05, "desc": "Madera dorada tallada" }
+		"damask_back": { "rect": Rect2(0.330, 0.670, 0.180, 0.280), "roughness": 0.55, "metallic": 0.05, "desc": "Tela brocada crema/dorada pura para medallón sin esquinas negras" },
+		"damask_seat": { "rect": Rect2(0.620, 0.290, 0.250, 0.260), "roughness": 0.55, "metallic": 0.05, "desc": "Asiento adamascado" },
+		"carved_wood": { "rect": Rect2(0.078, 0.664, 0.117, 0.176), "roughness": 0.50, "metallic": 0.05, "desc": "Madera dorada tallada pura sin esquinas negras" },
+		"wood_leg": { "rect": Rect2(0.078, 0.664, 0.117, 0.176), "roughness": 0.50, "metallic": 0.05, "desc": "Patas doradas talladas" }
 	},
 	"chair_02": {
-		"polka_seat": { "rect": Rect2(0.610, 0.390, 0.300, 0.300), "roughness": 0.60, "metallic": 0.02, "desc": "Tapizado de lunares / jacquard crema para asiento" },
-		"polka_back": { "rect": Rect2(0.030, 0.640, 0.240, 0.320), "roughness": 0.60, "metallic": 0.02, "desc": "Respaldo tapizado crema" },
-		"wood_frame": { "rect": Rect2(0.610, 0.690, 0.310, 0.290), "roughness": 0.55, "metallic": 0.02, "desc": "Madera de caoba / cerezo para patas y marco" }
+		"polka_seat": { "rect": Rect2(0.620, 0.400, 0.260, 0.260), "roughness": 0.60, "metallic": 0.02, "desc": "Tapizado de lunares / jacquard crema para asiento" },
+		"polka_back": { "rect": Rect2(0.045, 0.660, 0.210, 0.300), "roughness": 0.60, "metallic": 0.02, "desc": "Respaldo tapizado crema con marco de caoba" },
+		"wood_frame": { "rect": Rect2(0.620, 0.690, 0.280, 0.300), "roughness": 0.55, "metallic": 0.02, "desc": "Madera de caoba pulida para marco y faldón" },
+		"wood_leg": { "rect": Rect2(0.620, 0.690, 0.100, 0.300), "roughness": 0.55, "metallic": 0.02, "desc": "Patas cuadradas de caoba" }
 	},
 	"chair_03": {
 		"slat_back": { "rect": Rect2(0.005, 0.570, 0.380, 0.425), "roughness": 0.65, "metallic": 0.02, "desc": "Listones verticales de pino" },
