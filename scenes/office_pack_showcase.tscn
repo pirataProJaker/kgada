@@ -1,4 +1,4 @@
-[gd_scene load_steps=2 format=3 uid="uid://c6officepackshowcase"]
+[gd_scene format=3 uid="uid://dmhki8pewfp33"]
 
 [ext_resource type="Script" path="res://scenes/office_pack_showcase.gd" id="1_showcase"]
 

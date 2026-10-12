@@ -5,12 +5,7 @@ extends RefCounted
 ## Para el Motor de Objetos de Play Sector X
 ## =========================================================================
 ## Arquitectura: +0 Draw Calls (Hardware Instancing en ObjectEngine)
-## Modelos 1:1 fieles al asset pack "Interior Village" de elbolilloduro:
-##   1. BedSinglePlaidRecipe         - Cama individual de madera oscura con cobertor escocés a cuadros
-##   2. BedDoubleIronArabesqueRecipe - Cama matrimonial de hierro forjado blanco con arabescos
-##   3. BedDoubleGreyDuvetRecipe     - Cama matrimonial de madera con cabecero liso y edredón gris
-##   4. BedDoubleRusticBandRecipe    - Cama matrimonial de madera dorada con cenefa decorativa
-##   5. BedDoubleRusticWrinkledRecipe- Cama matrimonial de madera oscura con sábanas arrugadas
+## Mapeo preciso de sub-regiones UV del Atlas Inteligente
 
 const ObjectAtlasScript = preload("res://world/object_engine/object_atlas.gd")
 
@@ -35,41 +30,41 @@ class BedSinglePlaidRecipe extends ObjectRecipeBase:
 		for side: float in [-1.0, 1.0]:
 			var px := side * (w * 0.5 - post_w * 0.5)
 			var post_t := base_t * Transform3D(Basis.IDENTITY, Vector3(px, h_head * 0.5, -l * 0.5 + post_w * 0.5))
-			builder.add_smart_box(post_t, Vector3(post_w, h_head, post_w), texture_key, "")
+			builder.add_smart_box(post_t, Vector3(post_w, h_head, post_w), texture_key, "wood_post")
 
 		# 2 Postes piecero (delanteros +Z)
 		for side: float in [-1.0, 1.0]:
 			var px := side * (w * 0.5 - post_w * 0.5)
 			var post_t := base_t * Transform3D(Basis.IDENTITY, Vector3(px, foot_h * 0.5, l * 0.5 - post_w * 0.5))
-			builder.add_smart_box(post_t, Vector3(post_w, foot_h, post_w), texture_key, "")
+			builder.add_smart_box(post_t, Vector3(post_w, foot_h, post_w), texture_key, "wood_post")
 
 		# Panel del Cabecero
 		var head_p_h := 0.55
 		var head_p_t := base_t * Transform3D(Basis.IDENTITY, Vector3(0.0, h_head - head_p_h * 0.5 - 0.05, -l * 0.5 + post_w * 0.5))
-		builder.add_smart_box(head_p_t, Vector3(w - post_w * 2.0, head_p_h, 0.035), texture_key, "")
+		builder.add_smart_box(head_p_t, Vector3(w - post_w * 2.0, head_p_h, 0.035), texture_key, "wood_headboard")
 
 		# Panel del Piecero
 		var foot_p_h := 0.35
 		var foot_p_t := base_t * Transform3D(Basis.IDENTITY, Vector3(0.0, foot_h - foot_p_h * 0.5 - 0.04, l * 0.5 - post_w * 0.5))
-		builder.add_smart_box(foot_p_t, Vector3(w - post_w * 2.0, foot_p_h, 0.035), texture_key, "")
+		builder.add_smart_box(foot_p_t, Vector3(w - post_w * 2.0, foot_p_h, 0.035), texture_key, "wood")
 
 		# Largueros laterales del marco
 		for side: float in [-1.0, 1.0]:
 			var px := side * (w * 0.5 - 0.02)
 			var rail_t := base_t * Transform3D(Basis.IDENTITY, Vector3(px, 0.28, 0.0))
-			builder.add_smart_box(rail_t, Vector3(0.04, rail_h, l - post_w * 2.0), texture_key, "")
+			builder.add_smart_box(rail_t, Vector3(0.04, rail_h, l - post_w * 2.0), texture_key, "wood")
 
-		# 2. Colchón con sábana bajera
+		# 2. Colchón con edredón rayado acolchado
 		var m_t := base_t * Transform3D(Basis.IDENTITY, Vector3(0.0, mattress_y, 0.0))
-		builder.add_smart_box(m_t, Vector3(w - 0.08, 0.18, l - post_w * 2.0 - 0.04), texture_key, "", 0.75, 0.02)
+		builder.add_smart_box(m_t, Vector3(w - 0.08, 0.18, l - post_w * 2.0 - 0.04), texture_key, "duvet", 0.80, 0.01)
 
 		# 3. Franja doblada de cobija escocesa a cuadros (tartan)
 		var plaid_t := base_t * Transform3D(Basis.IDENTITY, Vector3(0.0, mattress_y + 0.10, -0.20))
-		builder.add_smart_box(plaid_t, Vector3(w - 0.06, 0.025, 0.40), texture_key, "", 0.70, 0.02)
+		builder.add_smart_box(plaid_t, Vector3(w - 0.06, 0.025, 0.40), texture_key, "plaid", 0.75, 0.01)
 
-		# 4. Almohada esponjosa
+		# 4. Almohada esponjosa escocesa
 		var pillow_t := base_t * Transform3D(Basis(Vector3.RIGHT, deg_to_rad(12.0)), Vector3(0.0, mattress_y + 0.12, -l * 0.5 + 0.35))
-		builder.add_smart_box(pillow_t, Vector3(w * 0.65, 0.10, 0.38), texture_key, "", 0.80, 0.01)
+		builder.add_smart_box(pillow_t, Vector3(w * 0.65, 0.10, 0.38), texture_key, "pillow", 0.80, 0.01)
 
 
 # =========================================================================
@@ -85,46 +80,47 @@ class BedDoubleIronArabesqueRecipe extends ObjectRecipeBase:
 		var pipe_r := 0.02
 		var foot_h := 0.85
 		var mattress_y := 0.40
+		var iron_rect := ObjectAtlasScript.get_region(texture_key, "iron_white")
 
 		# 1. Estructura de tubos de hierro blanco
 		# 2 Postes principales cabecero
 		for side: float in [-1.0, 1.0]:
 			var px := side * (w * 0.5 - pipe_r)
 			var post_t := base_t * Transform3D(Basis.IDENTITY, Vector3(px, h_head * 0.5, -l * 0.5 + pipe_r))
-			builder.add_cylinder(post_t, pipe_r, h_head, texture_key, Rect2(0.35, 0.05, 0.08, 0.40), 0.35, 0.40)
+			builder.add_cylinder(post_t, pipe_r, h_head, texture_key, iron_rect, 0.35, 0.40)
 			# Pomo esférico en la punta
 			var finial_t := base_t * Transform3D(Basis.IDENTITY, Vector3(px, h_head + 0.03, -l * 0.5 + pipe_r))
-			builder.add_smart_box(finial_t, Vector3(0.06, 0.06, 0.06), texture_key, "", 0.35, 0.40)
+			builder.add_smart_box(finial_t, Vector3(0.06, 0.06, 0.06), texture_key, "iron_white", 0.35, 0.40)
 
 		# 2 Postes piecero
 		for side: float in [-1.0, 1.0]:
 			var px := side * (w * 0.5 - pipe_r)
 			var post_t := base_t * Transform3D(Basis.IDENTITY, Vector3(px, foot_h * 0.5, l * 0.5 - pipe_r))
-			builder.add_cylinder(post_t, pipe_r, foot_h, texture_key, Rect2(0.35, 0.05, 0.08, 0.40), 0.35, 0.40)
+			builder.add_cylinder(post_t, pipe_r, foot_h, texture_key, iron_rect, 0.35, 0.40)
 			var finial_t := base_t * Transform3D(Basis.IDENTITY, Vector3(px, foot_h + 0.03, l * 0.5 - pipe_r))
-			builder.add_smart_box(finial_t, Vector3(0.06, 0.06, 0.06), texture_key, "", 0.35, 0.40)
+			builder.add_smart_box(finial_t, Vector3(0.06, 0.06, 0.06), texture_key, "iron_white", 0.35, 0.40)
 
 		# Travesaños y reja de arabescos del cabecero
 		var bar_top_t := base_t * Transform3D(Basis(Vector3.FORWARD, deg_to_rad(90.0)), Vector3(0.0, h_head - 0.05, -l * 0.5 + pipe_r))
-		builder.add_cylinder(bar_top_t, 0.015, w - 0.08, texture_key, Rect2(0.35, 0.05, 0.08, 0.40), 0.35, 0.40)
+		builder.add_cylinder(bar_top_t, 0.015, w - 0.08, texture_key, iron_rect, 0.35, 0.40)
 		var arabesque_t := base_t * Transform3D(Basis.IDENTITY, Vector3(0.0, h_head - 0.32, -l * 0.5 + pipe_r))
-		builder.add_smart_box(arabesque_t, Vector3(w - 0.12, 0.48, 0.02), texture_key, "", 0.35, 0.40, false)
+		builder.add_smart_box(arabesque_t, Vector3(w - 0.12, 0.48, 0.02), texture_key, "iron_arabesque", 0.35, 0.40, false)
 
 		# Travesaño piecero
 		var bar_foot_t := base_t * Transform3D(Basis(Vector3.FORWARD, deg_to_rad(90.0)), Vector3(0.0, foot_h - 0.05, l * 0.5 - pipe_r))
-		builder.add_cylinder(bar_foot_t, 0.015, w - 0.08, texture_key, Rect2(0.35, 0.05, 0.08, 0.40), 0.35, 0.40)
+		builder.add_cylinder(bar_foot_t, 0.015, w - 0.08, texture_key, iron_rect, 0.35, 0.40)
 		var foot_mesh_t := base_t * Transform3D(Basis.IDENTITY, Vector3(0.0, foot_h - 0.25, l * 0.5 - pipe_r))
-		builder.add_smart_box(foot_mesh_t, Vector3(w - 0.12, 0.38, 0.02), texture_key, "", 0.35, 0.40, false)
+		builder.add_smart_box(foot_mesh_t, Vector3(w - 0.12, 0.38, 0.02), texture_key, "iron_arabesque", 0.35, 0.40, false)
 
-		# 2. Colchón con colcha de malla geométrica estampada
+		# 2. Colchón con edredón gris liso
 		var m_t := base_t * Transform3D(Basis.IDENTITY, Vector3(0.0, mattress_y, 0.0))
-		builder.add_smart_box(m_t, Vector3(w - 0.08, 0.22, l - 0.12), texture_key, "", 0.75, 0.02)
+		builder.add_smart_box(m_t, Vector3(w - 0.08, 0.22, l - 0.12), texture_key, "duvet", 0.80, 0.01)
 
-		# 3. 2 Almohadas blancas
+		# 3. 2 Almohadas con malla tejida
 		for side: float in [-1.0, 1.0]:
 			var px := side * (w * 0.25)
 			var pillow_t := base_t * Transform3D(Basis(Vector3.RIGHT, deg_to_rad(12.0)), Vector3(px, mattress_y + 0.14, -l * 0.5 + 0.38))
-			builder.add_smart_box(pillow_t, Vector3(w * 0.40, 0.11, 0.42), texture_key, "", 0.80, 0.01)
+			builder.add_smart_box(pillow_t, Vector3(w * 0.40, 0.11, 0.42), texture_key, "pillow", 0.75, 0.01)
 
 
 # =========================================================================
@@ -142,26 +138,26 @@ class BedDoubleGreyDuvetRecipe extends ObjectRecipeBase:
 
 		# 1. Cabecero de madera amplio y continuo
 		var head_t := base_t * Transform3D(Basis.IDENTITY, Vector3(0.0, h_head * 0.5, -l * 0.5 + frame_thick * 0.5))
-		builder.add_smart_box(head_t, Vector3(w, h_head, frame_thick), texture_key, "")
+		builder.add_smart_box(head_t, Vector3(w, h_head, frame_thick), texture_key, "wood_headboard")
 
 		# Marco perimetral y patas de madera
 		for side: float in [-1.0, 1.0]:
 			var px := side * (w * 0.5 - frame_thick * 0.5)
 			var rail_t := base_t * Transform3D(Basis.IDENTITY, Vector3(px, 0.22, 0.0))
-			builder.add_smart_box(rail_t, Vector3(frame_thick, 0.20, l - frame_thick), texture_key, "")
+			builder.add_smart_box(rail_t, Vector3(frame_thick, 0.20, l - frame_thick), texture_key, "wood")
 
 		var foot_rail_t := base_t * Transform3D(Basis.IDENTITY, Vector3(0.0, 0.22, l * 0.5 - frame_thick * 0.5))
-		builder.add_smart_box(foot_rail_t, Vector3(w - frame_thick * 2.0, 0.20, frame_thick), texture_key, "")
+		builder.add_smart_box(foot_rail_t, Vector3(w - frame_thick * 2.0, 0.20, frame_thick), texture_key, "wood")
 
-		# 2. Colchón con edredón gris/marrón
+		# 2. Colchón con edredón bicolor gris topo y beige
 		var m_t := base_t * Transform3D(Basis.IDENTITY, Vector3(0.0, mattress_y, 0.02))
-		builder.add_smart_box(m_t, Vector3(w - frame_thick * 2.0 - 0.02, 0.22, l - frame_thick * 2.0 - 0.02), texture_key, "", 0.75, 0.02)
+		builder.add_smart_box(m_t, Vector3(w - frame_thick * 2.0 - 0.02, 0.22, l - frame_thick * 2.0 - 0.02), texture_key, "duvet", 0.80, 0.01)
 
-		# 3. 2 Almohadas oscuras de confort
+		# 3. 2 Almohadas oscuras de confort carbón
 		for side: float in [-1.0, 1.0]:
 			var px := side * (w * 0.25)
 			var pillow_t := base_t * Transform3D(Basis(Vector3.RIGHT, deg_to_rad(12.0)), Vector3(px, mattress_y + 0.14, -l * 0.5 + 0.40))
-			builder.add_smart_box(pillow_t, Vector3(w * 0.40, 0.12, 0.42), texture_key, "", 0.80, 0.01)
+			builder.add_smart_box(pillow_t, Vector3(w * 0.40, 0.12, 0.42), texture_key, "pillow", 0.80, 0.01)
 
 
 # =========================================================================
@@ -182,28 +178,28 @@ class BedDoubleRusticBandRecipe extends ObjectRecipeBase:
 			var px := sx * (w * 0.5 - post_sz * 0.5)
 			# Postes cabecero
 			var p_head_t := base_t * Transform3D(Basis.IDENTITY, Vector3(px, h_head * 0.5, -l * 0.5 + post_sz * 0.5))
-			builder.add_smart_box(p_head_t, Vector3(post_sz, h_head, post_sz), texture_key, "")
+			builder.add_smart_box(p_head_t, Vector3(post_sz, h_head, post_sz), texture_key, "wood_post")
 			# Postes piecero
 			var p_foot_t := base_t * Transform3D(Basis.IDENTITY, Vector3(px, 0.50 * 0.5, l * 0.5 - post_sz * 0.5))
-			builder.add_smart_box(p_foot_t, Vector3(post_sz, 0.50, post_sz), texture_key, "")
+			builder.add_smart_box(p_foot_t, Vector3(post_sz, 0.50, post_sz), texture_key, "wood_post")
 
 		# Cabecero de paneles verticales de madera
 		var head_p_t := base_t * Transform3D(Basis.IDENTITY, Vector3(0.0, h_head * 0.5 + 0.10, -l * 0.5 + post_sz * 0.5))
-		builder.add_smart_box(head_p_t, Vector3(w - post_sz * 2.0, h_head - 0.25, 0.05), texture_key, "")
+		builder.add_smart_box(head_p_t, Vector3(w - post_sz * 2.0, h_head - 0.25, 0.05), texture_key, "wood")
 
-		# 2. Colchón con frazada suave
+		# 2. Colchón con sábana gris
 		var m_t := base_t * Transform3D(Basis.IDENTITY, Vector3(0.0, mattress_y, 0.0))
-		builder.add_smart_box(m_t, Vector3(w - post_sz * 2.0 - 0.02, 0.22, l - post_sz * 2.0 - 0.02), texture_key, "", 0.70, 0.02)
+		builder.add_smart_box(m_t, Vector3(w - post_sz * 2.0 - 0.02, 0.22, l - post_sz * 2.0 - 0.02), texture_key, "duvet", 0.80, 0.01)
 
 		# Cenefa decorativa estampada doblada sobre la cama
 		var band_t := base_t * Transform3D(Basis.IDENTITY, Vector3(0.0, mattress_y + 0.12, -0.22))
-		builder.add_smart_box(band_t, Vector3(w - post_sz * 2.0, 0.025, 0.35), texture_key, "", 0.75, 0.02)
+		builder.add_smart_box(band_t, Vector3(w - post_sz * 2.0, 0.025, 0.35), texture_key, "band", 0.85, 0.01)
 
 		# 3. 2 Almohadas
 		for side: float in [-1.0, 1.0]:
 			var px := side * (w * 0.25)
 			var pillow_t := base_t * Transform3D(Basis(Vector3.RIGHT, deg_to_rad(12.0)), Vector3(px, mattress_y + 0.14, -l * 0.5 + 0.42))
-			builder.add_smart_box(pillow_t, Vector3(w * 0.40, 0.12, 0.42), texture_key, "", 0.80, 0.01)
+			builder.add_smart_box(pillow_t, Vector3(w * 0.40, 0.12, 0.42), texture_key, "pillow", 0.80, 0.01)
 
 
 # =========================================================================
@@ -221,23 +217,23 @@ class BedDoubleRusticWrinkledRecipe extends ObjectRecipeBase:
 
 		# 1. Cabecero y piecero con postes salientes
 		var head_t := base_t * Transform3D(Basis.IDENTITY, Vector3(0.0, h_head * 0.5, -l * 0.5 + frame_thick * 0.5))
-		builder.add_smart_box(head_t, Vector3(w, h_head, frame_thick), texture_key, "")
+		builder.add_smart_box(head_t, Vector3(w, h_head, frame_thick), texture_key, "wood")
 
 		var foot_t := base_t * Transform3D(Basis.IDENTITY, Vector3(0.0, 0.45 * 0.5, l * 0.5 - frame_thick * 0.5))
-		builder.add_smart_box(foot_t, Vector3(w, 0.45, frame_thick), texture_key, "")
+		builder.add_smart_box(foot_t, Vector3(w, 0.45, frame_thick), texture_key, "wood")
 
 		# Largueros laterales
 		for side: float in [-1.0, 1.0]:
 			var px := side * (w * 0.5 - frame_thick * 0.5)
 			var rail_t := base_t * Transform3D(Basis.IDENTITY, Vector3(px, 0.22, 0.0))
-			builder.add_smart_box(rail_t, Vector3(frame_thick, 0.20, l - frame_thick * 2.0), texture_key, "")
+			builder.add_smart_box(rail_t, Vector3(frame_thick, 0.20, l - frame_thick * 2.0), texture_key, "wood")
 
-		# 2. Colchón con sábanas blancas y pliegues arrugados realistas
+		# 2. Colchón con sábanas y pliegues arrugados realistas
 		var m_t := base_t * Transform3D(Basis.IDENTITY, Vector3(0.0, mattress_y, 0.0))
-		builder.add_smart_box(m_t, Vector3(w - frame_thick * 2.0 - 0.02, 0.22, l - frame_thick * 2.0 - 0.02), texture_key, "", 0.80, 0.01)
+		builder.add_smart_box(m_t, Vector3(w - frame_thick * 2.0 - 0.02, 0.22, l - frame_thick * 2.0 - 0.02), texture_key, "duvet", 0.85, 0.01)
 
-		# 3. 2 Almohadas con pliegues
+		# 3. 2 Almohadas blancas con pliegues
 		for side: float in [-1.0, 1.0]:
 			var px := side * (w * 0.25)
 			var pillow_t := base_t * Transform3D(Basis(Vector3.RIGHT, deg_to_rad(12.0)), Vector3(px, mattress_y + 0.14, -l * 0.5 + 0.40))
-			builder.add_smart_box(pillow_t, Vector3(w * 0.40, 0.12, 0.42), texture_key, "", 0.80, 0.01)
+			builder.add_smart_box(pillow_t, Vector3(w * 0.40, 0.12, 0.42), texture_key, "pillow", 0.85, 0.01)

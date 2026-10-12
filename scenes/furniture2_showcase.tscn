@@ -1,4 +1,4 @@
-[gd_scene load_steps=2 format=3 uid="uid://dfurniture2showcase"]
+[gd_scene format=3 uid="uid://upmvcmi1emse"]
 
 [ext_resource type="Script" path="res://scenes/furniture2_showcase.gd" id="1_f2showcase"]
 

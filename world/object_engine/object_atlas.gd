@@ -1105,6 +1105,382 @@ static var _REGIONS: Dictionary = {
 			"metallic": 0.20,
 			"desc": "Zócalo base inferior del archivero"
 		}
+	},
+
+	# =========================================================================
+	# 23. COLECCIÓN FURNITURE 2.0 (INTERIOR VILLAGE)
+	# =========================================================================
+	"bed": {
+		"wood": { "rect": Rect2(0.005, 0.495, 0.555, 0.500), "roughness": 0.65, "metallic": 0.02, "desc": "Paneles de madera oscura lisa" },
+		"wood_headboard": { "rect": Rect2(0.005, 0.220, 0.185, 0.270), "roughness": 0.65, "metallic": 0.02, "desc": "Cabecero de madera oscura con listones" },
+		"wood_post": { "rect": Rect2(0.420, 0.055, 0.140, 0.435), "roughness": 0.60, "metallic": 0.02, "desc": "Postes esquineros y largueros de madera" },
+		"duvet": { "rect": Rect2(0.566, 0.620, 0.380, 0.375), "roughness": 0.80, "metallic": 0.01, "desc": "Edredón rayado acolchado" },
+		"plaid": { "rect": Rect2(0.566, 0.498, 0.380, 0.120), "roughness": 0.75, "metallic": 0.01, "desc": "Cenefa de cobija escocesa roja a cuadros" },
+		"pillow": { "rect": Rect2(0.566, 0.498, 0.380, 0.120), "roughness": 0.80, "metallic": 0.01, "desc": "Almohada escocesa a juego" }
+	},
+	"bed_01": {
+		"wood": { "rect": Rect2(0.005, 0.605, 0.590, 0.390), "roughness": 0.70, "metallic": 0.02, "desc": "Tablones de pino rústico dorado" },
+		"wood_post": { "rect": Rect2(0.300, 0.605, 0.300, 0.390), "roughness": 0.70, "metallic": 0.02, "desc": "Postes y largueros de pino rústico" },
+		"duvet": { "rect": Rect2(0.005, 0.250, 0.285, 0.260), "roughness": 0.80, "metallic": 0.01, "desc": "Sábana superior gris claro" },
+		"band": { "rect": Rect2(0.005, 0.510, 0.285, 0.090), "roughness": 0.85, "metallic": 0.01, "desc": "Cenefa tejida artesanal con figuras decorativas" },
+		"pillow": { "rect": Rect2(0.005, 0.250, 0.285, 0.260), "roughness": 0.80, "metallic": 0.01, "desc": "Almohada suave a juego" }
+	},
+	"bed_02": {
+		"iron_white": { "rect": Rect2(0.350, 0.020, 0.300, 0.450), "roughness": 0.35, "metallic": 0.40, "desc": "Tubos de hierro forjado blanco" },
+		"iron_arabesque": { "rect": Rect2(0.300, 0.005, 0.380, 0.480), "roughness": 0.35, "metallic": 0.40, "desc": "Filigrana y arabescos de hierro blanco" },
+		"duvet": { "rect": Rect2(0.005, 0.495, 0.335, 0.500), "roughness": 0.80, "metallic": 0.01, "desc": "Edredón gris liso acolchado" },
+		"sheet": { "rect": Rect2(0.345, 0.495, 0.335, 0.500), "roughness": 0.80, "metallic": 0.01, "desc": "Sábana bajera crema" },
+		"pillow": { "rect": Rect2(0.005, 0.005, 0.300, 0.480), "roughness": 0.75, "metallic": 0.01, "desc": "Almohada con malla tejida y cenefa oscura" }
+	},
+	"bed_03": {
+		"wood": { "rect": Rect2(0.005, 0.612, 0.560, 0.385), "roughness": 0.65, "metallic": 0.02, "desc": "Tablones de roble cálido" },
+		"wood_headboard": { "rect": Rect2(0.565, 0.280, 0.195, 0.285), "roughness": 0.65, "metallic": 0.02, "desc": "Cabecero y piecero de madera" },
+		"duvet": { "rect": Rect2(0.005, 0.225, 0.268, 0.380), "roughness": 0.80, "metallic": 0.01, "desc": "Edredón bicolor gris topo y beige" },
+		"pillow": { "rect": Rect2(0.005, 0.080, 0.185, 0.140), "roughness": 0.80, "metallic": 0.01, "desc": "Almohadas oscuras carbón" }
+	},
+	"bed_04": {
+		"wood": { "rect": Rect2(0.005, 0.525, 0.305, 0.470), "roughness": 0.65, "metallic": 0.02, "desc": "Tablas de nogal oscuro rústico" },
+		"duvet": { "rect": Rect2(0.312, 0.556, 0.300, 0.350), "roughness": 0.85, "metallic": 0.01, "desc": "Sábanas arrugadas acogedoras grisáceas" },
+		"pillow": { "rect": Rect2(0.100, 0.268, 0.130, 0.200), "roughness": 0.85, "metallic": 0.01, "desc": "Almohada blanca arrugada" }
+	},
+	"armchair_08": {
+		"damask": { "rect": Rect2(0.450, 0.460, 0.370, 0.520), "roughness": 0.50, "metallic": 0.15, "desc": "Brocado de damasco floral dorado refinado" },
+		"trim_gold": { "rect": Rect2(0.880, 0.380, 0.110, 0.570), "roughness": 0.40, "metallic": 0.30, "desc": "Moldura perimetral barroca dorada tallada" },
+		"satin_base": { "rect": Rect2(0.005, 0.360, 0.230, 0.620), "roughness": 0.55, "metallic": 0.15, "desc": "Satén satinado para base y laterales" },
+		"wood_leg": { "rect": Rect2(0.020, 0.050, 0.180, 0.250), "roughness": 0.40, "metallic": 0.30, "desc": "Pata tallada dorada" }
+	},
+	"armchair_06": {
+		"floral": { "rect": Rect2(0.610, 0.450, 0.190, 0.530), "roughness": 0.65, "metallic": 0.01, "desc": "Estampado floral cottage estilo provenzal" },
+		"cushion": { "rect": Rect2(0.610, 0.450, 0.190, 0.530), "roughness": 0.65, "metallic": 0.01, "desc": "Cojín acolchado floral" },
+		"wood_base": { "rect": Rect2(0.005, 0.460, 0.210, 0.530), "roughness": 0.60, "metallic": 0.02, "desc": "Zócalo base de madera oscura tallada" },
+		"wood_leg": { "rect": Rect2(0.005, 0.460, 0.210, 0.530), "roughness": 0.60, "metallic": 0.02, "desc": "Patas de madera oscura" }
+	},
+	"armchair_07": {
+		"cushion": { "rect": Rect2(0.780, 0.510, 0.200, 0.485), "roughness": 0.70, "metallic": 0.01, "desc": "Tapizado de lino marfil texturizado" },
+		"fabric_linen": { "rect": Rect2(0.780, 0.510, 0.200, 0.485), "roughness": 0.70, "metallic": 0.01, "desc": "Lino marfil de asiento y respaldo" },
+		"wood_frame": { "rect": Rect2(0.060, 0.480, 0.370, 0.500), "roughness": 0.60, "metallic": 0.02, "desc": "Estructura vista de madera de roble claro" }
+	},
+	"armchair_03": {
+		"cushion": { "rect": Rect2(0.240, 0.300, 0.260, 0.310), "roughness": 0.40, "metallic": 0.10, "desc": "Cuero granate suave para cojín de asiento" },
+		"tufted_back": { "rect": Rect2(0.710, 0.100, 0.120, 0.220), "roughness": 0.45, "metallic": 0.10, "desc": "Cuero capitoné con botones en rombo" },
+		"arm_scroll": { "rect": Rect2(0.005, 0.230, 0.230, 0.370), "roughness": 0.40, "metallic": 0.10, "desc": "Brazo curvo enrollado Chesterfield" },
+		"bun_foot": { "rect": Rect2(0.050, 0.050, 0.200, 0.200), "roughness": 0.50, "metallic": 0.05, "desc": "Pata redonda de madera oscura torneada" }
+	},
+	"armchair_04": {
+		"cushion": { "rect": Rect2(0.240, 0.300, 0.260, 0.310), "roughness": 0.40, "metallic": 0.10, "desc": "Cuero marrón cognac suave para asiento" },
+		"tufted_back": { "rect": Rect2(0.710, 0.100, 0.120, 0.220), "roughness": 0.45, "metallic": 0.10, "desc": "Cuero cognac capitoné" },
+		"arm_scroll": { "rect": Rect2(0.005, 0.230, 0.230, 0.370), "roughness": 0.40, "metallic": 0.10, "desc": "Brazo enrollado en espiral" },
+		"bun_foot": { "rect": Rect2(0.050, 0.050, 0.200, 0.200), "roughness": 0.50, "metallic": 0.05, "desc": "Pata torneada" }
+	},
+	"armchair": {
+		"tufted_back": { "rect": Rect2(0.005, 0.260, 0.320, 0.320), "roughness": 0.45, "metallic": 0.10, "desc": "Respaldo alto capitoné con orejas" },
+		"cushion": { "rect": Rect2(0.005, 0.580, 0.320, 0.415), "roughness": 0.40, "metallic": 0.10, "desc": "Cojín de cuero grueso envejecido" },
+		"arm_roll": { "rect": Rect2(0.620, 0.080, 0.180, 0.340), "roughness": 0.45, "metallic": 0.10, "desc": "Orejas laterales y reposabrazos" },
+		"wood_leg": { "rect": Rect2(0.620, 0.080, 0.180, 0.340), "roughness": 0.55, "metallic": 0.02, "desc": "Patas de madera oscura" }
+	},
+	"armchair_01": {
+		"tufted_back": { "rect": Rect2(0.640, 0.650, 0.290, 0.345), "roughness": 0.55, "metallic": 0.05, "desc": "Respaldo capitoné gris carbón / marengo" },
+		"cushion": { "rect": Rect2(0.005, 0.280, 0.340, 0.670), "roughness": 0.50, "metallic": 0.05, "desc": "Cojín suave gris marengo" },
+		"arm": { "rect": Rect2(0.005, 0.280, 0.340, 0.670), "roughness": 0.50, "metallic": 0.05, "desc": "Laterales acolchados" }
+	},
+	"armchair_02": {
+		"tufted_back": { "rect": Rect2(0.640, 0.680, 0.290, 0.315), "roughness": 0.50, "metallic": 0.08, "desc": "Respaldo capitoné azul cielo" },
+		"cushion": { "rect": Rect2(0.005, 0.250, 0.340, 0.730), "roughness": 0.45, "metallic": 0.08, "desc": "Cojín azul cielo pastel" },
+		"studded_arm": { "rect": Rect2(0.640, 0.320, 0.210, 0.360), "roughness": 0.40, "metallic": 0.20, "desc": "Reposabrazos con tachuelas plateadas" }
+	},
+	"armchair_05": {
+		"tufted_back": { "rect": Rect2(0.005, 0.280, 0.280, 0.240), "roughness": 0.70, "metallic": 0.02, "desc": "Respaldo capitoné terciopelo mostaza" },
+		"cushion": { "rect": Rect2(0.005, 0.600, 0.640, 0.395), "roughness": 0.70, "metallic": 0.02, "desc": "Cojín de terciopelo amarillo mostaza" },
+		"arm": { "rect": Rect2(0.005, 0.600, 0.640, 0.395), "roughness": 0.70, "metallic": 0.02, "desc": "Brazos de terciopelo" }
+	},
+	"chair": {
+		"toile_back": { "rect": Rect2(0.290, 0.640, 0.230, 0.355), "roughness": 0.60, "metallic": 0.02, "desc": "Respaldo oval Toile de Jouy azul" },
+		"toile_seat": { "rect": Rect2(0.520, 0.760, 0.240, 0.235), "roughness": 0.60, "metallic": 0.02, "desc": "Asiento acolchado Toile de Jouy azul" },
+		"carved_wood": { "rect": Rect2(0.005, 0.360, 0.250, 0.280), "roughness": 0.50, "metallic": 0.05, "desc": "Madera tallada estilo Luis XV" }
+	},
+	"chair_01": {
+		"damask_back": { "rect": Rect2(0.280, 0.640, 0.280, 0.355), "roughness": 0.55, "metallic": 0.05, "desc": "Respaldo barroco damasco dorado/rojo" },
+		"damask_seat": { "rect": Rect2(0.610, 0.280, 0.270, 0.280), "roughness": 0.55, "metallic": 0.05, "desc": "Asiento adamascado" },
+		"carved_wood": { "rect": Rect2(0.005, 0.360, 0.250, 0.280), "roughness": 0.50, "metallic": 0.05, "desc": "Madera dorada tallada" }
+	},
+	"chair_02": {
+		"polka_seat": { "rect": Rect2(0.610, 0.390, 0.300, 0.300), "roughness": 0.60, "metallic": 0.02, "desc": "Tapizado de lunares / jacquard crema para asiento" },
+		"polka_back": { "rect": Rect2(0.030, 0.640, 0.240, 0.320), "roughness": 0.60, "metallic": 0.02, "desc": "Respaldo tapizado crema" },
+		"wood_frame": { "rect": Rect2(0.610, 0.690, 0.310, 0.290), "roughness": 0.55, "metallic": 0.02, "desc": "Madera de caoba / cerezo para patas y marco" }
+	},
+	"chair_03": {
+		"slat_back": { "rect": Rect2(0.005, 0.570, 0.380, 0.425), "roughness": 0.65, "metallic": 0.02, "desc": "Listones verticales de pino" },
+		"wood_seat": { "rect": Rect2(0.380, 0.100, 0.230, 0.890), "roughness": 0.60, "metallic": 0.02, "desc": "Asiento de madera sólida de pino" },
+		"wood_leg": { "rect": Rect2(0.380, 0.100, 0.230, 0.890), "roughness": 0.60, "metallic": 0.02, "desc": "Patas cuadradas de pino" }
+	},
+	"chair_04": {
+		"wood_seat": { "rect": Rect2(0.005, 0.680, 0.320, 0.315), "roughness": 0.60, "metallic": 0.02, "desc": "Asiento moldeado redondeado de madera" },
+		"spindles": { "rect": Rect2(0.600, 0.360, 0.300, 0.300), "roughness": 0.55, "metallic": 0.02, "desc": "Husillos y barrotes torneados" }
+	},
+	"chair_05": {
+		"boucle_seat": { "rect": Rect2(0.005, 0.250, 0.250, 0.270), "roughness": 0.80, "metallic": 0.01, "desc": "Tapizado bouclé texturizado de asiento" },
+		"boucle_back": { "rect": Rect2(0.520, 0.030, 0.230, 0.250), "roughness": 0.80, "metallic": 0.01, "desc": "Respaldo semicircular bouclé" },
+		"wood_legs": { "rect": Rect2(0.005, 0.510, 0.500, 0.485), "roughness": 0.60, "metallic": 0.02, "desc": "Patas cónicas de nogal oscuro" }
+	},
+	"chest_drawers_01": {
+		"drawers": { "rect": Rect2(0.005, 0.580, 0.360, 0.360), "roughness": 0.60, "metallic": 0.05, "desc": "Frente de 3 cajones con jaladeras metálicas" },
+		"drawer_top": { "rect": Rect2(0.020, 0.590, 0.330, 0.110), "roughness": 0.60, "metallic": 0.05, "desc": "Cajón superior" },
+		"drawer_mid": { "rect": Rect2(0.020, 0.700, 0.330, 0.110), "roughness": 0.60, "metallic": 0.05, "desc": "Cajón central" },
+		"drawer_bot": { "rect": Rect2(0.020, 0.810, 0.330, 0.110), "roughness": 0.60, "metallic": 0.05, "desc": "Cajón inferior" },
+		"wood_body": { "rect": Rect2(0.380, 0.570, 0.370, 0.420), "roughness": 0.60, "metallic": 0.02, "desc": "Cuerpo y laterales de madera clara" },
+		"wood_top": { "rect": Rect2(0.270, 0.160, 0.270, 0.400), "roughness": 0.60, "metallic": 0.02, "desc": "Cubierta superior de madera" }
+	},
+	"chest_drawers_02": {
+		"drawers": { "rect": Rect2(0.265, 0.510, 0.255, 0.485), "roughness": 0.35, "metallic": 0.15, "desc": "Frentes de cajón blancos con anillas de latón" },
+		"white_body": { "rect": Rect2(0.005, 0.510, 0.250, 0.485), "roughness": 0.35, "metallic": 0.10, "desc": "Laterales y tapa esmaltados en blanco" }
+	},
+	"chest_drawers_03": {
+		"drawers": { "rect": Rect2(0.005, 0.505, 0.490, 0.490), "roughness": 0.60, "metallic": 0.05, "desc": "3 cajones de pino con pomos oscuros" },
+		"drawer_top": { "rect": Rect2(0.015, 0.525, 0.470, 0.150), "roughness": 0.60, "metallic": 0.05, "desc": "Cajón superior de pino" },
+		"drawer_mid": { "rect": Rect2(0.015, 0.680, 0.470, 0.150), "roughness": 0.60, "metallic": 0.05, "desc": "Cajón central de pino" },
+		"drawer_bot": { "rect": Rect2(0.015, 0.835, 0.470, 0.150), "roughness": 0.60, "metallic": 0.05, "desc": "Cajón inferior de pino" },
+		"pine_top": { "rect": Rect2(0.005, 0.005, 0.495, 0.495), "roughness": 0.60, "metallic": 0.02, "desc": "Cubierta superior de pino" },
+		"pine_body": { "rect": Rect2(0.505, 0.505, 0.490, 0.490), "roughness": 0.60, "metallic": 0.02, "desc": "Laterales de pino con veta cálida" }
+	},
+	"chest_drawers_04": {
+		"nightstand_drawers": { "rect": Rect2(0.030, 0.450, 0.360, 0.240), "roughness": 0.60, "metallic": 0.05, "desc": "2 cajones para mesita de noche con pomos" },
+		"nightstand_drawer_top": { "rect": Rect2(0.030, 0.450, 0.360, 0.120), "roughness": 0.60, "metallic": 0.05, "desc": "Cajón superior de mesita" },
+		"nightstand_drawer_bot": { "rect": Rect2(0.030, 0.570, 0.360, 0.120), "roughness": 0.60, "metallic": 0.05, "desc": "Cajón inferior de mesita" },
+		"chest_drawers": { "rect": Rect2(0.460, 0.040, 0.510, 0.440), "roughness": 0.60, "metallic": 0.05, "desc": "Cajones anchos para cómoda alta" },
+		"chest_drawer_top": { "rect": Rect2(0.460, 0.040, 0.510, 0.220), "roughness": 0.60, "metallic": 0.05, "desc": "Cajón ancho superior" },
+		"chest_drawer_bot": { "rect": Rect2(0.460, 0.260, 0.510, 0.220), "roughness": 0.60, "metallic": 0.05, "desc": "Cajón ancho inferior" },
+		"oak_body": { "rect": Rect2(0.400, 0.450, 0.410, 0.540), "roughness": 0.60, "metallic": 0.02, "desc": "Tablero de roble limpio para laterales y tapa" },
+		"wood_leg": { "rect": Rect2(0.810, 0.450, 0.180, 0.540), "roughness": 0.60, "metallic": 0.02, "desc": "Patas cónicas de roble" }
+	},
+	"chest_drawers_05": {
+		"drawer_panels": { "rect": Rect2(0.245, 0.065, 0.230, 0.925), "roughness": 0.60, "metallic": 0.02, "desc": "Columna de frentes biselados y cajones" },
+		"drawer_top": { "rect": Rect2(0.245, 0.065, 0.230, 0.285), "roughness": 0.60, "metallic": 0.02, "desc": "Cajón superior enmarcado" },
+		"drawer_mid": { "rect": Rect2(0.245, 0.355, 0.230, 0.340), "roughness": 0.60, "metallic": 0.02, "desc": "Franja media de cajones" },
+		"drawer_bot": { "rect": Rect2(0.245, 0.695, 0.230, 0.285), "roughness": 0.60, "metallic": 0.02, "desc": "Cajón inferior enmarcado" },
+		"wood_body": { "rect": Rect2(0.005, 0.055, 0.235, 0.935), "roughness": 0.60, "metallic": 0.02, "desc": "Laterales de madera cálida" }
+	},
+	"chest_drawers_06": {
+		"doors": { "rect": Rect2(0.510, 0.495, 0.465, 0.495), "roughness": 0.60, "metallic": 0.05, "desc": "Puertas dobles y cajones con pomos de metal" },
+		"door_left": { "rect": Rect2(0.510, 0.495, 0.230, 0.495), "roughness": 0.60, "metallic": 0.05, "desc": "Puerta izquierda con pomo" },
+		"door_right": { "rect": Rect2(0.740, 0.495, 0.235, 0.495), "roughness": 0.60, "metallic": 0.05, "desc": "Puerta derecha con pomo" },
+		"wood_body": { "rect": Rect2(0.015, 0.490, 0.480, 0.505), "roughness": 0.60, "metallic": 0.02, "desc": "Tablero de madera natural para laterales y tapa" }
+	},
+	"fitment": {
+		"vitrine_glass": { "rect": Rect2(0.005, 0.700, 0.490, 0.295), "roughness": 0.20, "metallic": 0.10, "desc": "Puertas vitrina con cristal cuarteado y vajilla interior" },
+		"drawers_strip": { "rect": Rect2(0.005, 0.638, 0.490, 0.055), "roughness": 0.60, "metallic": 0.05, "desc": "Hilera de 5 cajoncitos con tiradores" },
+		"top_cabinets": { "rect": Rect2(0.005, 0.505, 0.490, 0.130), "roughness": 0.60, "metallic": 0.02, "desc": "Alacenas superiores de roble tallado" },
+		"wood_body": { "rect": Rect2(0.505, 0.525, 0.490, 0.470), "roughness": 0.60, "metallic": 0.02, "desc": "Vetas de roble horizontal para cubierta y laterales" }
+	},
+	"bookcase": {
+		"books_shelves": { "rect": Rect2(0.015, 0.495, 0.335, 0.500), "roughness": 0.70, "metallic": 0.01, "desc": "Estantes repletos de lomos de libros antiguos" },
+		"wood_body": { "rect": Rect2(0.355, 0.495, 0.355, 0.500), "roughness": 0.60, "metallic": 0.02, "desc": "Madera de caoba pulida para laterales y repisas" }
+	},
+	"bookcase_01": {
+		"vitrine_books": { "rect": Rect2(0.230, 0.225, 0.285, 0.290), "roughness": 0.25, "metallic": 0.15, "desc": "Vitrina con cristales y encuadernaciones de lujo" },
+		"wood_cabinet": { "rect": Rect2(0.518, 0.315, 0.285, 0.195), "roughness": 0.60, "metallic": 0.02, "desc": "Armario inferior de nogal con molduras" },
+		"wood_body": { "rect": Rect2(0.005, 0.520, 0.620, 0.475), "roughness": 0.60, "metallic": 0.02, "desc": "Panel lateral de nogal lustroso" }
+	},
+	"wardrobe": {
+		"clothes_hanging": { "rect": Rect2(0.005, 0.130, 0.230, 0.350), "roughness": 0.75, "metallic": 0.01, "desc": "Ropa colgada en perchas dentro del armario" },
+		"wood_body": { "rect": Rect2(0.235, 0.130, 0.230, 0.350), "roughness": 0.60, "metallic": 0.02, "desc": "Madera para costados y techo de ropero" }
+	},
+	"stove": {
+		"burners": { "rect": Rect2(0.0, 0.0, 1.0, 0.36), "roughness": 0.85, "metallic": 0.15, "desc": "6 quemadores de gas con parrillas de hierro forjado" },
+		"knobs": { "rect": Rect2(0.0, 0.36, 1.0, 0.15), "roughness": 0.30, "metallic": 0.50, "desc": "Panel frontal de acero con perillas redondas" },
+		"oven_door": { "rect": Rect2(0.0, 0.51, 1.0, 0.49), "roughness": 0.25, "metallic": 0.20, "desc": "Puerta del horno con cristal negro y logo Viking" },
+		"white_side": { "rect": Rect2(0.02, 0.85, 0.10, 0.10), "roughness": 0.35, "metallic": 0.10, "desc": "Esmalte blanco pulido para laterales" }
+	},
+	"refrigerator": {
+		"main_door": { "rect": Rect2(0.24, 0.64, 0.23, 0.35), "roughness": 0.30, "metallic": 0.15, "desc": "Puerta inferior con nota adhesiva y magnetos" },
+		"freezer_door": { "rect": Rect2(0.36, 0.40, 0.15, 0.23), "roughness": 0.30, "metallic": 0.15, "desc": "Puerta superior congelador con dispensador" },
+		"enamel_body": { "rect": Rect2(0.005, 0.65, 0.20, 0.30), "roughness": 0.35, "metallic": 0.10, "desc": "Lámina beige marfil para costados y techo" }
+	},
+	"cupboard": {
+		"drawer": { "rect": Rect2(0.0, 0.0, 1.0, 0.22), "roughness": 0.45, "metallic": 0.05, "desc": "Frente de cajón blanco shaker con tirador" },
+		"doors": { "rect": Rect2(0.0, 0.22, 1.0, 0.78), "roughness": 0.45, "metallic": 0.05, "desc": "Puertas dobles shaker blancas con tiradores" },
+		"door_left": { "rect": Rect2(0.0, 0.22, 0.50, 0.78), "roughness": 0.45, "metallic": 0.05, "desc": "Puerta izquierda shaker" },
+		"door_right": { "rect": Rect2(0.50, 0.22, 0.50, 0.78), "roughness": 0.45, "metallic": 0.05, "desc": "Puerta derecha shaker" },
+		"white_body": { "rect": Rect2(0.05, 0.85, 0.15, 0.10), "roughness": 0.45, "metallic": 0.05, "desc": "Laterales blancos limpios" }
+	},
+	"cupboard_01": {
+		"doors": { "rect": Rect2(0.0, 0.0, 1.0, 1.0), "roughness": 0.45, "metallic": 0.05, "desc": "Puertas dobles altas de alacena blanca con tiradores" },
+		"door_left": { "rect": Rect2(0.0, 0.0, 0.50, 1.0), "roughness": 0.45, "metallic": 0.05, "desc": "Puerta izquierda alta" },
+		"door_right": { "rect": Rect2(0.50, 0.0, 0.50, 1.0), "roughness": 0.45, "metallic": 0.05, "desc": "Puerta derecha alta" },
+		"white_body": { "rect": Rect2(0.10, 0.10, 0.20, 0.20), "roughness": 0.45, "metallic": 0.05, "desc": "Blanco puro para laterales y base" }
+	},
+	"cupboard_02": {
+		"drawer": { "rect": Rect2(0.0, 0.0, 1.0, 0.25), "roughness": 0.45, "metallic": 0.05, "desc": "Cajón gris shaker con jaladera" },
+		"doors": { "rect": Rect2(0.0, 0.25, 1.0, 0.75), "roughness": 0.45, "metallic": 0.05, "desc": "Puertas dobles gris shaker" },
+		"grey_body": { "rect": Rect2(0.10, 0.35, 0.20, 0.20), "roughness": 0.45, "metallic": 0.05, "desc": "Gris suave para estructura" }
+	},
+	"table": {
+		"gingham_cloth": { "rect": Rect2(0.005, 0.495, 0.350, 0.500), "roughness": 0.70, "metallic": 0.01, "desc": "Mantel a cuadros rojos y blancos estilo picnic" },
+		"gingham_skirt": { "rect": Rect2(0.705, 0.495, 0.260, 0.500), "roughness": 0.70, "metallic": 0.01, "desc": "Faldón colgante de mantel vichy" },
+		"pine_wood": { "rect": Rect2(0.360, 0.510, 0.340, 0.485), "roughness": 0.60, "metallic": 0.02, "desc": "Tablones de madera clara para repisas y tablero" },
+		"wood_leg": { "rect": Rect2(0.595, 0.020, 0.065, 0.490), "roughness": 0.60, "metallic": 0.02, "desc": "Patas cilíndricas/cuadradas de madera" }
+	},
+	"table_01": {
+		"gingham_top": { "rect": Rect2(0.005, 0.520, 0.470, 0.460), "roughness": 0.70, "metallic": 0.01, "desc": "Mantel octagonal de cuadros rojos" },
+		"lace_trim": { "rect": Rect2(0.520, 0.350, 0.410, 0.170), "roughness": 0.75, "metallic": 0.01, "desc": "Borde de encaje blanco troquelado" },
+		"wood": { "rect": Rect2(0.520, 0.550, 0.410, 0.400), "roughness": 0.60, "metallic": 0.02, "desc": "Madera para patas y bastidor" }
+	},
+	"table_02": {
+		"lace_cloth": { "rect": Rect2(0.005, 0.480, 0.300, 0.515), "roughness": 0.75, "metallic": 0.01, "desc": "Mantel de encaje blanco con filigrana bordada" },
+		"dark_walnut": { "rect": Rect2(0.300, 0.490, 0.290, 0.505), "roughness": 0.60, "metallic": 0.02, "desc": "Nogal oscuro para patas y base" }
+	},
+	"box_pizza": {
+		"pizza": { "rect": Rect2(0.360, 0.675, 0.335, 0.325), "roughness": 0.80, "metallic": 0.02, "desc": "Pizza entera de pepperoni con queso gratinado" },
+		"box_lid": { "rect": Rect2(0.360, 0.315, 0.270, 0.365), "roughness": 0.85, "metallic": 0.01, "desc": "Tapa de caja con logo de porción de pizza" },
+		"box_inside": { "rect": Rect2(0.005, 0.265, 0.355, 0.365), "roughness": 0.85, "metallic": 0.01, "desc": "Interior de la caja de pizza con manchas de aceite" },
+		"cardboard": { "rect": Rect2(0.630, 0.315, 0.255, 0.365), "roughness": 0.85, "metallic": 0.01, "desc": "Cartón corrugado kraft limpio" }
+	},
+	"pizza": {
+		"slice": { "rect": Rect2(0.450, 0.365, 0.445, 0.635), "roughness": 0.80, "metallic": 0.02, "desc": "Porción triangular de pizza con pepperoni" },
+		"crust": { "rect": Rect2(0.005, 0.365, 0.445, 0.635), "roughness": 0.85, "metallic": 0.01, "desc": "Corteza horneada de la masa de pizza" }
+	},
+	"chicken": {
+		"roast": { "rect": Rect2(0.005, 0.520, 0.330, 0.475), "roughness": 0.65, "metallic": 0.05, "desc": "Pollo entero asado dorado crujiente" }
+	},
+	"fried_foods": {
+		"fries": { "rect": Rect2(0.500, 0.240, 0.495, 0.755), "roughness": 0.80, "metallic": 0.02, "desc": "Bolsa de patatas fritas / frituras crujientes" }
+	},
+	"meat": {
+		"steak": { "rect": Rect2(0.005, 0.400, 0.410, 0.595), "roughness": 0.50, "metallic": 0.05, "desc": "Corte de carne roja fresca marmoleada" }
+	},
+	"cereal_bowl": {
+		"cereal": { "rect": Rect2(0.490, 0.520, 0.460, 0.475), "roughness": 0.75, "metallic": 0.01, "desc": "Aros de cereal de colores en tazón con leche" },
+		"bowl": { "rect": Rect2(0.005, 0.520, 0.460, 0.475), "roughness": 0.30, "metallic": 0.10, "desc": "Tazón de cerámica azul pastel" }
+	},
+	"plate_food": {
+		"soup": { "rect": Rect2(0.480, 0.520, 0.495, 0.460), "roughness": 0.40, "metallic": 0.05, "desc": "Ramen caliente con huevo cocido y chashu" },
+		"plate": { "rect": Rect2(0.005, 0.520, 0.460, 0.460), "roughness": 0.30, "metallic": 0.10, "desc": "Plato hondo de porcelana" }
+	},
+	"cake": {
+		"slice": { "rect": Rect2(0.410, 0.460, 0.410, 0.520), "roughness": 0.70, "metallic": 0.02, "desc": "Porción de tarta de cerezas enrejada" }
+	},
+	"flan": {
+		"caramel": { "rect": Rect2(0.400, 0.580, 0.350, 0.415), "roughness": 0.40, "metallic": 0.05, "desc": "Flan de huevo con caramelo líquido" },
+		"lid": { "rect": Rect2(0.005, 0.580, 0.395, 0.415), "roughness": 0.25, "metallic": 0.50, "desc": "Tapa de aluminio azul sellada" }
+	},
+	"can": {
+		"lid": { "rect": Rect2(0.005, 0.005, 0.250, 0.285), "roughness": 0.20, "metallic": 0.85, "desc": "Tapa metálica con anilla abrefácil" },
+		"label": { "rect": Rect2(0.005, 0.320, 0.805, 0.675), "roughness": 0.35, "metallic": 0.15, "desc": "Etiqueta serigrafiada de leche de fresa" }
+	},
+	"bottle": {
+		"label": { "rect": Rect2(0.005, 0.450, 0.745, 0.160), "roughness": 0.30, "metallic": 0.10, "desc": "Faja con logo rojo de refresco de cola" },
+		"glass": { "rect": Rect2(0.005, 0.005, 0.250, 0.450), "roughness": 0.15, "metallic": 0.10, "desc": "Vidrio tintado con líquido oscuro de cola" },
+		"cap": { "rect": Rect2(0.750, 0.620, 0.120, 0.140), "roughness": 0.25, "metallic": 0.75, "desc": "Chapa corona de metal estriada" }
+	},
+	"milk": {
+		"label": { "rect": Rect2(0.380, 0.110, 0.170, 0.170), "roughness": 0.35, "metallic": 0.05, "desc": "Logo azul de vaca pasteurizada" },
+		"cap": { "rect": Rect2(0.710, 0.610, 0.100, 0.110), "roughness": 0.35, "metallic": 0.10, "desc": "Tapón de rosca azul" },
+		"jug": { "rect": Rect2(0.360, 0.560, 0.350, 0.420), "roughness": 0.45, "metallic": 0.02, "desc": "Envase de plástico semitranslúcido blanco" }
+	},
+	"alarm_clock": {
+		"display": { "rect": Rect2(0.530, 0.490, 0.215, 0.505), "roughness": 0.20, "metallic": 0.20, "desc": "Display LED digital rojo (16:20)" },
+		"case": { "rect": Rect2(0.005, 0.215, 0.250, 0.265), "roughness": 0.45, "metallic": 0.10, "desc": "Carcasa plástica negra mate" }
+	},
+	"radio": {
+		"dial": { "rect": Rect2(0.330, 0.475, 0.300, 0.515), "roughness": 0.30, "metallic": 0.20, "desc": "Dial de frecuencias AM/FM con altavoz frontal" },
+		"case": { "rect": Rect2(0.005, 0.475, 0.300, 0.515), "roughness": 0.45, "metallic": 0.15, "desc": "Gabinete de radio militar verde oliva" }
+	},
+	"ventilator": {
+		"cage": { "rect": Rect2(0.005, 0.350, 0.300, 0.300), "roughness": 0.35, "metallic": 0.50, "desc": "Rejilla frontal protectora de alambre con logo" },
+		"tube": { "rect": Rect2(0.305, 0.200, 0.035, 0.450), "roughness": 0.30, "metallic": 0.70, "desc": "Tubo metálico cromado del mástil" }
+	},
+	"ventilator_01": {
+		"cage": { "rect": Rect2(0.005, 0.575, 0.420, 0.420), "roughness": 0.35, "metallic": 0.50, "desc": "Rejilla circular con aspas internas" },
+		"motor": { "rect": Rect2(0.420, 0.220, 0.190, 0.210), "roughness": 0.40, "metallic": 0.15, "desc": "Carcasa trasera del motor eléctrico" },
+		"stand": { "rect": Rect2(0.005, 0.250, 0.160, 0.320), "roughness": 0.30, "metallic": 0.70, "desc": "Brazo curvo de soporte de mesa" }
+	},
+	"lamp": {
+		"shade": { "rect": Rect2(0.005, 0.005, 0.480, 0.480), "roughness": 0.70, "metallic": 0.01, "desc": "Pantalla textil plisada de lámpara de mesa" },
+		"metal": { "rect": Rect2(0.485, 0.315, 0.340, 0.340), "roughness": 0.30, "metallic": 0.60, "desc": "Metal cepillado para base y campana" }
+	},
+	"lamp_02": {
+		"shade": { "rect": Rect2(0.0, 0.5, 0.5, 0.5), "roughness": 0.20, "metallic": 0.10, "desc": "Tulipa de cristal verde esmeralda de banquero" },
+		"metal": { "rect": Rect2(0.0, 0.0, 0.5, 0.5), "roughness": 0.25, "metallic": 0.85, "desc": "Base y brazos de latón dorado" }
+	},
+	"lamp_03": {
+		"shade": { "rect": Rect2(0.555, 0.350, 0.205, 0.640), "roughness": 0.20, "metallic": 0.10, "desc": "Tulipa de cristal verde esmeralda de banquero" },
+		"metal": { "rect": Rect2(0.005, 0.740, 0.255, 0.255), "roughness": 0.25, "metallic": 0.85, "desc": "Base y brazos de latón dorado brillante" }
+	},
+	"ceiling_fan": {
+		"blades": { "rect": Rect2(0.0, 0.5, 0.5, 0.5), "roughness": 0.55, "metallic": 0.05, "desc": "Aspas de madera oscura para ventilador de techo" },
+		"motor": { "rect": Rect2(0.5, 0.5, 0.5, 0.5), "roughness": 0.35, "metallic": 0.50, "desc": "Carcasa del motor central" },
+		"rod": { "rect": Rect2(0.0, 0.0, 0.5, 0.5), "roughness": 0.30, "metallic": 0.60, "desc": "Tija colgante de soporte" }
+	},
+	"desk_lamp": {
+		"head": { "rect": Rect2(0.0, 0.5, 0.5, 0.5), "roughness": 0.30, "metallic": 0.45, "desc": "Campana reflectora orientable negra" },
+		"neck": { "rect": Rect2(0.5, 0.0, 0.5, 0.5), "roughness": 0.35, "metallic": 0.40, "desc": "Brazo flexible de cuello de ganso" },
+		"base": { "rect": Rect2(0.0, 0.08, 0.5, 0.42), "roughness": 0.35, "metallic": 0.40, "desc": "Base redonda lastrada negra" }
+	},
+	"desk_lamp_01": {
+		"head": { "rect": Rect2(0.5, 0.5, 0.5, 0.5), "roughness": 0.30, "metallic": 0.35, "desc": "Campana reflectora orientable blanca" },
+		"neck": { "rect": Rect2(0.5, 0.0, 0.5, 0.5), "roughness": 0.35, "metallic": 0.35, "desc": "Brazo flexible blanco" },
+		"base": { "rect": Rect2(0.0, 0.0, 0.5, 0.5), "roughness": 0.35, "metallic": 0.35, "desc": "Base redonda blanca" }
+	},
+	"focus": {
+		"bulb": { "rect": Rect2(0.0, 0.5, 0.5, 0.5), "roughness": 0.10, "metallic": 0.05, "desc": "Bombilla incandescente encendida" },
+		"socket": { "rect": Rect2(0.0, 0.0, 0.5, 0.5), "roughness": 0.45, "metallic": 0.20, "desc": "Portalámparas de baquelita" }
+	},
+	"alarm_clock_01": {
+		"display": { "rect": Rect2(0.0, 0.0, 0.5, 0.5), "roughness": 0.20, "metallic": 0.20, "desc": "Display LED digital verde" },
+		"case": { "rect": Rect2(0.0, 0.5, 0.5, 0.5), "roughness": 0.45, "metallic": 0.10, "desc": "Carcasa plástica negra" }
+	},
+	"radio_01": {
+		"dial": { "rect": Rect2(0.5, 0.5, 0.5, 0.5), "roughness": 0.30, "metallic": 0.20, "desc": "Dial sintonizador con rejilla de altavoz" },
+		"case": { "rect": Rect2(0.0, 0.5, 0.5, 0.5), "roughness": 0.40, "metallic": 0.10, "desc": "Carcasa de radio portátil" }
+	},
+	"gadgets": {
+		"case": { "rect": Rect2(0.043, 0.500, 0.457, 0.444), "roughness": 0.50, "metallic": 0.10, "desc": "Cuerpo de walkie-talkie con botonera" },
+		"antenna": { "rect": Rect2(0.043, 0.019, 0.457, 0.481), "roughness": 0.30, "metallic": 0.60, "desc": "Antena flexible de goma" }
+	},
+	"phone": {
+		"dial": { "rect": Rect2(0.0, 0.0, 0.5, 0.5), "roughness": 0.20, "metallic": 0.30, "desc": "Disco rotatorio con números" },
+		"body": { "rect": Rect2(0.0, 0.5, 0.5, 0.5), "roughness": 0.25, "metallic": 0.20, "desc": "Cuerpo del teléfono negro de baquelita" },
+		"handset": { "rect": Rect2(0.5, 0.0, 0.5, 0.5), "roughness": 0.25, "metallic": 0.20, "desc": "Auricular ergonómico clásico" }
+	},
+	"phone_01": {
+		"buttons": { "rect": Rect2(0.0, 0.039, 0.5, 0.461), "roughness": 0.30, "metallic": 0.10, "desc": "Teclado numérico beige de oficina" },
+		"body": { "rect": Rect2(0.0, 0.500, 0.5, 0.500), "roughness": 0.40, "metallic": 0.05, "desc": "Carcasa beige de teléfono de escritorio" }
+	},
+	"paintings": {
+		"canvas": { "rect": Rect2(0.0, 0.0, 1.0, 1.0), "roughness": 0.55, "metallic": 0.01, "desc": "Lienzo al óleo" },
+		"frame": { "rect": Rect2(0.0, 0.0, 0.1, 0.1), "roughness": 0.50, "metallic": 0.05, "desc": "Moldura de marco" }
+	},
+	"books": {
+		"pages": { "rect": Rect2(0.0, 0.5, 0.5, 0.5), "roughness": 0.70, "metallic": 0.01, "desc": "Canto de páginas de libros y papel" },
+		"cover": { "rect": Rect2(0.5, 0.0, 0.5, 0.5), "roughness": 0.50, "metallic": 0.02, "desc": "Cubiertas y lomos de libros encuadernados" }
+	},
+	"trash_can": {
+		"can_body": { "rect": Rect2(0.0, 0.0, 1.0, 1.0), "roughness": 0.50, "metallic": 0.10, "desc": "Bote de basura con bolsa gris arrugada" }
+	},
+	"garbage_bags": {
+		"plastic": { "rect": Rect2(0.0, 0.5, 0.5, 0.5), "roughness": 0.35, "metallic": 0.15, "desc": "Plástico de bolsa de basura arrugado" },
+		"knot": { "rect": Rect2(0.0, 0.0, 0.5, 0.5), "roughness": 0.40, "metallic": 0.10, "desc": "Nudo superior de bolsa atada" }
+	},
+	"flower_table": {
+		"rose": { "rect": Rect2(0.0, 0.0, 0.5, 0.5), "roughness": 0.60, "metallic": 0.02, "desc": "Rosa roja fresca y hojas verdes" },
+		"vase": { "rect": Rect2(0.5, 0.5, 0.5, 0.5), "roughness": 0.25, "metallic": 0.10, "desc": "Florero cerámico oscuro" }
+	},
+	"flower_table_01": {
+		"lavender": { "rect": Rect2(0.5, 0.0, 0.5, 0.5), "roughness": 0.65, "metallic": 0.02, "desc": "Espigas de flor de lavanda morada" },
+		"vase": { "rect": Rect2(0.0, 0.0, 0.5, 0.5), "roughness": 0.25, "metallic": 0.10, "desc": "Florero cilíndrico" }
+	},
+	"plate_food_01": {
+		"food": { "rect": Rect2(0.0, 0.5, 0.5, 0.5), "roughness": 0.40, "metallic": 0.05, "desc": "Guisado casero servido en plato" },
+		"plate": { "rect": Rect2(0.5, 0.5, 0.5, 0.5), "roughness": 0.20, "metallic": 0.10, "desc": "Plato llano blanco de porcelana" }
+	},
+	"ice_cream": {
+		"tub": { "rect": Rect2(0.0, 0.5, 0.5, 0.5), "roughness": 0.40, "metallic": 0.05, "desc": "Tarrina cilíndrica de helado artesanal" },
+		"lid": { "rect": Rect2(0.5, 0.5, 0.5, 0.5), "roughness": 0.40, "metallic": 0.05, "desc": "Tapa y etiqueta del bote de helado" }
+	},
+	"palette": {
+		"ice": { "rect": Rect2(0.0, 0.0, 0.5, 0.5), "roughness": 0.25, "metallic": 0.10, "desc": "Hielo cristalizado de paleta roja de fresa" }
+	},
+	"box_strawberries": {
+		"brick": { "rect": Rect2(0.0, 0.5, 0.5, 0.5), "roughness": 0.40, "metallic": 0.05, "desc": "Envase tetrabrik de leche con fresas" }
 	}
 }
 
