@@ -1447,8 +1447,16 @@ static var _REGIONS: Dictionary = {
 		"socket": { "rect": Rect2(0.0, 0.0, 0.5, 0.5), "roughness": 0.45, "metallic": 0.20, "desc": "Portalámparas de baquelita" }
 	},
 	"alarm_clock_01": {
-		"display": { "rect": Rect2(0.0, 0.0, 0.5, 0.5), "roughness": 0.20, "metallic": 0.20, "desc": "Display LED digital verde" },
-		"case": { "rect": Rect2(0.0, 0.5, 0.5, 0.5), "roughness": 0.45, "metallic": 0.10, "desc": "Carcasa plástica negra" }
+		"display": { "rect": Rect2(0.53125, 0.44531, 0.20312, 0.46094), "roughness": 0.15, "metallic": 0.10, "desc": "Display LED digital ámbar con números 12:53 e indicadores" },
+		"display_digits": { "rect": Rect2(0.56250, 0.46094, 0.15625, 0.42188), "roughness": 0.15, "metallic": 0.10, "desc": "Recorte estrecho de los dígitos 12:53" },
+		"case": { "rect": Rect2(0.01562, 0.25000, 0.21875, 0.70312), "roughness": 0.45, "metallic": 0.05, "desc": "Carcasa plástica negra mate con textura PSX" },
+		"body": { "rect": Rect2(0.01562, 0.25000, 0.21875, 0.70312), "roughness": 0.45, "metallic": 0.05, "desc": "Alias de carcasa plástica negra" },
+		"front_panel": { "rect": Rect2(0.50000, 0.34375, 0.26562, 0.64062), "roughness": 0.40, "metallic": 0.08, "desc": "Frontal biselado con marco de pantalla" },
+		"buttons_strip": { "rect": Rect2(0.28125, 0.42969, 0.13281, 0.32812), "roughness": 0.30, "metallic": 0.15, "desc": "Franja superior de botonera circular" },
+		"button_snooze": { "rect": Rect2(0.31250, 0.60547, 0.07031, 0.07031), "roughness": 0.30, "metallic": 0.15, "desc": "Botón circular grande de Snooze / Repetición" },
+		"button_small": { "rect": Rect2(0.32422, 0.43359, 0.04688, 0.04688), "roughness": 0.30, "metallic": 0.15, "desc": "Botón circular secundario (Time / Alarm / Hour)" },
+		"battery_cover": { "rect": Rect2(0.77344, 0.70312, 0.10156, 0.18750), "roughness": 0.45, "metallic": 0.05, "desc": "Tapa trasera del compartimento de baterías" },
+		"back_face": { "rect": Rect2(0.75781, 0.34375, 0.23438, 0.64062), "roughness": 0.45, "metallic": 0.05, "desc": "Panel posterior de la carcasa" }
 	},
 	"radio_01": {
 		"dial": { "rect": Rect2(0.5, 0.5, 0.5, 0.5), "roughness": 0.30, "metallic": 0.20, "desc": "Dial sintonizador con rejilla de altavoz" },

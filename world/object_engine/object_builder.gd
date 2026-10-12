@@ -566,6 +566,45 @@ func add_smart_quad(
 	add_primitive("quad", scaled_t, texture_key, uv_rect, r, m, false, {})
 
 
+## 7. Agrega una Caja Achaflanada (Chamfer Box / Prisma Octogonal) escalada a 'size'
+func add_chamfer_box(
+	t: Transform3D,
+	size: Vector3,
+	texture_key: String = "roble_claro",
+	uv_rect: Rect2 = Rect2(0.0, 0.0, 1.0, 1.0),
+	roughness: float = 0.55,
+	metallic: float = 0.02,
+	collision: bool = true
+) -> void:
+	var scaled_t := t.scaled_local(size)
+	var col_data := {}
+	if collision:
+		col_data = {
+			"type": "box",
+			"transform": t,
+			"size": size
+		}
+	add_primitive("chamfer", scaled_t, texture_key, uv_rect, roughness, metallic, collision, col_data)
+
+
+## Shorthand inteligente para caja achaflanada consultando ObjectAtlas
+func add_smart_chamfer_box(
+	t: Transform3D,
+	size: Vector3,
+	texture_key: String,
+	region_name: String = "",
+	roughness: float = -1.0,
+	metallic: float = -1.0,
+	collision: bool = true
+) -> void:
+	var resolved := ObjectAtlasScript.resolve_semantic_texture(texture_key, region_name)
+	var final_tex: String = resolved["texture_key"]
+	var uv_rect: Rect2 = resolved["uv_rect"]
+	var r: float = roughness if roughness >= 0.0 else resolved["roughness"]
+	var m: float = metallic if metallic >= 0.0 else resolved["metallic"]
+	add_chamfer_box(t, size, final_tex, uv_rect, r, m, collision)
+
+
 # =========================================================================
 # FUSIÓN DE BUILDERS Y EJECUCIÓN DE RECETAS
 # =========================================================================
@@ -886,7 +925,7 @@ func add_furniture_by_script(scr: Variant, t: Transform3D, extra_params: Diction
 		elif s_key == "alarm_clock_digital_red" or s_key == "alarm_clock_red":
 			Furniture2PropsRecipesScript.AlarmClockDigitalRedRecipe.build(self, t, extra_params)
 			return
-		elif s_key == "alarm_clock_digital_green" or s_key == "alarm_clock_green":
+		elif s_key == "alarm_clock_digital_green" or s_key == "alarm_clock_green" or s_key == "alarm_clock_01" or s_key == "reloj" or s_key == "clock":
 			Furniture2PropsRecipesScript.AlarmClockDigitalGreenRecipe.build(self, t, extra_params)
 			return
 		elif s_key == "radio_vintage_dial" or s_key == "radio_vintage":

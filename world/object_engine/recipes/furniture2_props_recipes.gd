@@ -52,6 +52,7 @@ extends RefCounted
 ##  36. DrinkCanRecipe               - Lata de refresco de aluminio (can)
 
 const ObjectAtlasScript = preload("res://world/object_engine/object_atlas.gd")
+const AlarmClock01RecipeScript = preload("res://world/object_engine/recipes/alarm_clock_01_recipe.gd")
 
 
 # =========================================================================
@@ -237,17 +238,11 @@ class AlarmClockDigitalRedRecipe extends ObjectRecipeBase:
 
 
 # =========================================================================
-# 10. DESPERTADOR DIGITAL LED VERDE (ALARM_CLOCK_01)
+# 10. DESPERTADOR DIGITAL LED (ALARM_CLOCK_01 / 12:53)
 # =========================================================================
 class AlarmClockDigitalGreenRecipe extends ObjectRecipeBase:
 	static func build(builder: Variant, base_t: Transform3D, params: Dictionary = {}) -> void:
-		var w: float = params.get("width", 0.16)
-		var d: float = params.get("depth", 0.08)
-		var h: float = params.get("height", 0.07)
-		var texture_key: String = params.get("texture_key", "alarm_clock_01")
-
-		var clock_t := base_t * Transform3D(Basis.IDENTITY, Vector3(0.0, h * 0.5, 0.0))
-		builder.add_panel_box(clock_t, Vector3(w, h, d), texture_key, "display", "case")
+		AlarmClock01RecipeScript.build(builder, base_t, params)
 
 
 # =========================================================================

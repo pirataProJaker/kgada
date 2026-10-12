@@ -32,7 +32,7 @@ static func get_mesh(primitive_type: String) -> ArrayMesh:
 			mesh = _create_unit_sphere()
 		"capsule":
 			mesh = _create_unit_capsule()
-		"chamfer", "bevel":
+		"chamfer", "bevel", "chamfer_box", "beveled_box":
 			mesh = _create_unit_chamfer()
 		"quad", "panel", "plane", "decal":
 			mesh = _create_unit_quad()
@@ -286,10 +286,87 @@ static func _create_unit_capsule() -> ArrayMesh:
 	return st.commit()
 
 
-## 6. Bisel / Chaflán Unitario (Chamfer) para cantos redondeados/suavizados (1x1x1)
+## 6. Bisel / Chaflán Unitario (Chamfer Box) con 4 esquinas achaflanadas (1x1x1)
 static func _create_unit_chamfer() -> ArrayMesh:
-	# Cuña simétrica truncada a 45 grados para suavizar bordes de muebles
-	return _create_unit_wedge()
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+
+	var hx := 0.5
+	var hy := 0.5
+	var hz := 0.5
+	var c := 0.15 # Tamaño relativo del bisel / chaflán en esquinas
+
+	var x1 := hx - c
+	var y1 := hy - c
+
+	# 8 Puntos perimetrales 2D en plano XY (orden horario mirando hacia +Z)
+	var pts: Array[Vector2] = [
+		Vector2(-x1,  hy), # 0: Superior-Izquierda
+		Vector2( x1,  hy), # 1: Superior-Derecha
+		Vector2( hx,  y1), # 2: Derecha-Superior
+		Vector2( hx, -y1), # 3: Derecha-Inferior
+		Vector2( x1, -hy), # 4: Inferior-Derecha
+		Vector2(-x1, -hy), # 5: Inferior-Izquierda
+		Vector2(-hx, -y1), # 6: Izquierda-Inferior
+		Vector2(-hx,  y1), # 7: Izquierda-Superior
+	]
+
+	# 1. Cara frontal (+Z)
+	var center_front := Vector3(0.0, 0.0, hz)
+	for i in range(8):
+		var i_next := (i + 1) % 8
+		var v_curr := Vector3(pts[i].x, pts[i].y, hz)
+		var v_next := Vector3(pts[i_next].x, pts[i_next].y, hz)
+
+		var uv_curr := Vector2(pts[i].x + 0.5, 0.5 - pts[i].y)
+		var uv_next := Vector2(pts[i_next].x + 0.5, 0.5 - pts[i_next].y)
+		var uv_cent := Vector2(0.5, 0.5)
+
+		st.set_normal(Vector3.FORWARD)
+		st.set_uv(uv_cent); st.add_vertex(center_front)
+		st.set_uv(uv_curr); st.add_vertex(v_curr)
+		st.set_uv(uv_next); st.add_vertex(v_next)
+
+	# 2. Cara trasera (-Z)
+	var center_back := Vector3(0.0, 0.0, -hz)
+	for i in range(8):
+		var i_next := (i + 1) % 8
+		var v_curr := Vector3(pts[i].x, pts[i].y, -hz)
+		var v_next := Vector3(pts[i_next].x, pts[i_next].y, -hz)
+
+		var uv_curr := Vector2(0.5 - pts[i].x, 0.5 - pts[i].y)
+		var uv_next := Vector2(0.5 - pts[i_next].x, 0.5 - pts[i_next].y)
+		var uv_cent := Vector2(0.5, 0.5)
+
+		st.set_normal(Vector3.BACK)
+		st.set_uv(uv_cent); st.add_vertex(center_back)
+		st.set_uv(uv_next); st.add_vertex(v_next)
+		st.set_uv(uv_curr); st.add_vertex(v_curr)
+
+	# 3. 8 Caras perimetrales laterales (conectan frente y dorso)
+	for i in range(8):
+		var i_next := (i + 1) % 8
+		var pA: Vector2 = pts[i]
+		var pB: Vector2 = pts[i_next]
+
+		var edge: Vector2 = pB - pA
+		var normal_2d := Vector3(edge.y, -edge.x, 0.0).normalized()
+
+		var vA_front := Vector3(pA.x, pA.y,  hz)
+		var vB_front := Vector3(pB.x, pB.y,  hz)
+		var vB_back  := Vector3(pB.x, pB.y, -hz)
+		var vA_back  := Vector3(pA.x, pA.y, -hz)
+
+		st.set_normal(normal_2d); st.set_uv(Vector2(0.0, 0.0)); st.add_vertex(vA_front)
+		st.set_normal(normal_2d); st.set_uv(Vector2(1.0, 0.0)); st.add_vertex(vB_front)
+		st.set_normal(normal_2d); st.set_uv(Vector2(1.0, 1.0)); st.add_vertex(vB_back)
+
+		st.set_normal(normal_2d); st.set_uv(Vector2(0.0, 0.0)); st.add_vertex(vA_front)
+		st.set_normal(normal_2d); st.set_uv(Vector2(1.0, 1.0)); st.add_vertex(vB_back)
+		st.set_normal(normal_2d); st.set_uv(Vector2(0.0, 1.0)); st.add_vertex(vA_back)
+
+	st.generate_tangents()
+	return st.commit()
 
 
 ## 7. Cuadrilátero Plano Unitario (Quad / Panel 1x1) centrado en (0, 0, 0) mirando hacia +Z (normal = Vector3.FORWARD)
