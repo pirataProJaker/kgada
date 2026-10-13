@@ -1,0 +1,18 @@
+{
+	"vintage_01_jacquard_gold": { "rect": [0.00, 0.00, 0.25, 0.25], "roughness": 0.88, "metallic": 0.0, "desc": "Jacquard floral café y oro viejo" },
+	"vintage_02_velvet_burgundy": { "rect": [0.25, 0.00, 0.25, 0.25], "roughness": 0.85, "metallic": 0.0, "desc": "Terciopelo labrado burdeos guinda" },
+	"vintage_03_corduroy_orange": { "rect": [0.50, 0.00, 0.25, 0.25], "roughness": 0.90, "metallic": 0.0, "desc": "Pana gruesa acanalada naranja óxido" },
+	"vintage_04_brocade_green": { "rect": [0.75, 0.00, 0.25, 0.25], "roughness": 0.88, "metallic": 0.0, "desc": "Brocado colonial verde y beige" },
+	"vintage_05_stripes_tan": { "rect": [0.00, 0.25, 0.25, 0.25], "roughness": 0.90, "metallic": 0.0, "desc": "Rayas verticales beige, crema y marrón" },
+	"vintage_06_tapestry_mustard": { "rect": [0.25, 0.25, 0.25, 0.25], "roughness": 0.88, "metallic": 0.0, "desc": "Tapiz mostaza floral retro" },
+	"vintage_07_tweed_rustic": { "rect": [0.50, 0.25, 0.25, 0.25], "roughness": 0.92, "metallic": 0.0, "desc": "Telar rústico artesanal jaspeado tierra" },
+	"vintage_08_diamonds_70s": { "rect": [0.75, 0.25, 0.25, 0.25], "roughness": 0.88, "metallic": 0.0, "desc": "Geométrico retro de rombos setenteros" },
+	"modern_01_charcoal": { "rect": [0.00, 0.50, 0.25, 0.25], "roughness": 0.90, "metallic": 0.0, "desc": "Lino contemporáneo gris carbón uniforme" },
+	"modern_02_boucle_oat": { "rect": [0.25, 0.50, 0.25, 0.25], "roughness": 0.92, "metallic": 0.0, "desc": "Bouclé texturizado beige avena" },
+	"modern_03_offwhite": { "rect": [0.50, 0.50, 0.25, 0.25], "roughness": 0.88, "metallic": 0.0, "desc": "Algodón/lino liso blanco marfil off-white" },
+	"modern_04_olive": { "rect": [0.75, 0.50, 0.25, 0.25], "roughness": 0.90, "metallic": 0.0, "desc": "Lino moderno verde olivo apagado" },
+	"modern_05_navy": { "rect": [0.00, 0.75, 0.25, 0.25], "roughness": 0.90, "metallic": 0.0, "desc": "Azul marino profundo liso" },
+	"modern_06_terracotta": { "rect": [0.25, 0.75, 0.25, 0.25], "roughness": 0.90, "metallic": 0.0, "desc": "Tejido contemporáneo terracota mate" },
+	"modern_07_mustard": { "rect": [0.50, 0.75, 0.25, 0.25], "roughness": 0.90, "metallic": 0.0, "desc": "Lino liso mostaza cálido" },
+	"modern_08_graphite": { "rect": [0.75, 0.75, 0.25, 0.25], "roughness": 0.90, "metallic": 0.0, "desc": "Microfibra lisa negro grafito" }
+}

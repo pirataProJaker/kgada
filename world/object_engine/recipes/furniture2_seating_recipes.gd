@@ -61,23 +61,35 @@ class SofaDamaskGoldRecipe extends ObjectRecipeBase:
 		var crest_t := base_t * Transform3D(Basis.IDENTITY, Vector3(0.0, h - 0.02, back_z + 0.04))
 		builder.add_smart_box(crest_t, Vector3(usable_w, 0.04, 0.10), texture_key, "trim_gold", 0.65, 0.0, false)
 
-		# 5. Brazos acolchados con satén mate y frente tallado
-		var arm_len := d - 0.06
-		var roll_radius := arm_w * 0.5
+		# 5. Brazos acolchados con satén mate y rollo circular tallado (sin tabla que tape la curva)
+		var roll_radius: float = arm_w * 0.5
+		var roll_y: float = arm_h - roll_radius
+		var arm_body_h: float = roll_y - leg_h
+		var arm_body_y: float = leg_h + arm_body_h * 0.5
+		var arm_len: float = d - 0.04
+		var roll_basis := Basis(Vector3.RIGHT, deg_to_rad(90))
+
 		for side: float in [-1.0, 1.0]:
-			var arm_x := side * (w * 0.5 - arm_w * 0.5)
-			var arm_body_h := arm_h - leg_h - roll_radius
-			var arm_body_y := leg_h + arm_body_h * 0.5
-			var arm_body_t := base_t * Transform3D(Basis.IDENTITY, Vector3(arm_x, arm_body_y, -0.01))
-			builder.add_smart_box(arm_body_t, Vector3(arm_w, arm_body_h, arm_len - 0.02), texture_key, "satin_base", 0.85, 0.0)
+			var arm_x: float = side * (w * 0.5 - arm_w * 0.5)
 
-			var roll_y := leg_h + arm_body_h
-			var roll_basis := Basis(Vector3.RIGHT, deg_to_rad(90))
-			var roll_t := base_t * Transform3D(roll_basis, Vector3(arm_x, roll_y, -0.01))
-			builder.add_cylinder(roll_t, roll_radius, arm_len - 0.02, texture_key, ObjectAtlasScript.get_region(texture_key, "satin_base"), 0.85, 0.0, false)
+			# A) Bloque inferior del brazo (soporte bajo el rollo, termina exactamente en roll_y)
+			var body_t := base_t * Transform3D(Basis.IDENTITY, Vector3(arm_x, arm_body_y, 0.0))
+			builder.add_smart_box(body_t, Vector3(arm_w, arm_body_h, arm_len), texture_key, "satin_base", 0.85, 0.0)
 
-			var face_t := base_t * Transform3D(Basis.IDENTITY, Vector3(arm_x, leg_h + (arm_h - leg_h) * 0.5, d * 0.5 - 0.01))
-			builder.add_panel_box(face_t, Vector3(arm_w, arm_h - leg_h, 0.03), texture_key, "trim_gold", "satin_base", 0.65, 0.0, false)
+			# B) Rollo cilíndrico superior horizontal continuo de atrás hacia adelante
+			var roll_t := base_t * Transform3D(roll_basis, Vector3(arm_x, roll_y, 0.0))
+			builder.add_cylinder(roll_t, roll_radius, arm_len, texture_key, ObjectAtlasScript.get_region(texture_key, "damask"), 0.85, 0.0, false)
+
+			# C) Voluta frontal circular (disco en el extremo delantero del rollo, redondo, NO rectangular)
+			var front_disk_z := arm_len * 0.5 + 0.005
+			var front_disk_t := base_t * Transform3D(roll_basis, Vector3(arm_x, roll_y, front_disk_z))
+			builder.add_cylinder(front_disk_t, roll_radius * 1.02, 0.012, texture_key, ObjectAtlasScript.get_region(texture_key, "trim_gold"), 0.65, 0.0, false)
+
+			# D) Moldura frontal inferior (solo cubre el cuerpo bajo hasta roll_y, sin tapar el círculo)
+			var f_z := arm_len * 0.5 + 0.003
+			var f_t := base_t * Transform3D(Basis.IDENTITY, Vector3(arm_x, arm_body_y, f_z))
+			builder.add_smart_box(f_t, Vector3(arm_w - 0.01, arm_body_h - 0.01, 0.008), texture_key, "trim_gold", 0.65, 0.0, false)
+
 
 
 # =========================================================================
@@ -754,3 +766,146 @@ class ArmchairLouisXVBlueRecipe extends ObjectRecipeBase:
 
 			var pad_t := base_t * Transform3D(Basis.IDENTITY, Vector3(arm_x, seat_h + 0.07 + arm_h + 0.02, -0.04))
 			builder.add_smart_box(pad_t, Vector3(0.045, 0.025, 0.16), texture_key, "arm_pad", 0.88, 0.0)
+
+
+# =========================================================================
+# 12. SOFÁ MODULAR PSX DE ALTA DEFINICIÓN (1.0m, 1.5m, 2.0m)
+# =========================================================================
+## Hiperoptimizado con esquinas boleadas low-poly (rounded_box).
+## 100% gobernado por el Atlas Inteligente (ObjectAtlas) con texel density uniforme.
+class ModularSofaRecipe extends ObjectRecipeBase:
+	static func build(builder: Variant, base_t: Transform3D, params: Dictionary = {}) -> void:
+		# Dimensiones métricas cerradas compatibles con la cuadrícula de construcción:
+		# 1.0 m -> 1 plaza (sillón individual)
+		# 1.5 m -> 2 plazas (loveseat mediano)
+		# 2.0 m -> 3 plazas (sofá grande)
+		var w: float = params.get("width", 2.00)
+		var d: float = params.get("depth", 0.88)
+		var h: float = params.get("height", 0.86)
+
+		# Selección de tela semántica (0..15 o nombre semántico del catálogo)
+		var fabric_param: Variant = params.get("fabric", "vintage_01_jacquard_gold")
+		var sofa_key: String = "vintage_01_jacquard_gold"
+		if fabric_param is int or fabric_param is float:
+			var idx := clampi(int(fabric_param), 0, ObjectAtlasScript.SOFA_FABRIC_NAMES.size() - 1)
+			sofa_key = ObjectAtlasScript.SOFA_FABRIC_NAMES[idx]
+		else:
+			sofa_key = str(fabric_param).strip_edges().to_lower()
+			if not ObjectAtlasScript.SOFA_FABRIC_NAMES.has(sofa_key):
+				# Probar prefijos comunes
+				if ObjectAtlasScript.SOFA_FABRIC_NAMES.has("vintage_" + sofa_key):
+					sofa_key = "vintage_" + sofa_key
+				elif ObjectAtlasScript.SOFA_FABRIC_NAMES.has("modern_" + sofa_key):
+					sofa_key = "modern_" + sofa_key
+
+		var leg_h := 0.10
+		var apron_h := 0.14
+		var arm_w := 0.18
+		var arm_h := 0.64
+		var usable_w := w - arm_w * 2.0
+
+		# Configuración paramétrica de cojines según ancho métrico
+		var num_cushions := 3
+		if w <= 1.15:
+			num_cushions = 1
+		elif w <= 1.65:
+			num_cushions = 2
+		else:
+			num_cushions = 3
+
+		var cushion_w := usable_w / float(num_cushions)
+		var cushion_d := 0.56
+		var cushion_thick := 0.13
+
+		# 1. Patas de madera torneada en las 4 esquinas (+ central si w >= 2.0)
+		var leg_r := 0.030
+		var leg_x_offset := w * 0.5 - 0.09
+		var leg_z_offset := d * 0.5 - 0.09
+
+		for sx: float in [-1.0, 1.0]:
+			for sz: float in [-1.0, 1.0]:
+				var leg_pos := Vector3(sx * leg_x_offset, leg_h * 0.5, sz * leg_z_offset)
+				var leg_t := base_t * Transform3D(Basis.IDENTITY, leg_pos)
+				builder.add_smart_cylinder(leg_t, leg_r, leg_h, sofa_key, "wood_leg", -1.0, -1.0, false)
+
+		if num_cushions == 3:
+			var leg_center_t := base_t * Transform3D(Basis.IDENTITY, Vector3(0.0, leg_h * 0.5, -0.05))
+			builder.add_smart_cylinder(leg_center_t, leg_r * 0.9, leg_h, sofa_key, "wood_leg", -1.0, -1.0, false)
+
+		# 2. Bastidor estructural inferior
+		var base_frame_y := leg_h + apron_h * 0.5
+		var base_frame_t := base_t * Transform3D(Basis.IDENTITY, Vector3(0.0, base_frame_y, -0.02))
+		builder.add_smart_box(base_frame_t, Vector3(usable_w, apron_h, d - 0.10), sofa_key, "arm_side", -1.0, -1.0, true)
+
+		# 3. Faldón frontal modular con caída vertical congruente (1 panel alineado bajo cada cojín)
+		var apron_z := d * 0.5 - 0.08
+		var apron_y := leg_h + apron_h * 0.5
+		for i in range(num_cushions):
+			var cx := -usable_w * 0.5 + float(i) * cushion_w + cushion_w * 0.5
+			var apron_panel_t := base_t * Transform3D(Basis.IDENTITY, Vector3(cx, apron_y, apron_z))
+			builder.add_smart_box(apron_panel_t, Vector3(cushion_w - 0.005, apron_h, 0.035), sofa_key, "apron", -1.0, -1.0, false)
+
+		# 4. Cojines de asiento usando 'rounded_box' (mullidos, flujo longitudinal de atrás hacia adelante, 1:1)
+		var seat_surface_y := leg_h + apron_h + cushion_thick * 0.5 - 0.01
+		var cushion_gap := 0.010
+		for i in range(num_cushions):
+			var cx := -usable_w * 0.5 + float(i) * cushion_w + cushion_w * 0.5
+			var c_pos := Vector3(cx, seat_surface_y, 0.08) # ligero voladizo frontal sobre el faldón
+			var c_t := base_t * Transform3D(Basis.IDENTITY, c_pos)
+			builder.add_smart_rounded_box(c_t, Vector3(cushion_w - cushion_gap, cushion_thick, cushion_d), sofa_key, "cushion", -1.0, -1.0, true)
+
+		# 5. Respaldo estructural trasero modular (1 panel congruente por cojín con flujo vertical)
+		var back_h := h - (leg_h + apron_h)
+		var back_z := -d * 0.5 + 0.08
+		var back_y := leg_h + apron_h + back_h * 0.5
+		for i in range(num_cushions):
+			var cx := -usable_w * 0.5 + float(i) * cushion_w + cushion_w * 0.5
+			var shell_panel_t := base_t * Transform3D(Basis.IDENTITY, Vector3(cx, back_y, back_z))
+			builder.add_smart_box(shell_panel_t, Vector3(cushion_w - 0.002, back_h, 0.12), sofa_key, "back", -1.0, -1.0, false)
+
+		# 6. Cojines de respaldo mullidos (rounded_box orientado con cara acolchada al frente y flujo vertical)
+		var pillow_h := back_h - 0.03
+		var pillow_thick := 0.14
+		# Rotación de 83° (90° en X para encarar al frente + 7° inclinación ergonómica hacia atrás)
+		var pillow_basis := Basis(Vector3.RIGHT, deg_to_rad(83.0))
+		var pillow_center_y := leg_h + apron_h + cushion_thick + pillow_h * 0.5 - 0.03
+		var pillow_z := back_z + 0.075
+
+		for i in range(num_cushions):
+			var px := -usable_w * 0.5 + float(i) * cushion_w + cushion_w * 0.5
+			var p_t := base_t * Transform3D(pillow_basis, Vector3(px, pillow_center_y, pillow_z))
+			# En rounded_box rotado 83°: X local = ancho, Y local = espesor (apunta al frente), Z local = altura (apunta arriba)
+			builder.add_smart_rounded_box(p_t, Vector3(cushion_w - cushion_gap, pillow_thick, pillow_h), sofa_key, "back", -1.0, -1.0, false)
+
+		# 7. Reposabrazos redondeados auténticos modulares (paneles 1:1, rollo continuo y voluta 1:1)
+		var roll_radius: float = arm_w * 0.5
+		var roll_y: float = arm_h - roll_radius
+		var arm_body_h: float = roll_y - leg_h
+		var arm_body_y: float = leg_h + arm_body_h * 0.5
+		var arm_len: float = d - 0.04
+		var half_arm_len: float = arm_len * 0.5
+		var roll_basis := Basis(Vector3.RIGHT, deg_to_rad(90.0))
+
+		for side: float in [-1.0, 1.0]:
+			var arm_x: float = side * (w * 0.5 - arm_w * 0.5)
+
+			# A y B) Cuerpo y Rollo divididos en 2 secciones modulares congruentes (Z anterior y posterior)
+			for seg_idx in range(2):
+				var seg_z: float = -half_arm_len * 0.5 + float(seg_idx) * half_arm_len
+				var body_t := base_t * Transform3D(Basis.IDENTITY, Vector3(arm_x, arm_body_y, seg_z))
+				builder.add_smart_box(body_t, Vector3(arm_w, arm_body_h, half_arm_len - 0.002), sofa_key, "arm_side", -1.0, -1.0, true)
+
+				var roll_t := base_t * Transform3D(roll_basis, Vector3(arm_x, roll_y, seg_z))
+				builder.add_smart_cylinder(roll_t, roll_radius, half_arm_len - 0.002, sofa_key, "arm_roll", -1.0, -1.0, false)
+
+			# C) Remate frontal circular (voluta redonda frontal 1:1)
+			var front_disk_z := arm_len * 0.5 + 0.004
+			var front_disk_t := base_t * Transform3D(roll_basis, Vector3(arm_x, roll_y, front_disk_z))
+			builder.add_smart_cylinder(front_disk_t, roll_radius * 1.01, 0.010, sofa_key, "arm_cap", -1.0, -1.0, false)
+
+			# D) Moldura frontal inferior bajo el rollo (proporcional vertical 1:2.58)
+			var front_trim_z := arm_len * 0.5 + 0.003
+			var front_trim_t := base_t * Transform3D(Basis.IDENTITY, Vector3(arm_x, arm_body_y, front_trim_z))
+			builder.add_smart_box(front_trim_t, Vector3(arm_w - 0.01, arm_body_h - 0.01, 0.008), sofa_key, "arm_front", -1.0, -1.0, false)
+
+

@@ -1,0 +1,1762 @@
+{
+	"avena_crunch": {
+		"desc": "Avena Crunch 375g (Caja completa de cereal 375g)",
+		"metallic": 0.02,
+		"rect": [
+			0.8046875,
+			0.263929618768328,
+			0.1904296875,
+			0.237536656891496
+		],
+		"roughness": 0.45
+	},
+	"avena_crunch_color": {
+		"desc": "Avena Crunch 375g (Color sólido de marca para lomo y tapas)",
+		"metallic": 0.02,
+		"rect": [
+			0.8125,
+			0.275659824046921,
+			0.0234375,
+			0.0351906158357771
+		],
+		"roughness": 0.5
+	},
+	"avena_crunch_front": {
+		"desc": "Avena Crunch 375g (Portada frontal: logotipo, tazón y mascota)",
+		"metallic": 0.02,
+		"rect": [
+			0.8046875,
+			0.263929618768328,
+			0.1328125,
+			0.237536656891496
+		],
+		"roughness": 0.45
+	},
+	"avena_crunch_side": {
+		"desc": "Avena Crunch 375g (Panel lateral: Información Nutricional y código de barras)",
+		"metallic": 0.02,
+		"rect": [
+			0.9375,
+			0.263929618768328,
+			0.0576171875,
+			0.237536656891496
+		],
+		"roughness": 0.5
+	},
+	"bosque_crunch": {
+		"desc": "Bosque Crunch 375g (Caja completa de cereal 375g)",
+		"metallic": 0.02,
+		"rect": [
+			0.8046875,
+			0.752199413489736,
+			0.1904296875,
+			0.234604105571848
+		],
+		"roughness": 0.45
+	},
+	"bosque_crunch_color": {
+		"desc": "Bosque Crunch 375g (Color sólido de marca para lomo y tapas)",
+		"metallic": 0.02,
+		"rect": [
+			0.8125,
+			0.763929618768328,
+			0.0234375,
+			0.0351906158357771
+		],
+		"roughness": 0.5
+	},
+	"bosque_crunch_front": {
+		"desc": "Bosque Crunch 375g (Portada frontal: logotipo, tazón y mascota)",
+		"metallic": 0.02,
+		"rect": [
+			0.8046875,
+			0.752199413489736,
+			0.1328125,
+			0.234604105571848
+		],
+		"roughness": 0.45
+	},
+	"bosque_crunch_side": {
+		"desc": "Bosque Crunch 375g (Panel lateral: Información Nutricional y código de barras)",
+		"metallic": 0.02,
+		"rect": [
+			0.9375,
+			0.752199413489736,
+			0.0576171875,
+			0.234604105571848
+		],
+		"roughness": 0.5
+	},
+	"campo_feliz": {
+		"desc": "Campo Feliz 375g (Caja completa de cereal 375g)",
+		"metallic": 0.02,
+		"rect": [
+			0.005859375,
+			0.752199413489736,
+			0.1904296875,
+			0.234604105571848
+		],
+		"roughness": 0.45
+	},
+	"campo_feliz_color": {
+		"desc": "Campo Feliz 375g (Color sólido de marca para lomo y tapas)",
+		"metallic": 0.02,
+		"rect": [
+			0.013671875,
+			0.763929618768328,
+			0.0234375,
+			0.0351906158357771
+		],
+		"roughness": 0.5
+	},
+	"campo_feliz_front": {
+		"desc": "Campo Feliz 375g (Portada frontal: logotipo, tazón y mascota)",
+		"metallic": 0.02,
+		"rect": [
+			0.005859375,
+			0.752199413489736,
+			0.1328125,
+			0.234604105571848
+		],
+		"roughness": 0.45
+	},
+	"campo_feliz_side": {
+		"desc": "Campo Feliz 375g (Panel lateral: Información Nutricional y código de barras)",
+		"metallic": 0.02,
+		"rect": [
+			0.138671875,
+			0.752199413489736,
+			0.0576171875,
+			0.234604105571848
+		],
+		"roughness": 0.5
+	},
+	"cereal_avena_crunch": {
+		"desc": "Avena Crunch 375g (Caja completa de cereal 375g)",
+		"metallic": 0.02,
+		"rect": [
+			0.8046875,
+			0.263929618768328,
+			0.1904296875,
+			0.237536656891496
+		],
+		"roughness": 0.45
+	},
+	"cereal_avena_crunch_color": {
+		"desc": "Avena Crunch 375g (Color sólido de marca para lomo y tapas)",
+		"metallic": 0.02,
+		"rect": [
+			0.8125,
+			0.275659824046921,
+			0.0234375,
+			0.0351906158357771
+		],
+		"roughness": 0.5
+	},
+	"cereal_avena_crunch_front": {
+		"desc": "Avena Crunch 375g (Portada frontal: logotipo, tazón y mascota)",
+		"metallic": 0.02,
+		"rect": [
+			0.8046875,
+			0.263929618768328,
+			0.1328125,
+			0.237536656891496
+		],
+		"roughness": 0.45
+	},
+	"cereal_avena_crunch_side": {
+		"desc": "Avena Crunch 375g (Panel lateral: Información Nutricional y código de barras)",
+		"metallic": 0.02,
+		"rect": [
+			0.9375,
+			0.263929618768328,
+			0.0576171875,
+			0.237536656891496
+		],
+		"roughness": 0.5
+	},
+	"cereal_bosque_crunch": {
+		"desc": "Bosque Crunch 375g (Caja completa de cereal 375g)",
+		"metallic": 0.02,
+		"rect": [
+			0.8046875,
+			0.752199413489736,
+			0.1904296875,
+			0.234604105571848
+		],
+		"roughness": 0.45
+	},
+	"cereal_bosque_crunch_color": {
+		"desc": "Bosque Crunch 375g (Color sólido de marca para lomo y tapas)",
+		"metallic": 0.02,
+		"rect": [
+			0.8125,
+			0.763929618768328,
+			0.0234375,
+			0.0351906158357771
+		],
+		"roughness": 0.5
+	},
+	"cereal_bosque_crunch_front": {
+		"desc": "Bosque Crunch 375g (Portada frontal: logotipo, tazón y mascota)",
+		"metallic": 0.02,
+		"rect": [
+			0.8046875,
+			0.752199413489736,
+			0.1328125,
+			0.234604105571848
+		],
+		"roughness": 0.45
+	},
+	"cereal_bosque_crunch_side": {
+		"desc": "Bosque Crunch 375g (Panel lateral: Información Nutricional y código de barras)",
+		"metallic": 0.02,
+		"rect": [
+			0.9375,
+			0.752199413489736,
+			0.0576171875,
+			0.234604105571848
+		],
+		"roughness": 0.5
+	},
+	"cereal_campo_feliz": {
+		"desc": "Campo Feliz 375g (Caja completa de cereal 375g)",
+		"metallic": 0.02,
+		"rect": [
+			0.005859375,
+			0.752199413489736,
+			0.1904296875,
+			0.234604105571848
+		],
+		"roughness": 0.45
+	},
+	"cereal_campo_feliz_color": {
+		"desc": "Campo Feliz 375g (Color sólido de marca para lomo y tapas)",
+		"metallic": 0.02,
+		"rect": [
+			0.013671875,
+			0.763929618768328,
+			0.0234375,
+			0.0351906158357771
+		],
+		"roughness": 0.5
+	},
+	"cereal_campo_feliz_front": {
+		"desc": "Campo Feliz 375g (Portada frontal: logotipo, tazón y mascota)",
+		"metallic": 0.02,
+		"rect": [
+			0.005859375,
+			0.752199413489736,
+			0.1328125,
+			0.234604105571848
+		],
+		"roughness": 0.45
+	},
+	"cereal_campo_feliz_side": {
+		"desc": "Campo Feliz 375g (Panel lateral: Información Nutricional y código de barras)",
+		"metallic": 0.02,
+		"rect": [
+			0.138671875,
+			0.752199413489736,
+			0.0576171875,
+			0.234604105571848
+		],
+		"roughness": 0.5
+	},
+	"cereal_choco_bites": {
+		"desc": "Choco Bites 375g (Caja completa de cereal 375g)",
+		"metallic": 0.02,
+		"rect": [
+			0.6025390625,
+			0.00733137829912024,
+			0.1953125,
+			0.249266862170088
+		],
+		"roughness": 0.45
+	},
+	"cereal_choco_bites_color": {
+		"desc": "Choco Bites 375g (Color sólido de marca para lomo y tapas)",
+		"metallic": 0.02,
+		"rect": [
+			0.6103515625,
+			0.0190615835777126,
+			0.0234375,
+			0.0351906158357771
+		],
+		"roughness": 0.5
+	},
+	"cereal_choco_bites_front": {
+		"desc": "Choco Bites 375g (Portada frontal: logotipo, tazón y mascota)",
+		"metallic": 0.02,
+		"rect": [
+			0.6025390625,
+			0.00733137829912024,
+			0.13671875,
+			0.249266862170088
+		],
+		"roughness": 0.45
+	},
+	"cereal_choco_bites_side": {
+		"desc": "Choco Bites 375g (Panel lateral: Información Nutricional y código de barras)",
+		"metallic": 0.02,
+		"rect": [
+			0.7392578125,
+			0.00733137829912024,
+			0.05859375,
+			0.249266862170088
+		],
+		"roughness": 0.5
+	},
+	"cereal_choco_krunch": {
+		"desc": "Choco Krunch 375g (Caja completa de cereal 375g)",
+		"metallic": 0.02,
+		"rect": [
+			0.005859375,
+			0.263929618768328,
+			0.1904296875,
+			0.237536656891496
+		],
+		"roughness": 0.45
+	},
+	"cereal_choco_krunch_color": {
+		"desc": "Choco Krunch 375g (Color sólido de marca para lomo y tapas)",
+		"metallic": 0.02,
+		"rect": [
+			0.013671875,
+			0.275659824046921,
+			0.0234375,
+			0.0351906158357771
+		],
+		"roughness": 0.5
+	},
+	"cereal_choco_krunch_front": {
+		"desc": "Choco Krunch 375g (Portada frontal: logotipo, tazón y mascota)",
+		"metallic": 0.02,
+		"rect": [
+			0.005859375,
+			0.263929618768328,
+			0.1328125,
+			0.237536656891496
+		],
+		"roughness": 0.45
+	},
+	"cereal_choco_krunch_side": {
+		"desc": "Choco Krunch 375g (Panel lateral: Información Nutricional y código de barras)",
+		"metallic": 0.02,
+		"rect": [
+			0.138671875,
+			0.263929618768328,
+			0.0576171875,
+			0.237536656891496
+		],
+		"roughness": 0.5
+	},
+	"cereal_choco_rizos": {
+		"desc": "Choco Rizos 375g (Caja completa de cereal 375g)",
+		"metallic": 0.02,
+		"rect": [
+			0.4091796875,
+			0.752199413489736,
+			0.185546875,
+			0.234604105571848
+		],
+		"roughness": 0.45
+	},
+	"cereal_choco_rizos_color": {
+		"desc": "Choco Rizos 375g (Color sólido de marca para lomo y tapas)",
+		"metallic": 0.02,
+		"rect": [
+			0.4169921875,
+			0.763929618768328,
+			0.0234375,
+			0.0351906158357771
+		],
+		"roughness": 0.5
+	},
+	"cereal_choco_rizos_front": {
+		"desc": "Choco Rizos 375g (Portada frontal: logotipo, tazón y mascota)",
+		"metallic": 0.02,
+		"rect": [
+			0.4091796875,
+			0.752199413489736,
+			0.1298828125,
+			0.234604105571848
+		],
+		"roughness": 0.45
+	},
+	"cereal_choco_rizos_side": {
+		"desc": "Choco Rizos 375g (Panel lateral: Información Nutricional y código de barras)",
+		"metallic": 0.02,
+		"rect": [
+			0.5390625,
+			0.752199413489736,
+			0.0556640625,
+			0.234604105571848
+		],
+		"roughness": 0.5
+	},
+	"cereal_corny_bits": {
+		"desc": "Corny Bits 375g (Caja completa de cereal 375g)",
+		"metallic": 0.02,
+		"rect": [
+			0.4091796875,
+			0.00733137829912024,
+			0.185546875,
+			0.249266862170088
+		],
+		"roughness": 0.45
+	},
+	"cereal_corny_bits_color": {
+		"desc": "Corny Bits 375g (Color sólido de marca para lomo y tapas)",
+		"metallic": 0.02,
+		"rect": [
+			0.4169921875,
+			0.0190615835777126,
+			0.0234375,
+			0.0351906158357771
+		],
+		"roughness": 0.5
+	},
+	"cereal_corny_bits_front": {
+		"desc": "Corny Bits 375g (Portada frontal: logotipo, tazón y mascota)",
+		"metallic": 0.02,
+		"rect": [
+			0.4091796875,
+			0.00733137829912024,
+			0.1298828125,
+			0.249266862170088
+		],
+		"roughness": 0.45
+	},
+	"cereal_corny_bits_side": {
+		"desc": "Corny Bits 375g (Panel lateral: Información Nutricional y código de barras)",
+		"metallic": 0.02,
+		"rect": [
+			0.5390625,
+			0.00733137829912024,
+			0.0556640625,
+			0.249266862170088
+		],
+		"roughness": 0.5
+	},
+	"cereal_dulce_maiz": {
+		"desc": "Dulce Maíz 375g (Caja completa de cereal 375g)",
+		"metallic": 0.02,
+		"rect": [
+			0.2041015625,
+			0.752199413489736,
+			0.197265625,
+			0.234604105571848
+		],
+		"roughness": 0.45
+	},
+	"cereal_dulce_maiz_color": {
+		"desc": "Dulce Maíz 375g (Color sólido de marca para lomo y tapas)",
+		"metallic": 0.02,
+		"rect": [
+			0.2119140625,
+			0.763929618768328,
+			0.0234375,
+			0.0351906158357771
+		],
+		"roughness": 0.5
+	},
+	"cereal_dulce_maiz_front": {
+		"desc": "Dulce Maíz 375g (Portada frontal: logotipo, tazón y mascota)",
+		"metallic": 0.02,
+		"rect": [
+			0.2041015625,
+			0.752199413489736,
+			0.1376953125,
+			0.234604105571848
+		],
+		"roughness": 0.45
+	},
+	"cereal_dulce_maiz_side": {
+		"desc": "Dulce Maíz 375g (Panel lateral: Información Nutricional y código de barras)",
+		"metallic": 0.02,
+		"rect": [
+			0.341796875,
+			0.752199413489736,
+			0.0595703125,
+			0.234604105571848
+		],
+		"roughness": 0.5
+	},
+	"cereal_estrella_flakes": {
+		"desc": "Estrella Flakes 375g (Caja completa de cereal 375g)",
+		"metallic": 0.02,
+		"rect": [
+			0.4091796875,
+			0.263929618768328,
+			0.185546875,
+			0.237536656891496
+		],
+		"roughness": 0.45
+	},
+	"cereal_estrella_flakes_color": {
+		"desc": "Estrella Flakes 375g (Color sólido de marca para lomo y tapas)",
+		"metallic": 0.02,
+		"rect": [
+			0.4169921875,
+			0.275659824046921,
+			0.0234375,
+			0.0351906158357771
+		],
+		"roughness": 0.5
+	},
+	"cereal_estrella_flakes_front": {
+		"desc": "Estrella Flakes 375g (Portada frontal: logotipo, tazón y mascota)",
+		"metallic": 0.02,
+		"rect": [
+			0.4091796875,
+			0.263929618768328,
+			0.1298828125,
+			0.237536656891496
+		],
+		"roughness": 0.45
+	},
+	"cereal_estrella_flakes_side": {
+		"desc": "Estrella Flakes 375g (Panel lateral: Información Nutricional y código de barras)",
+		"metallic": 0.02,
+		"rect": [
+			0.5390625,
+			0.263929618768328,
+			0.0556640625,
+			0.237536656891496
+		],
+		"roughness": 0.5
+	},
+	"cereal_frosty_crunch": {
+		"desc": "Frosty Crunch 375g (Caja completa de cereal 375g)",
+		"metallic": 0.02,
+		"rect": [
+			0.2041015625,
+			0.508797653958944,
+			0.197265625,
+			0.234604105571848
+		],
+		"roughness": 0.45
+	},
+	"cereal_frosty_crunch_color": {
+		"desc": "Frosty Crunch 375g (Color sólido de marca para lomo y tapas)",
+		"metallic": 0.02,
+		"rect": [
+			0.2119140625,
+			0.520527859237537,
+			0.0234375,
+			0.0351906158357771
+		],
+		"roughness": 0.5
+	},
+	"cereal_frosty_crunch_front": {
+		"desc": "Frosty Crunch 375g (Portada frontal: logotipo, tazón y mascota)",
+		"metallic": 0.02,
+		"rect": [
+			0.2041015625,
+			0.508797653958944,
+			0.1376953125,
+			0.234604105571848
+		],
+		"roughness": 0.45
+	},
+	"cereal_frosty_crunch_side": {
+		"desc": "Frosty Crunch 375g (Panel lateral: Información Nutricional y código de barras)",
+		"metallic": 0.02,
+		"rect": [
+			0.341796875,
+			0.508797653958944,
+			0.0595703125,
+			0.234604105571848
+		],
+		"roughness": 0.5
+	},
+	"cereal_fruti_loops": {
+		"desc": "Fruti Loops 375g (Caja completa de cereal 375g)",
+		"metallic": 0.02,
+		"rect": [
+			0.8046875,
+			0.00733137829912024,
+			0.1904296875,
+			0.249266862170088
+		],
+		"roughness": 0.45
+	},
+	"cereal_fruti_loops_color": {
+		"desc": "Fruti Loops 375g (Color sólido de marca para lomo y tapas)",
+		"metallic": 0.02,
+		"rect": [
+			0.8125,
+			0.0190615835777126,
+			0.0234375,
+			0.0351906158357771
+		],
+		"roughness": 0.5
+	},
+	"cereal_fruti_loops_front": {
+		"desc": "Fruti Loops 375g (Portada frontal: logotipo, tazón y mascota)",
+		"metallic": 0.02,
+		"rect": [
+			0.8046875,
+			0.00733137829912024,
+			0.1328125,
+			0.249266862170088
+		],
+		"roughness": 0.45
+	},
+	"cereal_fruti_loops_side": {
+		"desc": "Fruti Loops 375g (Panel lateral: Información Nutricional y código de barras)",
+		"metallic": 0.02,
+		"rect": [
+			0.9375,
+			0.00733137829912024,
+			0.0576171875,
+			0.249266862170088
+		],
+		"roughness": 0.5
+	},
+	"cereal_granola_mix": {
+		"desc": "Granola Mix 375g (Caja completa de cereal 375g)",
+		"metallic": 0.02,
+		"rect": [
+			0.6025390625,
+			0.263929618768328,
+			0.1953125,
+			0.237536656891496
+		],
+		"roughness": 0.45
+	},
+	"cereal_granola_mix_color": {
+		"desc": "Granola Mix 375g (Color sólido de marca para lomo y tapas)",
+		"metallic": 0.02,
+		"rect": [
+			0.6103515625,
+			0.275659824046921,
+			0.0234375,
+			0.0351906158357771
+		],
+		"roughness": 0.5
+	},
+	"cereal_granola_mix_front": {
+		"desc": "Granola Mix 375g (Portada frontal: logotipo, tazón y mascota)",
+		"metallic": 0.02,
+		"rect": [
+			0.6025390625,
+			0.263929618768328,
+			0.13671875,
+			0.237536656891496
+		],
+		"roughness": 0.45
+	},
+	"cereal_granola_mix_side": {
+		"desc": "Granola Mix 375g (Panel lateral: Información Nutricional y código de barras)",
+		"metallic": 0.02,
+		"rect": [
+			0.7392578125,
+			0.263929618768328,
+			0.05859375,
+			0.237536656891496
+		],
+		"roughness": 0.5
+	},
+	"cereal_krisp_max": {
+		"desc": "Krisp Max 375g (Caja completa de cereal 375g)",
+		"metallic": 0.02,
+		"rect": [
+			0.005859375,
+			0.00733137829912024,
+			0.1904296875,
+			0.249266862170088
+		],
+		"roughness": 0.45
+	},
+	"cereal_krisp_max_color": {
+		"desc": "Krisp Max 375g (Color sólido de marca para lomo y tapas)",
+		"metallic": 0.02,
+		"rect": [
+			0.013671875,
+			0.0190615835777126,
+			0.0234375,
+			0.0351906158357771
+		],
+		"roughness": 0.5
+	},
+	"cereal_krisp_max_front": {
+		"desc": "Krisp Max 375g (Portada frontal: logotipo, tazón y mascota)",
+		"metallic": 0.02,
+		"rect": [
+			0.005859375,
+			0.00733137829912024,
+			0.1328125,
+			0.249266862170088
+		],
+		"roughness": 0.45
+	},
+	"cereal_krisp_max_side": {
+		"desc": "Krisp Max 375g (Panel lateral: Información Nutricional y código de barras)",
+		"metallic": 0.02,
+		"rect": [
+			0.138671875,
+			0.00733137829912024,
+			0.0576171875,
+			0.249266862170088
+		],
+		"roughness": 0.5
+	},
+	"cereal_miel_dorada": {
+		"desc": "Miel Dorada 375g (Caja completa de cereal 375g)",
+		"metallic": 0.02,
+		"rect": [
+			0.2041015625,
+			0.263929618768328,
+			0.197265625,
+			0.237536656891496
+		],
+		"roughness": 0.45
+	},
+	"cereal_miel_dorada_color": {
+		"desc": "Miel Dorada 375g (Color sólido de marca para lomo y tapas)",
+		"metallic": 0.02,
+		"rect": [
+			0.2119140625,
+			0.275659824046921,
+			0.0234375,
+			0.0351906158357771
+		],
+		"roughness": 0.5
+	},
+	"cereal_miel_dorada_front": {
+		"desc": "Miel Dorada 375g (Portada frontal: logotipo, tazón y mascota)",
+		"metallic": 0.02,
+		"rect": [
+			0.2041015625,
+			0.263929618768328,
+			0.1376953125,
+			0.237536656891496
+		],
+		"roughness": 0.45
+	},
+	"cereal_miel_dorada_side": {
+		"desc": "Miel Dorada 375g (Panel lateral: Información Nutricional y código de barras)",
+		"metallic": 0.02,
+		"rect": [
+			0.341796875,
+			0.263929618768328,
+			0.0595703125,
+			0.237536656891496
+		],
+		"roughness": 0.5
+	},
+	"cereal_nube_crispy": {
+		"desc": "Nube Crispy 375g (Caja completa de cereal 375g)",
+		"metallic": 0.02,
+		"rect": [
+			0.6025390625,
+			0.752199413489736,
+			0.1953125,
+			0.234604105571848
+		],
+		"roughness": 0.45
+	},
+	"cereal_nube_crispy_color": {
+		"desc": "Nube Crispy 375g (Color sólido de marca para lomo y tapas)",
+		"metallic": 0.02,
+		"rect": [
+			0.6103515625,
+			0.763929618768328,
+			0.0234375,
+			0.0351906158357771
+		],
+		"roughness": 0.5
+	},
+	"cereal_nube_crispy_front": {
+		"desc": "Nube Crispy 375g (Portada frontal: logotipo, tazón y mascota)",
+		"metallic": 0.02,
+		"rect": [
+			0.6025390625,
+			0.752199413489736,
+			0.13671875,
+			0.234604105571848
+		],
+		"roughness": 0.45
+	},
+	"cereal_nube_crispy_side": {
+		"desc": "Nube Crispy 375g (Panel lateral: Información Nutricional y código de barras)",
+		"metallic": 0.02,
+		"rect": [
+			0.7392578125,
+			0.752199413489736,
+			0.05859375,
+			0.234604105571848
+		],
+		"roughness": 0.5
+	},
+	"cereal_rayo_cereal": {
+		"desc": "Rayo Cereal 375g (Caja completa de cereal 375g)",
+		"metallic": 0.02,
+		"rect": [
+			0.4091796875,
+			0.508797653958944,
+			0.185546875,
+			0.234604105571848
+		],
+		"roughness": 0.45
+	},
+	"cereal_rayo_cereal_color": {
+		"desc": "Rayo Cereal 375g (Color sólido de marca para lomo y tapas)",
+		"metallic": 0.02,
+		"rect": [
+			0.4169921875,
+			0.520527859237537,
+			0.0234375,
+			0.0351906158357771
+		],
+		"roughness": 0.5
+	},
+	"cereal_rayo_cereal_front": {
+		"desc": "Rayo Cereal 375g (Portada frontal: logotipo, tazón y mascota)",
+		"metallic": 0.02,
+		"rect": [
+			0.4091796875,
+			0.508797653958944,
+			0.1298828125,
+			0.234604105571848
+		],
+		"roughness": 0.45
+	},
+	"cereal_rayo_cereal_side": {
+		"desc": "Rayo Cereal 375g (Panel lateral: Información Nutricional y código de barras)",
+		"metallic": 0.02,
+		"rect": [
+			0.5390625,
+			0.508797653958944,
+			0.0556640625,
+			0.234604105571848
+		],
+		"roughness": 0.5
+	},
+	"cereal_selva_crunch": {
+		"desc": "Selva Crunch 375g (Caja completa de cereal 375g)",
+		"metallic": 0.02,
+		"rect": [
+			0.6025390625,
+			0.508797653958944,
+			0.1953125,
+			0.234604105571848
+		],
+		"roughness": 0.45
+	},
+	"cereal_selva_crunch_color": {
+		"desc": "Selva Crunch 375g (Color sólido de marca para lomo y tapas)",
+		"metallic": 0.02,
+		"rect": [
+			0.6103515625,
+			0.520527859237537,
+			0.0234375,
+			0.0351906158357771
+		],
+		"roughness": 0.5
+	},
+	"cereal_selva_crunch_front": {
+		"desc": "Selva Crunch 375g (Portada frontal: logotipo, tazón y mascota)",
+		"metallic": 0.02,
+		"rect": [
+			0.6025390625,
+			0.508797653958944,
+			0.13671875,
+			0.234604105571848
+		],
+		"roughness": 0.45
+	},
+	"cereal_selva_crunch_side": {
+		"desc": "Selva Crunch 375g (Panel lateral: Información Nutricional y código de barras)",
+		"metallic": 0.02,
+		"rect": [
+			0.7392578125,
+			0.508797653958944,
+			0.05859375,
+			0.234604105571848
+		],
+		"roughness": 0.5
+	},
+	"cereal_sol_nativo": {
+		"desc": "Sol Nativo 375g (Caja completa de cereal 375g)",
+		"metallic": 0.02,
+		"rect": [
+			0.8046875,
+			0.508797653958944,
+			0.1904296875,
+			0.234604105571848
+		],
+		"roughness": 0.45
+	},
+	"cereal_sol_nativo_color": {
+		"desc": "Sol Nativo 375g (Color sólido de marca para lomo y tapas)",
+		"metallic": 0.02,
+		"rect": [
+			0.8125,
+			0.520527859237537,
+			0.0234375,
+			0.0351906158357771
+		],
+		"roughness": 0.5
+	},
+	"cereal_sol_nativo_front": {
+		"desc": "Sol Nativo 375g (Portada frontal: logotipo, tazón y mascota)",
+		"metallic": 0.02,
+		"rect": [
+			0.8046875,
+			0.508797653958944,
+			0.1328125,
+			0.234604105571848
+		],
+		"roughness": 0.45
+	},
+	"cereal_sol_nativo_side": {
+		"desc": "Sol Nativo 375g (Panel lateral: Información Nutricional y código de barras)",
+		"metallic": 0.02,
+		"rect": [
+			0.9375,
+			0.508797653958944,
+			0.0576171875,
+			0.234604105571848
+		],
+		"roughness": 0.5
+	},
+	"cereal_tornado_flakes": {
+		"desc": "Tornado Flakes 375g (Caja completa de cereal 375g)",
+		"metallic": 0.02,
+		"rect": [
+			0.005859375,
+			0.508797653958944,
+			0.1904296875,
+			0.234604105571848
+		],
+		"roughness": 0.45
+	},
+	"cereal_tornado_flakes_color": {
+		"desc": "Tornado Flakes 375g (Color sólido de marca para lomo y tapas)",
+		"metallic": 0.02,
+		"rect": [
+			0.013671875,
+			0.520527859237537,
+			0.0234375,
+			0.0351906158357771
+		],
+		"roughness": 0.5
+	},
+	"cereal_tornado_flakes_front": {
+		"desc": "Tornado Flakes 375g (Portada frontal: logotipo, tazón y mascota)",
+		"metallic": 0.02,
+		"rect": [
+			0.005859375,
+			0.508797653958944,
+			0.1328125,
+			0.234604105571848
+		],
+		"roughness": 0.45
+	},
+	"cereal_tornado_flakes_side": {
+		"desc": "Tornado Flakes 375g (Panel lateral: Información Nutricional y código de barras)",
+		"metallic": 0.02,
+		"rect": [
+			0.138671875,
+			0.508797653958944,
+			0.0576171875,
+			0.234604105571848
+		],
+		"roughness": 0.5
+	},
+	"cereal_zucarinix": {
+		"desc": "Zucarinix 375g (Caja completa de cereal 375g)",
+		"metallic": 0.02,
+		"rect": [
+			0.2041015625,
+			0.00733137829912024,
+			0.197265625,
+			0.249266862170088
+		],
+		"roughness": 0.45
+	},
+	"cereal_zucarinix_color": {
+		"desc": "Zucarinix 375g (Color sólido de marca para lomo y tapas)",
+		"metallic": 0.02,
+		"rect": [
+			0.2119140625,
+			0.0190615835777126,
+			0.0234375,
+			0.0351906158357771
+		],
+		"roughness": 0.5
+	},
+	"cereal_zucarinix_front": {
+		"desc": "Zucarinix 375g (Portada frontal: logotipo, tazón y mascota)",
+		"metallic": 0.02,
+		"rect": [
+			0.2041015625,
+			0.00733137829912024,
+			0.1376953125,
+			0.249266862170088
+		],
+		"roughness": 0.45
+	},
+	"cereal_zucarinix_side": {
+		"desc": "Zucarinix 375g (Panel lateral: Información Nutricional y código de barras)",
+		"metallic": 0.02,
+		"rect": [
+			0.341796875,
+			0.00733137829912024,
+			0.0595703125,
+			0.249266862170088
+		],
+		"roughness": 0.5
+	},
+	"choco_bites": {
+		"desc": "Choco Bites 375g (Caja completa de cereal 375g)",
+		"metallic": 0.02,
+		"rect": [
+			0.6025390625,
+			0.00733137829912024,
+			0.1953125,
+			0.249266862170088
+		],
+		"roughness": 0.45
+	},
+	"choco_bites_color": {
+		"desc": "Choco Bites 375g (Color sólido de marca para lomo y tapas)",
+		"metallic": 0.02,
+		"rect": [
+			0.6103515625,
+			0.0190615835777126,
+			0.0234375,
+			0.0351906158357771
+		],
+		"roughness": 0.5
+	},
+	"choco_bites_front": {
+		"desc": "Choco Bites 375g (Portada frontal: logotipo, tazón y mascota)",
+		"metallic": 0.02,
+		"rect": [
+			0.6025390625,
+			0.00733137829912024,
+			0.13671875,
+			0.249266862170088
+		],
+		"roughness": 0.45
+	},
+	"choco_bites_side": {
+		"desc": "Choco Bites 375g (Panel lateral: Información Nutricional y código de barras)",
+		"metallic": 0.02,
+		"rect": [
+			0.7392578125,
+			0.00733137829912024,
+			0.05859375,
+			0.249266862170088
+		],
+		"roughness": 0.5
+	},
+	"choco_krunch": {
+		"desc": "Choco Krunch 375g (Caja completa de cereal 375g)",
+		"metallic": 0.02,
+		"rect": [
+			0.005859375,
+			0.263929618768328,
+			0.1904296875,
+			0.237536656891496
+		],
+		"roughness": 0.45
+	},
+	"choco_krunch_color": {
+		"desc": "Choco Krunch 375g (Color sólido de marca para lomo y tapas)",
+		"metallic": 0.02,
+		"rect": [
+			0.013671875,
+			0.275659824046921,
+			0.0234375,
+			0.0351906158357771
+		],
+		"roughness": 0.5
+	},
+	"choco_krunch_front": {
+		"desc": "Choco Krunch 375g (Portada frontal: logotipo, tazón y mascota)",
+		"metallic": 0.02,
+		"rect": [
+			0.005859375,
+			0.263929618768328,
+			0.1328125,
+			0.237536656891496
+		],
+		"roughness": 0.45
+	},
+	"choco_krunch_side": {
+		"desc": "Choco Krunch 375g (Panel lateral: Información Nutricional y código de barras)",
+		"metallic": 0.02,
+		"rect": [
+			0.138671875,
+			0.263929618768328,
+			0.0576171875,
+			0.237536656891496
+		],
+		"roughness": 0.5
+	},
+	"choco_rizos": {
+		"desc": "Choco Rizos 375g (Caja completa de cereal 375g)",
+		"metallic": 0.02,
+		"rect": [
+			0.4091796875,
+			0.752199413489736,
+			0.185546875,
+			0.234604105571848
+		],
+		"roughness": 0.45
+	},
+	"choco_rizos_color": {
+		"desc": "Choco Rizos 375g (Color sólido de marca para lomo y tapas)",
+		"metallic": 0.02,
+		"rect": [
+			0.4169921875,
+			0.763929618768328,
+			0.0234375,
+			0.0351906158357771
+		],
+		"roughness": 0.5
+	},
+	"choco_rizos_front": {
+		"desc": "Choco Rizos 375g (Portada frontal: logotipo, tazón y mascota)",
+		"metallic": 0.02,
+		"rect": [
+			0.4091796875,
+			0.752199413489736,
+			0.1298828125,
+			0.234604105571848
+		],
+		"roughness": 0.45
+	},
+	"choco_rizos_side": {
+		"desc": "Choco Rizos 375g (Panel lateral: Información Nutricional y código de barras)",
+		"metallic": 0.02,
+		"rect": [
+			0.5390625,
+			0.752199413489736,
+			0.0556640625,
+			0.234604105571848
+		],
+		"roughness": 0.5
+	},
+	"corny_bits": {
+		"desc": "Corny Bits 375g (Caja completa de cereal 375g)",
+		"metallic": 0.02,
+		"rect": [
+			0.4091796875,
+			0.00733137829912024,
+			0.185546875,
+			0.249266862170088
+		],
+		"roughness": 0.45
+	},
+	"corny_bits_color": {
+		"desc": "Corny Bits 375g (Color sólido de marca para lomo y tapas)",
+		"metallic": 0.02,
+		"rect": [
+			0.4169921875,
+			0.0190615835777126,
+			0.0234375,
+			0.0351906158357771
+		],
+		"roughness": 0.5
+	},
+	"corny_bits_front": {
+		"desc": "Corny Bits 375g (Portada frontal: logotipo, tazón y mascota)",
+		"metallic": 0.02,
+		"rect": [
+			0.4091796875,
+			0.00733137829912024,
+			0.1298828125,
+			0.249266862170088
+		],
+		"roughness": 0.45
+	},
+	"corny_bits_side": {
+		"desc": "Corny Bits 375g (Panel lateral: Información Nutricional y código de barras)",
+		"metallic": 0.02,
+		"rect": [
+			0.5390625,
+			0.00733137829912024,
+			0.0556640625,
+			0.249266862170088
+		],
+		"roughness": 0.5
+	},
+	"dulce_maiz": {
+		"desc": "Dulce Maíz 375g (Caja completa de cereal 375g)",
+		"metallic": 0.02,
+		"rect": [
+			0.2041015625,
+			0.752199413489736,
+			0.197265625,
+			0.234604105571848
+		],
+		"roughness": 0.45
+	},
+	"dulce_maiz_color": {
+		"desc": "Dulce Maíz 375g (Color sólido de marca para lomo y tapas)",
+		"metallic": 0.02,
+		"rect": [
+			0.2119140625,
+			0.763929618768328,
+			0.0234375,
+			0.0351906158357771
+		],
+		"roughness": 0.5
+	},
+	"dulce_maiz_front": {
+		"desc": "Dulce Maíz 375g (Portada frontal: logotipo, tazón y mascota)",
+		"metallic": 0.02,
+		"rect": [
+			0.2041015625,
+			0.752199413489736,
+			0.1376953125,
+			0.234604105571848
+		],
+		"roughness": 0.45
+	},
+	"dulce_maiz_side": {
+		"desc": "Dulce Maíz 375g (Panel lateral: Información Nutricional y código de barras)",
+		"metallic": 0.02,
+		"rect": [
+			0.341796875,
+			0.752199413489736,
+			0.0595703125,
+			0.234604105571848
+		],
+		"roughness": 0.5
+	},
+	"estrella_flakes": {
+		"desc": "Estrella Flakes 375g (Caja completa de cereal 375g)",
+		"metallic": 0.02,
+		"rect": [
+			0.4091796875,
+			0.263929618768328,
+			0.185546875,
+			0.237536656891496
+		],
+		"roughness": 0.45
+	},
+	"estrella_flakes_color": {
+		"desc": "Estrella Flakes 375g (Color sólido de marca para lomo y tapas)",
+		"metallic": 0.02,
+		"rect": [
+			0.4169921875,
+			0.275659824046921,
+			0.0234375,
+			0.0351906158357771
+		],
+		"roughness": 0.5
+	},
+	"estrella_flakes_front": {
+		"desc": "Estrella Flakes 375g (Portada frontal: logotipo, tazón y mascota)",
+		"metallic": 0.02,
+		"rect": [
+			0.4091796875,
+			0.263929618768328,
+			0.1298828125,
+			0.237536656891496
+		],
+		"roughness": 0.45
+	},
+	"estrella_flakes_side": {
+		"desc": "Estrella Flakes 375g (Panel lateral: Información Nutricional y código de barras)",
+		"metallic": 0.02,
+		"rect": [
+			0.5390625,
+			0.263929618768328,
+			0.0556640625,
+			0.237536656891496
+		],
+		"roughness": 0.5
+	},
+	"frosty_crunch": {
+		"desc": "Frosty Crunch 375g (Caja completa de cereal 375g)",
+		"metallic": 0.02,
+		"rect": [
+			0.2041015625,
+			0.508797653958944,
+			0.197265625,
+			0.234604105571848
+		],
+		"roughness": 0.45
+	},
+	"frosty_crunch_color": {
+		"desc": "Frosty Crunch 375g (Color sólido de marca para lomo y tapas)",
+		"metallic": 0.02,
+		"rect": [
+			0.2119140625,
+			0.520527859237537,
+			0.0234375,
+			0.0351906158357771
+		],
+		"roughness": 0.5
+	},
+	"frosty_crunch_front": {
+		"desc": "Frosty Crunch 375g (Portada frontal: logotipo, tazón y mascota)",
+		"metallic": 0.02,
+		"rect": [
+			0.2041015625,
+			0.508797653958944,
+			0.1376953125,
+			0.234604105571848
+		],
+		"roughness": 0.45
+	},
+	"frosty_crunch_side": {
+		"desc": "Frosty Crunch 375g (Panel lateral: Información Nutricional y código de barras)",
+		"metallic": 0.02,
+		"rect": [
+			0.341796875,
+			0.508797653958944,
+			0.0595703125,
+			0.234604105571848
+		],
+		"roughness": 0.5
+	},
+	"fruti_loops": {
+		"desc": "Fruti Loops 375g (Caja completa de cereal 375g)",
+		"metallic": 0.02,
+		"rect": [
+			0.8046875,
+			0.00733137829912024,
+			0.1904296875,
+			0.249266862170088
+		],
+		"roughness": 0.45
+	},
+	"fruti_loops_color": {
+		"desc": "Fruti Loops 375g (Color sólido de marca para lomo y tapas)",
+		"metallic": 0.02,
+		"rect": [
+			0.8125,
+			0.0190615835777126,
+			0.0234375,
+			0.0351906158357771
+		],
+		"roughness": 0.5
+	},
+	"fruti_loops_front": {
+		"desc": "Fruti Loops 375g (Portada frontal: logotipo, tazón y mascota)",
+		"metallic": 0.02,
+		"rect": [
+			0.8046875,
+			0.00733137829912024,
+			0.1328125,
+			0.249266862170088
+		],
+		"roughness": 0.45
+	},
+	"fruti_loops_side": {
+		"desc": "Fruti Loops 375g (Panel lateral: Información Nutricional y código de barras)",
+		"metallic": 0.02,
+		"rect": [
+			0.9375,
+			0.00733137829912024,
+			0.0576171875,
+			0.249266862170088
+		],
+		"roughness": 0.5
+	},
+	"granola_mix": {
+		"desc": "Granola Mix 375g (Caja completa de cereal 375g)",
+		"metallic": 0.02,
+		"rect": [
+			0.6025390625,
+			0.263929618768328,
+			0.1953125,
+			0.237536656891496
+		],
+		"roughness": 0.45
+	},
+	"granola_mix_color": {
+		"desc": "Granola Mix 375g (Color sólido de marca para lomo y tapas)",
+		"metallic": 0.02,
+		"rect": [
+			0.6103515625,
+			0.275659824046921,
+			0.0234375,
+			0.0351906158357771
+		],
+		"roughness": 0.5
+	},
+	"granola_mix_front": {
+		"desc": "Granola Mix 375g (Portada frontal: logotipo, tazón y mascota)",
+		"metallic": 0.02,
+		"rect": [
+			0.6025390625,
+			0.263929618768328,
+			0.13671875,
+			0.237536656891496
+		],
+		"roughness": 0.45
+	},
+	"granola_mix_side": {
+		"desc": "Granola Mix 375g (Panel lateral: Información Nutricional y código de barras)",
+		"metallic": 0.02,
+		"rect": [
+			0.7392578125,
+			0.263929618768328,
+			0.05859375,
+			0.237536656891496
+		],
+		"roughness": 0.5
+	},
+	"krisp_max": {
+		"desc": "Krisp Max 375g (Caja completa de cereal 375g)",
+		"metallic": 0.02,
+		"rect": [
+			0.005859375,
+			0.00733137829912024,
+			0.1904296875,
+			0.249266862170088
+		],
+		"roughness": 0.45
+	},
+	"krisp_max_color": {
+		"desc": "Krisp Max 375g (Color sólido de marca para lomo y tapas)",
+		"metallic": 0.02,
+		"rect": [
+			0.013671875,
+			0.0190615835777126,
+			0.0234375,
+			0.0351906158357771
+		],
+		"roughness": 0.5
+	},
+	"krisp_max_front": {
+		"desc": "Krisp Max 375g (Portada frontal: logotipo, tazón y mascota)",
+		"metallic": 0.02,
+		"rect": [
+			0.005859375,
+			0.00733137829912024,
+			0.1328125,
+			0.249266862170088
+		],
+		"roughness": 0.45
+	},
+	"krisp_max_side": {
+		"desc": "Krisp Max 375g (Panel lateral: Información Nutricional y código de barras)",
+		"metallic": 0.02,
+		"rect": [
+			0.138671875,
+			0.00733137829912024,
+			0.0576171875,
+			0.249266862170088
+		],
+		"roughness": 0.5
+	},
+	"miel_dorada": {
+		"desc": "Miel Dorada 375g (Caja completa de cereal 375g)",
+		"metallic": 0.02,
+		"rect": [
+			0.2041015625,
+			0.263929618768328,
+			0.197265625,
+			0.237536656891496
+		],
+		"roughness": 0.45
+	},
+	"miel_dorada_color": {
+		"desc": "Miel Dorada 375g (Color sólido de marca para lomo y tapas)",
+		"metallic": 0.02,
+		"rect": [
+			0.2119140625,
+			0.275659824046921,
+			0.0234375,
+			0.0351906158357771
+		],
+		"roughness": 0.5
+	},
+	"miel_dorada_front": {
+		"desc": "Miel Dorada 375g (Portada frontal: logotipo, tazón y mascota)",
+		"metallic": 0.02,
+		"rect": [
+			0.2041015625,
+			0.263929618768328,
+			0.1376953125,
+			0.237536656891496
+		],
+		"roughness": 0.45
+	},
+	"miel_dorada_side": {
+		"desc": "Miel Dorada 375g (Panel lateral: Información Nutricional y código de barras)",
+		"metallic": 0.02,
+		"rect": [
+			0.341796875,
+			0.263929618768328,
+			0.0595703125,
+			0.237536656891496
+		],
+		"roughness": 0.5
+	},
+	"nube_crispy": {
+		"desc": "Nube Crispy 375g (Caja completa de cereal 375g)",
+		"metallic": 0.02,
+		"rect": [
+			0.6025390625,
+			0.752199413489736,
+			0.1953125,
+			0.234604105571848
+		],
+		"roughness": 0.45
+	},
+	"nube_crispy_color": {
+		"desc": "Nube Crispy 375g (Color sólido de marca para lomo y tapas)",
+		"metallic": 0.02,
+		"rect": [
+			0.6103515625,
+			0.763929618768328,
+			0.0234375,
+			0.0351906158357771
+		],
+		"roughness": 0.5
+	},
+	"nube_crispy_front": {
+		"desc": "Nube Crispy 375g (Portada frontal: logotipo, tazón y mascota)",
+		"metallic": 0.02,
+		"rect": [
+			0.6025390625,
+			0.752199413489736,
+			0.13671875,
+			0.234604105571848
+		],
+		"roughness": 0.45
+	},
+	"nube_crispy_side": {
+		"desc": "Nube Crispy 375g (Panel lateral: Información Nutricional y código de barras)",
+		"metallic": 0.02,
+		"rect": [
+			0.7392578125,
+			0.752199413489736,
+			0.05859375,
+			0.234604105571848
+		],
+		"roughness": 0.5
+	},
+	"rayo_cereal": {
+		"desc": "Rayo Cereal 375g (Caja completa de cereal 375g)",
+		"metallic": 0.02,
+		"rect": [
+			0.4091796875,
+			0.508797653958944,
+			0.185546875,
+			0.234604105571848
+		],
+		"roughness": 0.45
+	},
+	"rayo_cereal_color": {
+		"desc": "Rayo Cereal 375g (Color sólido de marca para lomo y tapas)",
+		"metallic": 0.02,
+		"rect": [
+			0.4169921875,
+			0.520527859237537,
+			0.0234375,
+			0.0351906158357771
+		],
+		"roughness": 0.5
+	},
+	"rayo_cereal_front": {
+		"desc": "Rayo Cereal 375g (Portada frontal: logotipo, tazón y mascota)",
+		"metallic": 0.02,
+		"rect": [
+			0.4091796875,
+			0.508797653958944,
+			0.1298828125,
+			0.234604105571848
+		],
+		"roughness": 0.45
+	},
+	"rayo_cereal_side": {
+		"desc": "Rayo Cereal 375g (Panel lateral: Información Nutricional y código de barras)",
+		"metallic": 0.02,
+		"rect": [
+			0.5390625,
+			0.508797653958944,
+			0.0556640625,
+			0.234604105571848
+		],
+		"roughness": 0.5
+	},
+	"selva_crunch": {
+		"desc": "Selva Crunch 375g (Caja completa de cereal 375g)",
+		"metallic": 0.02,
+		"rect": [
+			0.6025390625,
+			0.508797653958944,
+			0.1953125,
+			0.234604105571848
+		],
+		"roughness": 0.45
+	},
+	"selva_crunch_color": {
+		"desc": "Selva Crunch 375g (Color sólido de marca para lomo y tapas)",
+		"metallic": 0.02,
+		"rect": [
+			0.6103515625,
+			0.520527859237537,
+			0.0234375,
+			0.0351906158357771
+		],
+		"roughness": 0.5
+	},
+	"selva_crunch_front": {
+		"desc": "Selva Crunch 375g (Portada frontal: logotipo, tazón y mascota)",
+		"metallic": 0.02,
+		"rect": [
+			0.6025390625,
+			0.508797653958944,
+			0.13671875,
+			0.234604105571848
+		],
+		"roughness": 0.45
+	},
+	"selva_crunch_side": {
+		"desc": "Selva Crunch 375g (Panel lateral: Información Nutricional y código de barras)",
+		"metallic": 0.02,
+		"rect": [
+			0.7392578125,
+			0.508797653958944,
+			0.05859375,
+			0.234604105571848
+		],
+		"roughness": 0.5
+	},
+	"sol_nativo": {
+		"desc": "Sol Nativo 375g (Caja completa de cereal 375g)",
+		"metallic": 0.02,
+		"rect": [
+			0.8046875,
+			0.508797653958944,
+			0.1904296875,
+			0.234604105571848
+		],
+		"roughness": 0.45
+	},
+	"sol_nativo_color": {
+		"desc": "Sol Nativo 375g (Color sólido de marca para lomo y tapas)",
+		"metallic": 0.02,
+		"rect": [
+			0.8125,
+			0.520527859237537,
+			0.0234375,
+			0.0351906158357771
+		],
+		"roughness": 0.5
+	},
+	"sol_nativo_front": {
+		"desc": "Sol Nativo 375g (Portada frontal: logotipo, tazón y mascota)",
+		"metallic": 0.02,
+		"rect": [
+			0.8046875,
+			0.508797653958944,
+			0.1328125,
+			0.234604105571848
+		],
+		"roughness": 0.45
+	},
+	"sol_nativo_side": {
+		"desc": "Sol Nativo 375g (Panel lateral: Información Nutricional y código de barras)",
+		"metallic": 0.02,
+		"rect": [
+			0.9375,
+			0.508797653958944,
+			0.0576171875,
+			0.234604105571848
+		],
+		"roughness": 0.5
+	},
+	"tornado_flakes": {
+		"desc": "Tornado Flakes 375g (Caja completa de cereal 375g)",
+		"metallic": 0.02,
+		"rect": [
+			0.005859375,
+			0.508797653958944,
+			0.1904296875,
+			0.234604105571848
+		],
+		"roughness": 0.45
+	},
+	"tornado_flakes_color": {
+		"desc": "Tornado Flakes 375g (Color sólido de marca para lomo y tapas)",
+		"metallic": 0.02,
+		"rect": [
+			0.013671875,
+			0.520527859237537,
+			0.0234375,
+			0.0351906158357771
+		],
+		"roughness": 0.5
+	},
+	"tornado_flakes_front": {
+		"desc": "Tornado Flakes 375g (Portada frontal: logotipo, tazón y mascota)",
+		"metallic": 0.02,
+		"rect": [
+			0.005859375,
+			0.508797653958944,
+			0.1328125,
+			0.234604105571848
+		],
+		"roughness": 0.45
+	},
+	"tornado_flakes_side": {
+		"desc": "Tornado Flakes 375g (Panel lateral: Información Nutricional y código de barras)",
+		"metallic": 0.02,
+		"rect": [
+			0.138671875,
+			0.508797653958944,
+			0.0576171875,
+			0.234604105571848
+		],
+		"roughness": 0.5
+	},
+	"zucarinix": {
+		"desc": "Zucarinix 375g (Caja completa de cereal 375g)",
+		"metallic": 0.02,
+		"rect": [
+			0.2041015625,
+			0.00733137829912024,
+			0.197265625,
+			0.249266862170088
+		],
+		"roughness": 0.45
+	},
+	"zucarinix_color": {
+		"desc": "Zucarinix 375g (Color sólido de marca para lomo y tapas)",
+		"metallic": 0.02,
+		"rect": [
+			0.2119140625,
+			0.0190615835777126,
+			0.0234375,
+			0.0351906158357771
+		],
+		"roughness": 0.5
+	},
+	"zucarinix_front": {
+		"desc": "Zucarinix 375g (Portada frontal: logotipo, tazón y mascota)",
+		"metallic": 0.02,
+		"rect": [
+			0.2041015625,
+			0.00733137829912024,
+			0.1376953125,
+			0.249266862170088
+		],
+		"roughness": 0.45
+	},
+	"zucarinix_side": {
+		"desc": "Zucarinix 375g (Panel lateral: Información Nutricional y código de barras)",
+		"metallic": 0.02,
+		"rect": [
+			0.341796875,
+			0.00733137829912024,
+			0.0595703125,
+			0.249266862170088
+		],
+		"roughness": 0.5
+	}
+}

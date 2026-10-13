@@ -463,6 +463,47 @@ func add_smart_cylinder(
 	add_cylinder(t, radius, height, final_tex, uv_rect, r, m, collision)
 
 
+## Agrega un cilindro moldeable escalado elípticamente con size = Vector3(ancho_x, alto_y, prof_z)
+## Permite usar la misma primitiva del poste de luz/patas para carcasas curvadas, radios y despertadores (+0 DC)
+func add_cylinder_scaled(
+	t: Transform3D,
+	size: Vector3,
+	texture_key: String = "commercial_cooler",
+	uv_rect: Rect2 = Rect2(0.0, 0.0, 1.0, 1.0),
+	roughness: float = 0.35,
+	metallic: float = 0.60,
+	collision: bool = true
+) -> void:
+	var scaled_t := t.scaled_local(size)
+	var col_data := {}
+	if collision:
+		col_data = {
+			"type": "box",
+			"transform": t,
+			"size": size
+		}
+	add_primitive("cylinder", scaled_t, texture_key, uv_rect, roughness, metallic, collision, col_data)
+
+
+## Cilindro moldeable inteligente que consulta región de material en ObjectAtlas
+func add_smart_cylinder_scaled(
+	t: Transform3D,
+	size: Vector3,
+	texture_key: String,
+	region_name: String = "",
+	roughness: float = -1.0,
+	metallic: float = -1.0,
+	collision: bool = true
+) -> void:
+	var resolved := ObjectAtlasScript.resolve_semantic_texture(texture_key, region_name)
+	var final_tex: String = resolved["texture_key"]
+	var uv_rect: Rect2 = resolved["uv_rect"]
+	var r: float = roughness if roughness >= 0.0 else resolved["roughness"]
+	var m: float = metallic if metallic >= 0.0 else resolved["metallic"]
+	add_cylinder_scaled(t, size, final_tex, uv_rect, r, m, collision)
+
+
+
 ## 3. Agrega una Cuña / Rampa triangular (Wedge/Prism) escalada a 'size'
 func add_wedge(
 	t: Transform3D,
@@ -603,6 +644,46 @@ func add_smart_chamfer_box(
 	var r: float = roughness if roughness >= 0.0 else resolved["roughness"]
 	var m: float = metallic if metallic >= 0.0 else resolved["metallic"]
 	add_chamfer_box(t, size, final_tex, uv_rect, r, m, collision)
+
+
+## 8. Agrega una Caja con Esquinas Redondeadas (Rounded Box / Squircle) escalada a 'size'
+func add_rounded_box(
+	t: Transform3D,
+	size: Vector3,
+	texture_key: String = "roble_claro",
+	uv_rect: Rect2 = Rect2(0.0, 0.0, 1.0, 1.0),
+	roughness: float = 0.55,
+	metallic: float = 0.02,
+	collision: bool = true
+) -> void:
+	var scaled_t := t.scaled_local(size)
+	var col_data := {}
+	if collision:
+		col_data = {
+			"type": "box",
+			"transform": t,
+			"size": size
+		}
+	add_primitive("rounded_box", scaled_t, texture_key, uv_rect, roughness, metallic, collision, col_data)
+
+
+## Shorthand inteligente para caja redondeada consultando ObjectAtlas
+func add_smart_rounded_box(
+	t: Transform3D,
+	size: Vector3,
+	texture_key: String,
+	region_name: String = "",
+	roughness: float = -1.0,
+	metallic: float = -1.0,
+	collision: bool = true
+) -> void:
+	var resolved := ObjectAtlasScript.resolve_semantic_texture(texture_key, region_name)
+	var final_tex: String = resolved["texture_key"]
+	var uv_rect: Rect2 = resolved["uv_rect"]
+	var r: float = roughness if roughness >= 0.0 else resolved["roughness"]
+	var m: float = metallic if metallic >= 0.0 else resolved["metallic"]
+	add_rounded_box(t, size, final_tex, uv_rect, r, m, collision)
+
 
 
 # =========================================================================

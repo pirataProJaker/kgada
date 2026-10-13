@@ -1511,6 +1511,29 @@ static var _REGIONS: Dictionary = {
 	},
 	"box_strawberries": {
 		"brick": { "rect": Rect2(0.0, 0.5, 0.5, 0.5), "roughness": 0.40, "metallic": 0.05, "desc": "Envase tetrabrik de leche con fresas" }
+	},
+
+	# =========================================================================
+	# COLECCIÓN DE TELAS DE SOFÁ (sofa_fabrics_atlas.png - Cuadrícula 4x4)
+	# 8 Telas Mexicanas Vintage + 8 Telas Modernas Minimalistas
+	# =========================================================================
+	"sofa_fabrics_atlas": {
+		"vintage_01_jacquard_gold": { "rect": Rect2(0.00, 0.00, 0.25, 0.25), "roughness": 0.88, "metallic": 0.0, "desc": "Jacquard floral café y oro viejo" },
+		"vintage_02_velvet_burgundy": { "rect": Rect2(0.25, 0.00, 0.25, 0.25), "roughness": 0.85, "metallic": 0.0, "desc": "Terciopelo labrado burdeos guinda" },
+		"vintage_03_corduroy_orange": { "rect": Rect2(0.50, 0.00, 0.25, 0.25), "roughness": 0.90, "metallic": 0.0, "desc": "Pana gruesa acanalada naranja óxido" },
+		"vintage_04_brocade_green": { "rect": Rect2(0.75, 0.00, 0.25, 0.25), "roughness": 0.88, "metallic": 0.0, "desc": "Brocado colonial verde y beige" },
+		"vintage_05_stripes_tan": { "rect": Rect2(0.00, 0.25, 0.25, 0.25), "roughness": 0.90, "metallic": 0.0, "desc": "Rayas verticales beige, crema y marrón" },
+		"vintage_06_tapestry_mustard": { "rect": Rect2(0.25, 0.25, 0.25, 0.25), "roughness": 0.88, "metallic": 0.0, "desc": "Tapiz mostaza floral retro" },
+		"vintage_07_tweed_rustic": { "rect": Rect2(0.50, 0.25, 0.25, 0.25), "roughness": 0.92, "metallic": 0.0, "desc": "Telar rústico artesanal jaspeado tierra" },
+		"vintage_08_diamonds_70s": { "rect": Rect2(0.75, 0.25, 0.25, 0.25), "roughness": 0.88, "metallic": 0.0, "desc": "Geométrico retro de rombos setenteros" },
+		"modern_01_charcoal": { "rect": Rect2(0.00, 0.50, 0.25, 0.25), "roughness": 0.90, "metallic": 0.0, "desc": "Lino contemporáneo gris carbón uniforme" },
+		"modern_02_boucle_oat": { "rect": Rect2(0.25, 0.50, 0.25, 0.25), "roughness": 0.92, "metallic": 0.0, "desc": "Bouclé texturizado beige avena" },
+		"modern_03_offwhite": { "rect": Rect2(0.50, 0.50, 0.25, 0.25), "roughness": 0.88, "metallic": 0.0, "desc": "Algodón/lino liso blanco marfil off-white" },
+		"modern_04_olive": { "rect": Rect2(0.75, 0.50, 0.25, 0.25), "roughness": 0.90, "metallic": 0.0, "desc": "Lino moderno verde olivo apagado" },
+		"modern_05_navy": { "rect": Rect2(0.00, 0.75, 0.25, 0.25), "roughness": 0.90, "metallic": 0.0, "desc": "Azul marino profundo liso" },
+		"modern_06_terracotta": { "rect": Rect2(0.25, 0.75, 0.25, 0.25), "roughness": 0.90, "metallic": 0.0, "desc": "Tejido contemporáneo terracota mate" },
+		"modern_07_mustard": { "rect": Rect2(0.50, 0.75, 0.25, 0.25), "roughness": 0.90, "metallic": 0.0, "desc": "Lino liso mostaza cálido" },
+		"modern_08_graphite": { "rect": Rect2(0.75, 0.75, 0.25, 0.25), "roughness": 0.90, "metallic": 0.0, "desc": "Microfibra lisa negro grafito" }
 	}
 }
 
@@ -1522,11 +1545,391 @@ static func ensure_initialized() -> void:
 	if _is_initialized:
 		return
 	FurnitureTextureManagerScript.ensure_initialized()
+	_register_sofa_fabric_kit()
+	_register_carton_drinks_kit()
+	_register_soda_cans_kit()
+	_register_cereal_boxes_kit()
+	_register_candy_bags_kit()
+	_register_cigarette_packs_kit()
+	_register_cookie_packs_kit()
+	_register_snack_bags_kit()
 	_scan_folders_for_json_regions("res://assets/textures/furniture/")
 	_scan_folders_for_json_regions("res://assets/textures/house/")
 	_scan_folders_for_json_regions("res://assets/textures/office pack/")
 	_scan_folders_for_json_regions("res://assets/textures/furniture 2.0/")
 	_is_initialized = true
+
+
+## Registra semánticamente el kit de las 16 familias de telas de sofá con densidad uniforme y dirección congruente
+static func _register_sofa_fabric_kit() -> void:
+	for idx in range(16):
+		var key_name: String = SOFA_FABRIC_NAMES[idx]
+		var col := idx % 4
+		var row := idx / 4
+		var u0 := float(col) * 0.25
+		var v0 := float(row) * 0.25
+
+		# Densidad métrica uniforme universal: 0.25 en UV = 0.60m en el mundo real (0.4167 UV/m)
+		# 1. Asiento: 0.54 x 0.54m (cuadrado 1:1, textura sin distorsión)
+		var cushion_rect := Rect2(u0 + 0.0125, v0 + 0.0125, 0.225, 0.225)
+		# 2. Respaldo: 0.54 x 0.59m (cuadrado 1:1 vertical congruente)
+		var back_rect := Rect2(u0 + 0.0125, v0 + 0.0125, 0.225, 0.225)
+		# 3. Faldón frontal (1 panel por cojín): 0.54 x 0.14m (caída vertical proporcional, orla inferior)
+		var apron_rect := Rect2(u0 + 0.0125, v0 + 0.167, 0.225, 0.058)
+		# 4. Frente vertical del reposabrazos: 0.17 x 0.44m (vertical proporcional 1:2.58)
+		var arm_front_rect := Rect2(u0 + 0.089, v0 + 0.033, 0.071, 0.183)
+		# 5. Rollo del reposabrazos: semicilindro 0.28m desarrollo x 0.42m longitud modular
+		var arm_roll_rect := Rect2(u0 + 0.066, v0 + 0.037, 0.117, 0.175)
+		# 6. Lateral exterior del reposabrazos: panel modular 0.42m largo x 0.45m alto
+		var arm_side_rect := Rect2(u0 + 0.037, v0 + 0.031, 0.175, 0.187)
+		# 7. Remate circular frontal del reposabrazos: disco 0.18m diámetro (cuadrado 1:1)
+		var arm_cap_rect := Rect2(u0 + 0.087, v0 + 0.087, 0.075, 0.075)
+		# 8. Pata de madera torneada oscura
+		var wood_rect := Rect2(0.312, 0.117, 0.117, 0.234)
+
+		var sofa_dict := {
+			"cushion": { "rect": cushion_rect, "roughness": 0.88, "metallic": 0.0, "desc": "Cojín de asiento mullido 1:1" },
+			"back": { "rect": back_rect, "roughness": 0.88, "metallic": 0.0, "desc": "Cojín de respaldo vertical proporcional 1:1" },
+			"apron": { "rect": apron_rect, "roughness": 0.88, "metallic": 0.0, "desc": "Faldón frontal proporcional con caída vertical" },
+			"arm_front": { "rect": arm_front_rect, "roughness": 0.88, "metallic": 0.0, "desc": "Frente vertical del reposabrazos" },
+			"arm_roll": { "rect": arm_roll_rect, "roughness": 0.88, "metallic": 0.0, "desc": "Rollo cilíndrico del reposabrazos modular" },
+			"arm_side": { "rect": arm_side_rect, "roughness": 0.88, "metallic": 0.0, "desc": "Costado exterior del reposabrazos modular" },
+			"arm_cap": { "rect": arm_cap_rect, "roughness": 0.88, "metallic": 0.0, "desc": "Remate circular frontal del reposabrazos 1:1" },
+			"wood_leg": { "rect": wood_rect, "roughness": 0.70, "metallic": 0.02, "desc": "Pata de madera torneada" }
+		}
+
+		_REGIONS[key_name] = sofa_dict
+		_REGIONS["sofa_" + key_name] = sofa_dict
+		if idx < 8:
+			_REGIONS["sofa_vintage_0%d" % (idx + 1)] = sofa_dict
+			_REGIONS["vintage_0%d" % (idx + 1)] = sofa_dict
+		else:
+			_REGIONS["sofa_modern_0%d" % (idx - 7)] = sofa_dict
+			_REGIONS["modern_0%d" % (idx - 7)] = sofa_dict
+
+
+## Registra semánticamente el catálogo oficial de las 18 Bebidas en Cartón 1L (carton_drinks_atlas.png)
+static func _register_carton_drinks_kit() -> void:
+	for idx in range(18):
+		var data: Dictionary = CARTON_DRINK_DATA[idx]
+		var key_name: String = data["id"]
+		var c_idx: int = data["col"]
+		var r_idx: int = data["row"]
+
+		var u0: float = float(c_idx) / 6.0
+		var v0: float = float(r_idx) / 3.0
+		var cell_w: float = 1.0 / 6.0
+		var cell_h: float = 1.0 / 3.0
+
+		var front_w: float = (176.0 / 256.0) * cell_w
+		var side_w: float = (80.0 / 256.0) * cell_w
+		var left_w: float = (50.0 / 256.0) * cell_w
+
+		var front_rect := Rect2(u0, v0, front_w, cell_h)
+		var side_rect := Rect2(u0 + front_w, v0, side_w, cell_h)
+		var left_rect := Rect2(u0, v0, left_w, cell_h)
+		var top_rect := Rect2(u0, v0, front_w, cell_h * 0.15)
+		var full_rect := Rect2(u0, v0, cell_w, cell_h)
+
+		var drink_dict := {
+			"front": { "rect": front_rect, "roughness": 0.45, "metallic": 0.02, "desc": data["name"] + " (Frente)" },
+			"side": { "rect": side_rect, "roughness": 0.45, "metallic": 0.02, "desc": data["name"] + " (Información Nutricional)" },
+			"left": { "rect": left_rect, "roughness": 0.45, "metallic": 0.02, "desc": data["name"] + " (Lateral color)" },
+			"top": { "rect": top_rect, "roughness": 0.45, "metallic": 0.02, "desc": data["name"] + " (Tapa superior)" },
+			"full": { "rect": full_rect, "roughness": 0.45, "metallic": 0.02, "desc": data["name"] + " (Celda completa)" }
+		}
+
+		_REGIONS[key_name] = drink_dict
+		_REGIONS["drink_" + key_name] = drink_dict
+		_REGIONS["carton_" + key_name] = drink_dict
+
+
+## Registra semánticamente el catálogo oficial de las 19 Latas de Refresco / Cerveza / Bebidas (soda_cans_atlas.png)
+static func _register_soda_cans_kit() -> void:
+	var w: float = 1024.0
+	var h: float = 765.0
+
+	var lid_u := 830.0 / w
+	var lid_v := 579.0 / h
+	var lid_w := 180.0 / w
+	var lid_h := 180.0 / h
+	var lid_dict := {
+		"lid": { "rect": Rect2(lid_u, lid_v, lid_w, lid_h), "roughness": 0.22, "metallic": 0.88, "desc": "Tapa superior circular de aluminio con Pull-Tab" },
+		"top": { "rect": Rect2(lid_u, lid_v, lid_w, lid_h), "roughness": 0.22, "metallic": 0.88, "desc": "Alias de tapa superior" },
+		"pull_tab": { "rect": Rect2(lid_u, lid_v, lid_w, lid_h), "roughness": 0.22, "metallic": 0.88, "desc": "Alias de anilla de apertura" },
+		"rim": { "rect": Rect2(lid_u, lid_v, lid_w, lid_h * 0.15), "roughness": 0.18, "metallic": 0.90, "desc": "Aro biselado de aluminio" }
+	}
+	_REGIONS["soda_cans_atlas"] = lid_dict
+	_REGIONS["can_lid"] = lid_dict
+
+	for idx in range(SODA_CAN_DATA.size()):
+		var data: Dictionary = SODA_CAN_DATA[idx]
+		var key_name: String = data["id"]
+		var px: float = float(data["x"])
+		var py: float = float(data["y"])
+		var pw: float = float(data["w"])
+		var ph: float = float(data["h"])
+
+		var u0 := px / w
+		var v0 := py / h
+		var su := pw / w
+		var sv := ph / h
+
+		var full_rect := Rect2(u0, v0, su, sv)
+		var front_rect := Rect2(u0 + su * 0.16, v0, su * 0.62, sv)
+		var barcode_rect := Rect2(u0, v0, su * 0.16, sv)
+		var nut_rect := Rect2(u0 + su * 0.78, v0, su * 0.22, sv)
+
+		var can_dict := {
+			"full": { "rect": full_rect, "roughness": 0.30, "metallic": 0.65, "desc": data["name"] + " (Cilindro 360°)" },
+			"label": { "rect": full_rect, "roughness": 0.30, "metallic": 0.65, "desc": data["name"] + " (Envoltorio)" },
+			"front": { "rect": front_rect, "roughness": 0.30, "metallic": 0.65, "desc": data["name"] + " (Frente)" },
+			"barcode": { "rect": barcode_rect, "roughness": 0.35, "metallic": 0.50, "desc": data["name"] + " (Código de barras)" },
+			"nutrition": { "rect": nut_rect, "roughness": 0.35, "metallic": 0.50, "desc": data["name"] + " (Tabla nutricional)" },
+			"lid": { "rect": Rect2(lid_u, lid_v, lid_w, lid_h), "roughness": 0.22, "metallic": 0.88, "desc": "Tapa superior circular de aluminio" }
+		}
+
+		_REGIONS[key_name] = can_dict
+		_REGIONS["can_" + key_name] = can_dict
+		_REGIONS["soda_" + key_name] = can_dict
+
+## Registra semánticamente el catálogo oficial de las 20 Cajas de Cereal 375g (cereal_boxes_atlas.png)
+static func _register_cereal_boxes_kit() -> void:
+	var w: float = 1024.0
+	var h: float = 682.0
+
+	var kit_dict := {}
+	for idx in range(CEREAL_BOX_DATA.size()):
+		var data: Dictionary = CEREAL_BOX_DATA[idx]
+		var key_name: String = data["id"]
+		var px: float = float(data["x"])
+		var py: float = float(data["y"])
+		var pw: float = float(data["w"])
+		var ph: float = float(data["h"])
+
+		var front_w := float(int(pw * 0.70))
+		var side_w := pw - front_w
+		var side_x := px + front_w
+
+		var full_rect := Rect2(px / w, py / h, pw / w, ph / h)
+		var front_rect := Rect2(px / w, py / h, front_w / w, ph / h)
+		var side_rect := Rect2(side_x / w, py / h, side_w / w, ph / h)
+		var color_rect := Rect2((px + 8.0) / w, (py + 8.0) / h, 24.0 / w, 24.0 / h)
+
+		var item_dict := {
+			"full": { "rect": full_rect, "roughness": 0.45, "metallic": 0.02, "desc": data["name"] + " (Caja completa)" },
+			"front": { "rect": front_rect, "roughness": 0.45, "metallic": 0.02, "desc": data["name"] + " (Portada frontal: logo y tazón)" },
+			"side": { "rect": side_rect, "roughness": 0.50, "metallic": 0.02, "desc": data["name"] + " (Panel lateral: nutricional y código)" },
+			"color": { "rect": color_rect, "roughness": 0.50, "metallic": 0.02, "desc": data["name"] + " (Color sólido para lomo y tapas)" }
+		}
+
+		kit_dict[key_name] = item_dict["full"]
+		kit_dict[key_name + "_front"] = item_dict["front"]
+		kit_dict[key_name + "_side"] = item_dict["side"]
+		kit_dict[key_name + "_color"] = item_dict["color"]
+
+		_REGIONS[key_name] = item_dict
+		_REGIONS["cereal_" + key_name] = item_dict
+
+	if not _REGIONS.has("cereal_boxes_atlas"):
+		_REGIONS["cereal_boxes_atlas"] = {}
+	for k in kit_dict:
+		_REGIONS["cereal_boxes_atlas"][k] = kit_dict[k]
+
+
+## Registra semánticamente el catálogo oficial de los 20 Paquetes de Dulces y Chocolates (candy_bags_atlas.png)
+static func _register_candy_bags_kit() -> void:
+	var w: float = 1024.0
+	var h: float = 682.0
+
+	var kit_dict := {}
+	for idx in range(CANDY_BAG_DATA.size()):
+		var data: Dictionary = CANDY_BAG_DATA[idx]
+		var key_name: String = data["id"]
+		var px: float = float(data["x"])
+		var py: float = float(data["y"])
+		var pw: float = float(data["w"])
+		var ph: float = float(data["h"])
+
+		var crimp_w := float(clampi(int(round(pw * 0.082)), 13, 17))
+		var body_w := pw - crimp_w * 2.0
+		var crimp_r_x := px + pw - crimp_w
+
+		var full_rect := Rect2(px / w, py / h, pw / w, ph / h)
+		var body_rect := Rect2((px + crimp_w) / w, py / h, body_w / w, ph / h)
+		var crimp_l_rect := Rect2(px / w, py / h, crimp_w / w, ph / h)
+		var crimp_r_rect := Rect2(crimp_r_x / w, py / h, crimp_w / w, ph / h)
+		var color_rect := Rect2((px + crimp_w + 10.0) / w, (py + 12.0) / h, 14.0 / w, 14.0 / h)
+
+		var item_dict := {
+			"full": { "rect": full_rect, "roughness": 0.40, "metallic": 0.04, "desc": data["name"] + " (Paquete completo)" },
+			"body": { "rect": body_rect, "roughness": 0.40, "metallic": 0.04, "desc": data["name"] + " (Cuerpo frontal hinchado)" },
+			"crimp_left": { "rect": crimp_l_rect, "roughness": 0.35, "metallic": 0.08, "desc": data["name"] + " (Sellado dentado izquierdo)" },
+			"crimp_right": { "rect": crimp_r_rect, "roughness": 0.35, "metallic": 0.08, "desc": data["name"] + " (Sellado dentado derecho)" },
+			"color": { "rect": color_rect, "roughness": 0.45, "metallic": 0.02, "desc": data["name"] + " (Color sólido de envoltura)" }
+		}
+
+		kit_dict[key_name] = item_dict["full"]
+		kit_dict[key_name + "_full"] = item_dict["full"]
+		kit_dict[key_name + "_body"] = item_dict["body"]
+		kit_dict[key_name + "_crimp_left"] = item_dict["crimp_left"]
+		kit_dict[key_name + "_crimp_right"] = item_dict["crimp_right"]
+		kit_dict[key_name + "_color"] = item_dict["color"]
+
+		_REGIONS[key_name] = item_dict
+		_REGIONS["candy_" + key_name] = item_dict
+		_REGIONS["dulce_" + key_name] = item_dict
+
+	if not _REGIONS.has("candy_bags_atlas"):
+		_REGIONS["candy_bags_atlas"] = {}
+	for k in kit_dict:
+		_REGIONS["candy_bags_atlas"][k] = kit_dict[k]
+
+
+## Registra semánticamente el catálogo oficial de las 20 Cajetillas de Cigarros (cigarette_packs_atlas.png)
+static func _register_cigarette_packs_kit() -> void:
+	var w: float = 1024.0
+	var h: float = 682.0
+
+	var kit_dict := {}
+	for idx in range(CIGARETTE_PACK_DATA.size()):
+		var data: Dictionary = CIGARETTE_PACK_DATA[idx]
+		var key_name: String = data["id"]
+		var fx: float = float(data["fx"])
+		var fy: float = float(data["fy"])
+		var fw: float = float(data["fw"])
+		var fh: float = float(data["fh"])
+
+		var sx: float = float(data["sx"])
+		var sy: float = float(data["sy"])
+		var sw: float = float(data["sw"])
+		var sh: float = float(data["sh"])
+
+		var front_rect := Rect2(fx / w, fy / h, fw / w, fh / h)
+		var side_rect := Rect2(sx / w, sy / h, sw / w, sh / h)
+		var full_rect := Rect2(fx / w, fy / h, (sx + sw - fx) / w, maxf(fh, sh) / h)
+		var color_rect := Rect2((sx + 6.0) / w, (sy + 10.0) / h, 14.0 / w, 14.0 / h)
+
+		var item_dict := {
+			"front": { "rect": front_rect, "roughness": 0.45, "metallic": 0.05, "desc": data["name"] + " (Portada frontal: logo y aviso)" },
+			"side": { "rect": side_rect, "roughness": 0.45, "metallic": 0.05, "desc": data["name"] + " (Lateral derecho: marca y 20 cigarros)" },
+			"color": { "rect": color_rect, "roughness": 0.48, "metallic": 0.02, "desc": data["name"] + " (Color sólido para tapas y lomo)" },
+			"full": { "rect": full_rect, "roughness": 0.45, "metallic": 0.05, "desc": data["name"] + " (Frente y lateral combinados)" }
+		}
+
+		kit_dict[key_name] = item_dict["front"]
+		kit_dict[key_name + "_front"] = item_dict["front"]
+		kit_dict[key_name + "_side"] = item_dict["side"]
+		kit_dict[key_name + "_color"] = item_dict["color"]
+		kit_dict[key_name + "_full"] = item_dict["full"]
+
+		_REGIONS[key_name] = item_dict
+		_REGIONS["cigar_" + key_name] = item_dict
+		_REGIONS["cigarro_" + key_name] = item_dict
+		_REGIONS["cajetilla_" + key_name] = item_dict
+
+	if not _REGIONS.has("cigarette_packs_atlas"):
+		_REGIONS["cigarette_packs_atlas"] = {}
+	for k in kit_dict:
+		_REGIONS["cigarette_packs_atlas"][k] = kit_dict[k]
+
+
+## Registra semánticamente el catálogo oficial de los 18 paquetes de Galletas Rizko (cookie_packs_atlas.png)
+static func _register_cookie_packs_kit() -> void:
+	var w: float = 1024.0
+	var h: float = 682.0
+
+	var kit_dict := {}
+	for idx in range(COOKIE_PACK_DATA.size()):
+		var data: Dictionary = COOKIE_PACK_DATA[idx]
+		var key_name: String = data["id"]
+		var fx: float = float(data["fx"])
+		var fe: float = float(data["fe"])
+		var bx: float = float(data["bx"])
+		var be: float = float(data["be"])
+		var sx: float = float(data["sx"])
+		var se: float = float(data["se"])
+		var ys: float = float(data["ys"])
+		var ye: float = float(data["ye"])
+
+		var front_rect := Rect2(fx / w, ys / h, (fe - fx + 1.0) / w, (ye - ys + 1.0) / h)
+		var back_rect := Rect2(bx / w, ys / h, (be - bx + 1.0) / w, (ye - ys + 1.0) / h)
+		var side_rect := Rect2(sx / w, ys / h, (se - sx + 1.0) / w, (ye - ys + 1.0) / h)
+		var color_rect := Rect2((14.0 + float(idx) * 56.0 + 2.0) / w, (640.0 + 2.0) / h, 36.0 / w, 20.0 / h)
+		var full_rect := Rect2(fx / w, ys / h, (se - fx + 1.0) / w, (ye - ys + 1.0) / h)
+
+		var item_dict := {
+			"front": { "rect": front_rect, "roughness": 0.45, "metallic": 0.05, "desc": data["name"] + " (Frente: Logo Rizko, variedad y galletas)" },
+			"back": { "rect": back_rect, "roughness": 0.45, "metallic": 0.05, "desc": data["name"] + " (Atrás: Información nutrimental y código de barras)" },
+			"side": { "rect": side_rect, "roughness": 0.45, "metallic": 0.05, "desc": data["name"] + " (Lateral: Tira vertical con logotipo oficial)" },
+			"color": { "rect": color_rect, "roughness": 0.48, "metallic": 0.02, "desc": data["name"] + " (Color sólido para tapas y sellado)" },
+			"full": { "rect": full_rect, "roughness": 0.45, "metallic": 0.05, "desc": data["name"] + " (Envoltura completa desplegada)" }
+		}
+
+		kit_dict[key_name] = item_dict["front"]
+		kit_dict[key_name + "_front"] = item_dict["front"]
+		kit_dict[key_name + "_back"] = item_dict["back"]
+		kit_dict[key_name + "_side"] = item_dict["side"]
+		kit_dict[key_name + "_color"] = item_dict["color"]
+		kit_dict[key_name + "_full"] = item_dict["full"]
+
+		_REGIONS[key_name] = item_dict
+		_REGIONS["cookie_" + key_name] = item_dict
+		_REGIONS["galleta_" + key_name] = item_dict
+		_REGIONS["rizko_" + key_name] = item_dict
+
+	if not _REGIONS.has("cookie_packs_atlas"):
+		_REGIONS["cookie_packs_atlas"] = {}
+	for k in kit_dict:
+		_REGIONS["cookie_packs_atlas"][k] = kit_dict[k]
+
+
+## Registra semánticamente el catálogo oficial de las 20 Bolsas de Papitas / Sabritas (snack_bags_atlas.png)
+static func _register_snack_bags_kit() -> void:
+	var w: float = 1024.0
+	var h: float = 682.0
+
+	var kit_dict := {}
+	for idx in range(SNACK_BAG_DATA.size()):
+		var data: Dictionary = SNACK_BAG_DATA[idx]
+		var key_name: String = data["id"]
+		var fx: float = float(data["fx"])
+		var fe: float = float(data["fe"])
+		var sx: float = float(data["sx"])
+		var se: float = float(data["se"])
+		var ys: float = float(data["ys"])
+		var ye: float = float(data["ye"])
+
+		var front_rect := Rect2(fx / w, ys / h, (fe - fx + 1.0) / w, (ye - ys + 1.0) / h)
+		var side_rect := Rect2(sx / w, ys / h, (se - sx + 1.0) / w, (ye - ys + 1.0) / h)
+		var color_rect := Rect2(3.0 / w, (24.0 + float(idx) * 31.0 + 1.0) / h, 13.0 / w, 20.0 / h)
+		var full_rect := Rect2(fx / w, ys / h, (se - fx + 1.0) / w, (ye - ys + 1.0) / h)
+
+		var item_dict := {
+			"front": { "rect": front_rect, "roughness": 0.35, "metallic": 0.08, "desc": data["name"] + " (Frente: Logo de marca, botana y 60g)" },
+			"side": { "rect": side_rect, "roughness": 0.35, "metallic": 0.08, "desc": data["name"] + " (Lateral: Franja vertical con icono oficial)" },
+			"color": { "rect": color_rect, "roughness": 0.40, "metallic": 0.05, "desc": data["name"] + " (Color sólido para sellos y reverso)" },
+			"full": { "rect": full_rect, "roughness": 0.35, "metallic": 0.08, "desc": data["name"] + " (Envoltura completa)" }
+		}
+
+		kit_dict[key_name] = item_dict["front"]
+		kit_dict[key_name + "_front"] = item_dict["front"]
+		kit_dict[key_name + "_side"] = item_dict["side"]
+		kit_dict[key_name + "_color"] = item_dict["color"]
+		kit_dict[key_name + "_full"] = item_dict["full"]
+
+		_REGIONS[key_name] = item_dict
+		_REGIONS["snack_" + key_name] = item_dict
+		_REGIONS["sabrita_" + key_name] = item_dict
+		_REGIONS["papa_" + key_name] = item_dict
+		_REGIONS["papita_" + key_name] = item_dict
+		_REGIONS["botana_" + key_name] = item_dict
+
+	if not _REGIONS.has("snack_bags_atlas"):
+		_REGIONS["snack_bags_atlas"] = {}
+	for k in kit_dict:
+		_REGIONS["snack_bags_atlas"][k] = kit_dict[k]
+
 
 
 ## Escanea carpetas de texturas buscando archivos descriptores de regiones (.json)
@@ -1555,16 +1958,22 @@ static func _load_regions_from_json(json_path: String, texture_key: String) -> v
 	var text := file.get_as_text()
 	var parsed = JSON.parse_string(text)
 	if parsed is Dictionary:
-		for region_name in parsed:
-			var entry: Dictionary = parsed[region_name]
+		var regions_map: Dictionary = parsed.get("regions", parsed)
+		for region_name in regions_map:
+			if not (regions_map[region_name] is Dictionary):
+				continue
+			var entry: Dictionary = regions_map[region_name]
 			var rect := Rect2(0.0, 0.0, 1.0, 1.0)
 			if entry.has("rect") and entry["rect"] is Array and entry["rect"].size() >= 4:
 				var r_arr: Array = entry["rect"]
 				rect = Rect2(float(r_arr[0]), float(r_arr[1]), float(r_arr[2]), float(r_arr[3]))
+			elif entry.has("uv_rect") and entry["uv_rect"] is Array and entry["uv_rect"].size() >= 4:
+				var r_arr: Array = entry["uv_rect"]
+				rect = Rect2(float(r_arr[0]), float(r_arr[1]), float(r_arr[2]), float(r_arr[3]))
 			var roughness := float(entry.get("roughness", 0.55))
 			var metallic := float(entry.get("metallic", 0.02))
 			var desc := str(entry.get("desc", ""))
-			register_region(texture_key, region_name, rect, roughness, metallic, desc)
+			register_region(texture_key, str(region_name), rect, roughness, metallic, desc)
 
 
 ## Resuelve de forma inteligente y unificada cualquier identificador semántico.
@@ -1759,6 +2168,810 @@ static func get_bare_mattress_region() -> Rect2:
 ## Retorna la sub-región UV de la almohada con funda blanca (Fila 5, Col 2)
 static func get_pillow_region() -> Rect2:
 	return Rect2(2.0 / 8.0, 5.0 / 8.0, 1.0 / 8.0, 1.0 / 8.0)
+
+
+## Nombres canónicos de las 16 telas de sofá (4x4)
+const SOFA_FABRIC_NAMES: Array[String] = [
+	"vintage_01_jacquard_gold",
+	"vintage_02_velvet_burgundy",
+	"vintage_03_corduroy_orange",
+	"vintage_04_brocade_green",
+	"vintage_05_stripes_tan",
+	"vintage_06_tapestry_mustard",
+	"vintage_07_tweed_rustic",
+	"vintage_08_diamonds_70s",
+	"modern_01_charcoal",
+	"modern_02_boucle_oat",
+	"modern_03_offwhite",
+	"modern_04_olive",
+	"modern_05_navy",
+	"modern_06_terracotta",
+	"modern_07_mustard",
+	"modern_08_graphite"
+]
+
+
+## Nombres canónicos de las 18 bebidas en cartón de 1L (mosaico 6x3)
+const CARTON_DRINK_NAMES: Array[String] = [
+	"leche_entera",
+	"leche_descremada",
+	"leche_chocolate",
+	"jugo_naranja",
+	"jugo_manzana",
+	"jugo_mango",
+	"nectar_fresa",
+	"nectar_naranja",
+	"te_limon",
+	"agua_coco",
+	"bebida_platano",
+	"cafe_con_leche",
+	"rayo_energy",
+	"koka_plus",
+	"spritea",
+	"jumexito_mango",
+	"narizona_durazno",
+	"aquapura_agua"
+]
+
+## Datos completos de las 18 bebidas en cartón de 1L (marca, nombre, categoría, color de tapón)
+const CARTON_DRINK_DATA: Array[Dictionary] = [
+	# Fila 0: Lácteos y Jugos Básicos
+	{ "id": "leche_entera", "name": "Lácteos del Valle - Leche Entera 1L", "brand": "Lácteos del Valle", "category": "leche", "col": 0, "row": 0, "cap_color": Color(0.10, 0.40, 0.85) },
+	{ "id": "leche_descremada", "name": "Lácteos del Valle - Leche Descremada 1L", "brand": "Lácteos del Valle", "category": "leche", "col": 1, "row": 0, "cap_color": Color(0.85, 0.12, 0.12) },
+	{ "id": "leche_chocolate", "name": "ChocoVida - Leche Chocolate 1L", "brand": "ChocoVida", "category": "leche", "col": 2, "row": 0, "cap_color": Color(0.35, 0.18, 0.10) },
+	{ "id": "jugo_naranja", "name": "SolVida - Jugo de Naranja 1L", "brand": "SolVida", "category": "jugo", "col": 3, "row": 0, "cap_color": Color(0.95, 0.50, 0.05) },
+	{ "id": "jugo_manzana", "name": "SolVida - Jugo de Manzana 1L", "brand": "SolVida", "category": "jugo", "col": 4, "row": 0, "cap_color": Color(0.40, 0.75, 0.20) },
+	{ "id": "jugo_mango", "name": "SolVida - Jugo de Mango 1L", "brand": "SolVida", "category": "jugo", "col": 5, "row": 0, "cap_color": Color(0.95, 0.70, 0.05) },
+
+	# Fila 1: Néctares, Tés y Bebidas Especiales
+	{ "id": "nectar_fresa", "name": "Valle Frutal - Néctar de Fresa 1L", "brand": "Valle Frutal", "category": "nectar", "col": 0, "row": 1, "cap_color": Color(0.85, 0.10, 0.20) },
+	{ "id": "nectar_naranja", "name": "Valle Frutal - Néctar de Naranja 1L", "brand": "Valle Frutal", "category": "nectar", "col": 1, "row": 1, "cap_color": Color(0.95, 0.50, 0.05) },
+	{ "id": "te_limon", "name": "Tezá - Té Helado Limón 1L", "brand": "Tezá", "category": "te", "col": 2, "row": 1, "cap_color": Color(0.90, 0.80, 0.10) },
+	{ "id": "agua_coco", "name": "Vida - Agua de Coco 1L", "brand": "Vida", "category": "agua", "col": 3, "row": 1, "cap_color": Color(0.10, 0.70, 0.80) },
+	{ "id": "bebida_platano", "name": "Plátano Fresco - Bebida de Plátano 1L", "brand": "Plátano Fresco", "category": "jugo", "col": 4, "row": 1, "cap_color": Color(0.95, 0.85, 0.10) },
+	{ "id": "cafe_con_leche", "name": "Café del Valle - Café con Leche 1L", "brand": "Café del Valle", "category": "cafe", "col": 5, "row": 1, "cap_color": Color(0.35, 0.20, 0.15) },
+
+	# Fila 2: Energizantes, Refrescos y Aguas
+	{ "id": "rayo_energy", "name": "Rayo - Energy Drink 1L", "brand": "Rayo", "category": "energia", "col": 0, "row": 2, "cap_color": Color(0.10, 0.85, 0.10) },
+	{ "id": "koka_plus", "name": "Koka Plus - Sabor Original 1L", "brand": "Koka Plus", "category": "refresco", "col": 1, "row": 2, "cap_color": Color(0.85, 0.05, 0.05) },
+	{ "id": "spritea", "name": "Spritea - Sabor Lima-Limón 1L", "brand": "Spritea", "category": "refresco", "col": 2, "row": 2, "cap_color": Color(0.10, 0.70, 0.30) },
+	{ "id": "jumexito_mango", "name": "Jumexito - Néctar de Mango 1L", "brand": "Jumexito", "category": "nectar", "col": 3, "row": 2, "cap_color": Color(0.05, 0.20, 0.55) },
+	{ "id": "narizona_durazno", "name": "NariZona - Té Helado Durazno 1L", "brand": "NariZona", "category": "te", "col": 4, "row": 2, "cap_color": Color(0.10, 0.65, 0.65) },
+	{ "id": "aquapura_agua", "name": "AquaPura - Agua Purificada 1L", "brand": "AquaPura", "category": "agua", "col": 5, "row": 2, "cap_color": Color(0.20, 0.50, 0.90) }
+]
+
+## Retorna los metadatos completos de una bebida por ID o índice
+static func get_carton_drink_data(drink_key_or_idx: Variant) -> Dictionary:
+	ensure_initialized()
+	if drink_key_or_idx is int or drink_key_or_idx is float:
+		var idx := clampi(int(drink_key_or_idx), 0, CARTON_DRINK_DATA.size() - 1)
+		return CARTON_DRINK_DATA[idx]
+	var s := str(drink_key_or_idx).strip_edges().to_lower()
+	if s.begins_with("drink_"):
+		s = s.trim_prefix("drink_")
+	elif s.begins_with("carton_"):
+		s = s.trim_prefix("carton_")
+	for d in CARTON_DRINK_DATA:
+		if d["id"] == s:
+			return d
+
+	# Aliases comunes
+	var aliases := {
+		"solvida_naranja": "jugo_naranja",
+		"solvida_manzana": "jugo_manzana",
+		"solvida_mango": "jugo_mango",
+		"leche": "leche_entera",
+		"chocolate": "leche_chocolate",
+		"chocovida": "leche_chocolate",
+		"descremada": "leche_descremada",
+		"platano": "bebida_platano",
+		"banana": "bebida_platano",
+		"teza": "te_limon",
+		"limon": "te_limon",
+		"fresa": "nectar_fresa",
+		"coco": "agua_coco",
+		"vida": "agua_coco",
+		"cafe": "cafe_con_leche",
+		"rayo": "rayo_energy",
+		"energy": "rayo_energy",
+		"monster": "rayo_energy",
+		"koka": "koka_plus",
+		"coca": "koka_plus",
+		"sprite": "spritea",
+		"jumexito": "jumexito_mango",
+		"arizona": "narizona_durazno",
+		"durazno": "narizona_durazno",
+		"narizona": "narizona_durazno",
+		"agua": "aquapura_agua",
+		"aquapura": "aquapura_agua"
+	}
+	if aliases.has(s):
+		var target_id: String = aliases[s]
+		for d in CARTON_DRINK_DATA:
+			if d["id"] == target_id:
+				return d
+
+	for d in CARTON_DRINK_DATA:
+		if s in d["id"] or d["id"] in s or s in d["name"].to_lower():
+			return d
+
+	return CARTON_DRINK_DATA[0]
+
+## Catálogo canónico de las 19 latas de bebidas (355ml)
+const SODA_CAN_NAMES: Array[String] = [
+	"kola_plus",
+	"pepzi_maxx",
+	"spritz_up",
+	"fantatx",
+	"seven_spark",
+	"dr_pepperon",
+	"mont_dew",
+	"crushy",
+	"squirtle_citrus",
+	"mirindaz",
+	"jarriton",
+	"manzanita_solis",
+	"freskita",
+	"inka_schweppz",
+	"canada_dry",
+	"red_buller",
+	"mounstro_energy",
+	"aw_root_beer",
+	"muggy_float"
+]
+
+const SODA_CAN_DATA: Array[Dictionary] = [
+	# Fila 0: Colas y Cítricos Principales (y=7, h=188 -> bot=195, borde de aluminio estirado)
+	{ "id": "kola_plus", "name": "Kola Plus 355ml", "brand": "Kola Plus", "flavor": "Cola", "col": 0, "row": 0, "x": 0, "y": 7, "w": 204, "h": 188 },
+	{ "id": "pepzi_maxx", "name": "Pepzi Maxx 355ml", "brand": "Pepzi", "flavor": "Cola Sin Azúcar", "col": 1, "row": 0, "x": 205, "y": 7, "w": 204, "h": 188 },
+	{ "id": "spritz_up", "name": "Spritz Up 355ml", "brand": "Spritz Up", "flavor": "Lima-Limón", "col": 2, "row": 0, "x": 410, "y": 7, "w": 204, "h": 188 },
+	{ "id": "fantatx", "name": "Fantatx Naranja 355ml", "brand": "Fantatx", "flavor": "Naranja", "col": 3, "row": 0, "x": 615, "y": 7, "w": 204, "h": 188 },
+	{ "id": "seven_spark", "name": "Seven Spark 355ml", "brand": "Seven Spark", "flavor": "Lima", "col": 4, "row": 0, "x": 820, "y": 7, "w": 204, "h": 188 },
+
+	# Fila 1: Especiales y Frutales (y=201, h=182 -> bot=383, borde de aluminio estirado)
+	{ "id": "dr_pepperon", "name": "Dr Pepperón 355ml", "brand": "Dr Pepperón", "flavor": "Mora / Especial", "col": 0, "row": 1, "x": 0, "y": 201, "w": 204, "h": 182 },
+	{ "id": "mont_dew", "name": "Mont Dew 355ml", "brand": "Mont Dew", "flavor": "Citrus Energético", "col": 1, "row": 1, "x": 205, "y": 201, "w": 204, "h": 182 },
+	{ "id": "crushy", "name": "Crushy Naranja 355ml", "brand": "Crushy", "flavor": "Naranja", "col": 2, "row": 1, "x": 410, "y": 201, "w": 204, "h": 182 },
+	{ "id": "squirtle_citrus", "name": "Squirtle Citrus 355ml", "brand": "Squirtle", "flavor": "Toronja-Limón", "col": 3, "row": 1, "x": 615, "y": 201, "w": 204, "h": 182 },
+	{ "id": "mirindaz", "name": "Mirindaz Naranja 355ml", "brand": "Mirindaz", "flavor": "Naranja", "col": 4, "row": 1, "x": 820, "y": 201, "w": 204, "h": 182 },
+
+	# Fila 2: Mexicanos y Clásicos (y=388, h=178 -> bot=566, borde de aluminio estirado)
+	{ "id": "jarriton", "name": "Jarriton Tutti Frutti 355ml", "brand": "Jarriton", "flavor": "Tutti Frutti", "col": 0, "row": 2, "x": 0, "y": 388, "w": 204, "h": 178 },
+	{ "id": "manzanita_solis", "name": "Manzanita Solís 355ml", "brand": "Manzanita Solís", "flavor": "Manzana", "col": 1, "row": 2, "x": 205, "y": 388, "w": 204, "h": 178 },
+	{ "id": "freskita", "name": "Freskita Agua Mineral 355ml", "brand": "Freskita", "flavor": "Agua Mineral", "col": 2, "row": 2, "x": 410, "y": 388, "w": 204, "h": 178 },
+	{ "id": "inka_schweppz", "name": "Inka Cola-Real / Schweppz Tonic 355ml", "brand": "Inka / Schweppz", "flavor": "Tónica / Cola Real", "col": 3, "row": 2, "x": 615, "y": 388, "w": 204, "h": 178 },
+	{ "id": "canada_dry", "name": "Canada Dry Ginger Ale 355ml", "brand": "Canada Dry", "flavor": "Ginger Ale", "col": 4, "row": 2, "x": 820, "y": 388, "w": 204, "h": 178 },
+
+	# Fila 3: Energizantes y Bebidas Oscuras (y=570, h=182 -> bot=752, borde de aluminio estirado)
+	{ "id": "red_buller", "name": "Red Buller Energy Drink 355ml", "brand": "Red Buller", "flavor": "Energy", "col": 0, "row": 3, "x": 0, "y": 570, "w": 204, "h": 182 },
+	{ "id": "mounstro_energy", "name": "Mounstro Energy 355ml", "brand": "Mounstro", "flavor": "Energy", "col": 1, "row": 3, "x": 205, "y": 570, "w": 204, "h": 182 },
+	{ "id": "aw_root_beer", "name": "A&W Root Beer 355ml", "brand": "A&W", "flavor": "Root Beer", "col": 2, "row": 3, "x": 410, "y": 570, "w": 204, "h": 182 },
+	{ "id": "muggy_float", "name": "Muggy Float Chocolate 355ml", "brand": "Muggy Float", "flavor": "Float Chocolate", "col": 3, "row": 3, "x": 615, "y": 570, "w": 204, "h": 182 }
+]
+
+## Retorna los metadatos completos de una lata de refresco por ID o índice
+static func get_soda_can_data(can_key_or_idx: Variant) -> Dictionary:
+	ensure_initialized()
+	if can_key_or_idx is int or can_key_or_idx is float:
+		var idx := clampi(int(can_key_or_idx), 0, SODA_CAN_DATA.size() - 1)
+		return SODA_CAN_DATA[idx]
+	var s := str(can_key_or_idx).strip_edges().to_lower()
+	if s.begins_with("can_"):
+		s = s.trim_prefix("can_")
+	elif s.begins_with("soda_"):
+		s = s.trim_prefix("soda_")
+	for d in SODA_CAN_DATA:
+		if d["id"] == s:
+			return d
+
+	# Aliases comunes
+	var aliases := {
+		"cola": "kola_plus",
+		"coca": "kola_plus",
+		"pepsi": "pepzi_maxx",
+		"pepzi": "pepzi_maxx",
+		"sprite": "spritz_up",
+		"spritz": "spritz_up",
+		"fanta": "fantatx",
+		"seven": "seven_spark",
+		"7up": "seven_spark",
+		"pepper": "dr_pepperon",
+		"mountain_dew": "mont_dew",
+		"dew": "mont_dew",
+		"crush": "crushy",
+		"squirt": "squirtle_citrus",
+		"mirinda": "mirindaz",
+		"jarritos": "jarriton",
+		"jarrito": "jarriton",
+		"manzanita": "manzanita_solis",
+		"solis": "manzanita_solis",
+		"mineral": "freskita",
+		"inka": "inka_schweppz",
+		"schweppes": "inka_schweppz",
+		"tonic": "inka_schweppz",
+		"ginger": "canada_dry",
+		"ginger_ale": "canada_dry",
+		"redbull": "red_buller",
+		"red_bull": "red_buller",
+		"monster": "mounstro_energy",
+		"mounstro": "mounstro_energy",
+		"root_beer": "aw_root_beer",
+		"aw": "aw_root_beer",
+		"mug": "muggy_float",
+		"chocolate": "muggy_float"
+	}
+	if aliases.has(s):
+		var target_id: String = aliases[s]
+		for d in SODA_CAN_DATA:
+			if d["id"] == target_id:
+				return d
+
+	for d in SODA_CAN_DATA:
+		if s in d["id"] or d["id"] in s or s in d["name"].to_lower():
+			return d
+
+	return SODA_CAN_DATA[0]
+
+## Catálogo canónico de las 20 cajas de cereal (375g)
+const CEREAL_BOX_NAMES: Array[String] = [
+	"krisp_max",
+	"zucarinix",
+	"corny_bits",
+	"choco_bites",
+	"fruti_loops",
+	"choco_krunch",
+	"miel_dorada",
+	"estrella_flakes",
+	"granola_mix",
+	"avena_crunch",
+	"tornado_flakes",
+	"frosty_crunch",
+	"rayo_cereal",
+	"selva_crunch",
+	"sol_nativo",
+	"campo_feliz",
+	"dulce_maiz",
+	"choco_rizos",
+	"nube_crispy",
+	"bosque_crunch"
+]
+
+const CEREAL_BOX_DATA: Array[Dictionary] = [
+	# Fila 0: Maíz y Tradicionales
+	{ "id": "krisp_max",       "name": "Krisp Max 375g",       "brand": "Krisp Max",       "flavor": "Corn Flakes",           "color": "Rojo",             "col": 0, "row": 0, "x": 6,   "y": 5,   "w": 195, "h": 170 },
+	{ "id": "zucarinix",       "name": "Zucarinix 375g",       "brand": "Zucarinix",       "flavor": "Azucarados de Maíz",    "color": "Azul",             "col": 1, "row": 0, "x": 209, "y": 5,   "w": 202, "h": 170 },
+	{ "id": "corny_bits",      "name": "Corny Bits 375g",      "brand": "Corny Bits",      "flavor": "Cereal de Maíz",        "color": "Verde",            "col": 2, "row": 0, "x": 419, "y": 5,   "w": 190, "h": 170 },
+	{ "id": "choco_bites",     "name": "Choco Bites 375g",     "brand": "Choco Bites",     "flavor": "Cereal con Chocolate",  "color": "Naranja",          "col": 3, "row": 0, "x": 617, "y": 5,   "w": 200, "h": 170 },
+	{ "id": "fruti_loops",     "name": "Fruti Loops 375g",     "brand": "Fruti Loops",     "flavor": "Aros Frutales",         "color": "Morado",           "col": 4, "row": 0, "x": 824, "y": 5,   "w": 195, "h": 170 },
+
+	# Fila 1: Especialidades y Fibras
+	{ "id": "choco_krunch",    "name": "Choco Krunch 375g",    "brand": "Choco Krunch",    "flavor": "Cereal de Chocolate",   "color": "Café",             "col": 0, "row": 1, "x": 6,   "y": 180, "w": 195, "h": 162 },
+	{ "id": "miel_dorada",     "name": "Miel Dorada 375g",     "brand": "Miel Dorada",     "flavor": "Cereal con Miel",       "color": "Amarillo",         "col": 1, "row": 1, "x": 209, "y": 180, "w": 202, "h": 162 },
+	{ "id": "estrella_flakes", "name": "Estrella Flakes 375g", "brand": "Estrella Flakes", "flavor": "Estrellitas de Maíz",   "color": "Azul Oscuro",      "col": 2, "row": 1, "x": 419, "y": 180, "w": 190, "h": 162 },
+	{ "id": "granola_mix",     "name": "Granola Mix 375g",     "brand": "Granola Mix",     "flavor": "Granola con Frutas",    "color": "Verde Lima",       "col": 3, "row": 1, "x": 617, "y": 180, "w": 200, "h": 162 },
+	{ "id": "avena_crunch",    "name": "Avena Crunch 375g",    "brand": "Avena Crunch",    "flavor": "Cereal de Avena",       "color": "Beige Trigo",      "col": 4, "row": 1, "x": 824, "y": 180, "w": 195, "h": 162 },
+
+	# Fila 2: Glaseados y Temáticos
+	{ "id": "tornado_flakes",  "name": "Tornado Flakes 375g",  "brand": "Tornado Flakes",  "flavor": "Hojuelas y Leche",      "color": "Azul Cobalto",     "col": 0, "row": 2, "x": 6,   "y": 347, "w": 195, "h": 160 },
+	{ "id": "frosty_crunch",   "name": "Frosty Crunch 375g",   "brand": "Frosty Crunch",   "flavor": "Glaseado con Oso",      "color": "Celeste",          "col": 1, "row": 2, "x": 209, "y": 347, "w": 202, "h": 160 },
+	{ "id": "rayo_cereal",     "name": "Rayo Cereal 375g",     "brand": "Rayo Cereal",     "flavor": "Almohaditas Crujientes","color": "Rojo Fuego",       "col": 2, "row": 2, "x": 419, "y": 347, "w": 190, "h": 160 },
+	{ "id": "selva_crunch",    "name": "Selva Crunch 375g",    "brand": "Selva Crunch",    "flavor": "Aros con Tucán",        "color": "Verde Selva",      "col": 3, "row": 2, "x": 617, "y": 347, "w": 200, "h": 160 },
+	{ "id": "sol_nativo",      "name": "Sol Nativo 375g",      "brand": "Sol Nativo",      "flavor": "Hojuelas Tostadas",     "color": "Naranja Dorado",   "col": 4, "row": 2, "x": 824, "y": 347, "w": 195, "h": 160 },
+
+	# Fila 3: Infantiles y Chocolate
+	{ "id": "campo_feliz",     "name": "Campo Feliz 375g",     "brand": "Campo Feliz",     "flavor": "Bolitas con Vaquita",   "color": "Verde Campo",      "col": 0, "row": 3, "x": 6,   "y": 513, "w": 195, "h": 160 },
+	{ "id": "dulce_maiz",      "name": "Dulce Maíz 375g",      "brand": "Dulce Maíz",      "flavor": "Multicolor con Conejo", "color": "Rosa Magenta",     "col": 1, "row": 3, "x": 209, "y": 513, "w": 202, "h": 160 },
+	{ "id": "choco_rizos",     "name": "Choco Rizos 375g",     "brand": "Choco Rizos",     "flavor": "Rizos de Chocolate",    "color": "Chocolate Oscuro", "col": 2, "row": 3, "x": 419, "y": 513, "w": 190, "h": 160 },
+	{ "id": "nube_crispy",     "name": "Nube Crispy 375g",     "brand": "Nube Crispy",     "flavor": "Arroz con Nubecita",    "color": "Azul Cielo",       "col": 3, "row": 3, "x": 617, "y": 513, "w": 200, "h": 160 },
+	{ "id": "bosque_crunch",   "name": "Bosque Crunch 375g",   "brand": "Bosque Crunch",   "flavor": "Aros con Oso",          "color": "Verde Bosque",     "col": 4, "row": 3, "x": 824, "y": 513, "w": 195, "h": 160 }
+]
+
+## Retorna los metadatos completos de una caja de cereal por ID o índice
+static func get_cereal_box_data(cereal_key_or_idx: Variant) -> Dictionary:
+	ensure_initialized()
+	if cereal_key_or_idx is int or cereal_key_or_idx is float:
+		var idx := clampi(int(cereal_key_or_idx), 0, CEREAL_BOX_DATA.size() - 1)
+		return CEREAL_BOX_DATA[idx]
+	var s := str(cereal_key_or_idx).strip_edges().to_lower()
+	if s.is_valid_int():
+		var idx := clampi(s.to_int(), 0, CEREAL_BOX_DATA.size() - 1)
+		return CEREAL_BOX_DATA[idx]
+	s = s.replace("cereal_", "").replace("box_", "")
+	for d in CEREAL_BOX_DATA:
+		if d["id"] == s:
+			return d
+	# Aliases semánticos y de sabores
+	var aliases := {
+		"corn_flakes": "krisp_max",
+		"krisp": "krisp_max",
+		"kelloggs": "krisp_max",
+		"zucaritas": "zucarinix",
+		"tigre": "zucarinix",
+		"corny": "corny_bits",
+		"choco": "choco_bites",
+		"froot_loops": "fruti_loops",
+		"fruit_loops": "fruti_loops",
+		"loops": "fruti_loops",
+		"krunch": "choco_krunch",
+		"oso": "choco_krunch",
+		"miel": "miel_dorada",
+		"abeja": "miel_dorada",
+		"estrella": "estrella_flakes",
+		"granola": "granola_mix",
+		"avena": "avena_crunch",
+		"tornado": "tornado_flakes",
+		"frosty": "frosty_crunch",
+		"polar": "frosty_crunch",
+		"rayo": "rayo_cereal",
+		"selva": "selva_crunch",
+		"tucan": "selva_crunch",
+		"sol": "sol_nativo",
+		"vaca": "campo_feliz",
+		"vaquita": "campo_feliz",
+		"conejo": "dulce_maiz",
+		"rizos": "choco_rizos",
+		"nube": "nube_crispy",
+		"bosque": "bosque_crunch"
+	}
+	if aliases.has(s):
+		var target_id: String = aliases[s]
+		for d in CEREAL_BOX_DATA:
+			if d["id"] == target_id:
+				return d
+	for d in CEREAL_BOX_DATA:
+		if s in d["id"] or d["id"] in s or s in d["name"].to_lower():
+			return d
+	return CEREAL_BOX_DATA[0]
+
+## Catálogo canónico de los 20 Paquetes de Dulces, Chocolates y Golosinas (candy_bags_atlas.png)
+const CANDY_BAG_NAMES: Array[String] = [
+	"chocorix",
+	"krix",
+	"mellos",
+	"dulcitos",
+	"nuxi",
+	"vitagom",
+	"cacaoz",
+	"rebotes",
+	"freskito",
+	"brrrt",
+	"chispy",
+	"frutix",
+	"zelta",
+	"lunetas",
+	"tornado",
+	"pipocas",
+	"nubez",
+	"aqualis",
+	"trufino",
+	"rollox"
+]
+
+const CANDY_BAG_DATA: Array[Dictionary] = [
+	# Fila 0: Chocolates y Obleas Crujientes
+	{ "id": "chocorix", "name": "Chocorix Chocolate con Leche", "brand": "Chocorix", "flavor": "Chocolate con Leche", "color": "Marrón Cacao", "col": 0, "row": 0, "x": 13, "y": 25, "w": 198, "h": 145 },
+	{ "id": "krix", "name": "Krix Oblea con Chocolate", "brand": "Krix", "flavor": "Oblea con Chocolate", "color": "Rojo Escarlata", "col": 1, "row": 0, "x": 223, "y": 25, "w": 186, "h": 146 },
+	{ "id": "mellos", "name": "Mellos Chocolate con Relleno", "brand": "Mellos", "flavor": "Chocolate Relleno", "color": "Marrón Oscuro", "col": 2, "row": 0, "x": 420, "y": 26, "w": 188, "h": 145 },
+	{ "id": "dulcitos", "name": "Dulcitos Cacahuate Cubierto", "brand": "Dulcitos", "flavor": "Cacahuate Confite", "color": "Amarillo Dorado", "col": 3, "row": 0, "x": 618, "y": 25, "w": 188, "h": 147 },
+	{ "id": "nuxi", "name": "Nuxi Chocolate con Avellana", "brand": "Nuxi", "flavor": "Avellana Premium", "color": "Oro Bronce", "col": 4, "row": 0, "x": 817, "y": 25, "w": 192, "h": 147 },
+
+	# Fila 1: Menta, Cacao Puro y Caramelos Árticos
+	{ "id": "vitagom", "name": "VitaGom Sabor Menta", "brand": "VitaGom", "flavor": "Menta Verde", "color": "Verde Esmeralda", "col": 0, "row": 1, "x": 13, "y": 186, "w": 198, "h": 146 },
+	{ "id": "cacaoz", "name": "Cacaoz Chocolate Puro", "brand": "Cacaoz", "flavor": "Cacao Amargo", "color": "Café Tostado", "col": 1, "row": 1, "x": 224, "y": 187, "w": 184, "h": 145 },
+	{ "id": "rebotes", "name": "Rebotes Caramelos de Fruta", "brand": "Rebotes", "flavor": "Gomitas Frutales", "color": "Naranja Cítrico", "col": 2, "row": 1, "x": 419, "y": 187, "w": 188, "h": 146 },
+	{ "id": "freskito", "name": "Freskito Chicle sin Azúcar Menta", "brand": "Freskito", "flavor": "Menta Glacial", "color": "Azul Cobalto", "col": 3, "row": 1, "x": 618, "y": 187, "w": 189, "h": 146 },
+	{ "id": "brrrt", "name": "Brrrt Caramelo Menta", "brand": "Brrrt", "flavor": "Menta Fuerte", "color": "Plata Metálico", "col": 4, "row": 1, "x": 817, "y": 188, "w": 192, "h": 144 },
+
+	# Fila 2: Confitados, Gomitas y Ácidos
+	{ "id": "chispy", "name": "Chispy Caramelos Surtidos", "brand": "Chispy", "flavor": "Caramelos Frutales", "color": "Fucsia Magenta", "col": 0, "row": 2, "x": 12, "y": 347, "w": 199, "h": 146 },
+	{ "id": "frutix", "name": "Frutix Gomitas de Fruta", "brand": "Frutix", "flavor": "Panditas Gomita", "color": "Amarillo Sol", "col": 1, "row": 2, "x": 223, "y": 349, "w": 185, "h": 144 },
+	{ "id": "zelta", "name": "Zelta Caramelo Ácido", "brand": "Zelta", "flavor": "Tiras Ácidas", "color": "Negro Carbón", "col": 2, "row": 2, "x": 421, "y": 349, "w": 184, "h": 143 },
+	{ "id": "lunetas", "name": "Lunetas Chocolate Confitado", "brand": "Lunetas", "flavor": "Lentejas Chocolate", "color": "Púrpura Violeta", "col": 3, "row": 2, "x": 617, "y": 348, "w": 190, "h": 145 },
+	{ "id": "tornado", "name": "Tornado Chicle Sabor Frutas", "brand": "Tornado", "flavor": "Tutti Frutti Chicle", "color": "Rojo Fuego", "col": 4, "row": 2, "x": 817, "y": 347, "w": 194, "h": 146 },
+
+	# Fila 3: Palomitas, Malvaviscos y Golosinas Especiales
+	{ "id": "pipocas", "name": "Pipocas Caramelo Crujiente", "brand": "Pipocas", "flavor": "Palomitas Dulces", "color": "Azul Marino", "col": 0, "row": 3, "x": 13, "y": 507, "w": 198, "h": 148 },
+	{ "id": "nubez", "name": "Nubez Malvavisco con Chocolate", "brand": "Nubez", "flavor": "Bombón de Chocolate", "color": "Rosa Pastel", "col": 1, "row": 3, "x": 224, "y": 508, "w": 183, "h": 148 },
+	{ "id": "aqualis", "name": "Aqualis Gomitas de Cola", "brand": "Aqualis", "flavor": "Botellitas Cola", "color": "Cian Turquesa", "col": 2, "row": 3, "x": 420, "y": 507, "w": 185, "h": 149 },
+	{ "id": "trufino", "name": "Trufino Chocolate Extra Fino", "brand": "Trufino", "flavor": "Trufa Bombón", "color": "Negro Chocolate", "col": 3, "row": 3, "x": 619, "y": 508, "w": 187, "h": 147 },
+	{ "id": "rollox", "name": "Rollox Caramelo Tutti Frutti", "brand": "Rollox", "flavor": "Rollos Arcoíris", "color": "Arcoíris Rayas", "col": 4, "row": 3, "x": 818, "y": 507, "w": 193, "h": 149 }
+]
+
+## Retorna los metadatos completos de un dulce/golosina por ID o índice
+static func get_candy_bag_data(candy_key_or_idx: Variant) -> Dictionary:
+	ensure_initialized()
+	if candy_key_or_idx is int or candy_key_or_idx is float:
+		var idx := clampi(int(candy_key_or_idx), 0, CANDY_BAG_DATA.size() - 1)
+		return CANDY_BAG_DATA[idx]
+	var s := str(candy_key_or_idx).strip_edges().to_lower()
+	if s.is_valid_int():
+		var idx := clampi(s.to_int(), 0, CANDY_BAG_DATA.size() - 1)
+		return CANDY_BAG_DATA[idx]
+	s = s.replace("candy_", "").replace("dulce_", "").replace("bag_", "")
+	for d in CANDY_BAG_DATA:
+		if d["id"] == s:
+			return d
+	# Aliases semánticos y de golosinas
+	var aliases := {
+		"chocolate": "chocorix",
+		"wafer": "krix",
+		"oblea": "krix",
+		"m&ms": "mellos",
+		"skittles": "chispy",
+		"cacahuate": "dulcitos",
+		"mani": "dulcitos",
+		"nuez": "nuxi",
+		"avellana": "nuxi",
+		"menta": "vitagom",
+		"chicle_menta": "vitagom",
+		"cacao": "cacaoz",
+		"chocolate_puro": "cacaoz",
+		"gomitas": "frutix",
+		"panditas": "frutix",
+		"acido": "zelta",
+		"sour": "zelta",
+		"lentejas": "lunetas",
+		"chicle": "tornado",
+		"bubblegum": "tornado",
+		"popcorn": "pipocas",
+		"palomitas": "pipocas",
+		"malvavisco": "nubez",
+		"marshmallow": "nubez",
+		"bombon": "nubez",
+		"cola": "aqualis",
+		"botellitas": "aqualis",
+		"trufa": "trufino",
+		"trufas": "trufino",
+		"arcoiris": "rollox",
+		"rainbow": "rollox"
+	}
+	if aliases.has(s):
+		var target_id: String = aliases[s]
+		for d in CANDY_BAG_DATA:
+			if d["id"] == target_id:
+				return d
+	for d in CANDY_BAG_DATA:
+		if s in d["id"] or d["id"] in s or s in d["name"].to_lower():
+			return d
+	return CANDY_BAG_DATA[0]
+
+## Catálogo canónico de las 20 Cajetillas de Cigarros (cigarette_packs_atlas.png)
+const CIGARETTE_PACK_NAMES: Array[String] = [
+	"ambar",
+	"nordico",
+	"cielo",
+	"sable",
+	"rio",
+	"fenix",
+	"valor",
+	"tormenta",
+	"duna",
+	"boreal",
+	"zafiro",
+	"lider",
+	"solsticio",
+	"eclipse",
+	"trento",
+	"alba",
+	"vertice",
+	"caleo",
+	"marfil",
+	"lumen"
+]
+
+const CIGARETTE_PACK_DATA: Array[Dictionary] = [
+	# Fila 0:
+	{ "id": "ambar", "name": "Ámbar Classic (Tabaco Rubio 20)", "brand": "Ámbar", "type": "Classic", "col": 0, "row": 0, "fx": 19, "fy": 15, "fw": 122, "fh": 148, "sx": 153, "sy": 15, "sw": 36, "sh": 148 },
+	{ "id": "nordico", "name": "Nórdico Suave (Tabaco Rubio 20)", "brand": "Nórdico", "type": "Suave", "col": 1, "row": 0, "fx": 221, "fy": 15, "fw": 122, "fh": 148, "sx": 355, "sy": 15, "sw": 36, "sh": 148 },
+	{ "id": "cielo", "name": "Cielo Lights (Tabaco Rubio 20)", "brand": "Cielo", "type": "Lights", "col": 2, "row": 0, "fx": 426, "fy": 15, "fw": 122, "fh": 148, "sx": 559, "sy": 15, "sw": 36, "sh": 148 },
+	{ "id": "sable", "name": "Sable Negro (Tabaco Negro 20)", "brand": "Sable", "type": "Negro", "col": 3, "row": 0, "fx": 630, "fy": 15, "fw": 122, "fh": 148, "sx": 765, "sy": 15, "sw": 35, "sh": 148 },
+	{ "id": "rio", "name": "Río Mentol (Tabaco Rubio 20)", "brand": "Río", "type": "Mentol", "col": 4, "row": 0, "fx": 836, "fy": 15, "fw": 123, "fh": 148, "sx": 970, "sy": 16, "sw": 35, "sh": 147 },
+
+	# Fila 1:
+	{ "id": "fenix", "name": "Fénix Fuerte (Tabaco Rubio 20)", "brand": "Fénix", "type": "Fuerte", "col": 0, "row": 1, "fx": 20, "fy": 181, "fw": 120, "fh": 149, "sx": 154, "sy": 181, "sw": 34, "sh": 149 },
+	{ "id": "valor", "name": "Valor Original (Tabaco Rubio 20)", "brand": "Valor", "type": "Original", "col": 1, "row": 1, "fx": 221, "fy": 181, "fw": 122, "fh": 149, "sx": 355, "sy": 181, "sw": 36, "sh": 149 },
+	{ "id": "tormenta", "name": "Tormenta Mentol (Tabaco Rubio 20)", "brand": "Tormenta", "type": "Mentol", "col": 2, "row": 1, "fx": 426, "fy": 181, "fw": 122, "fh": 149, "sx": 559, "sy": 181, "sw": 36, "sh": 150 },
+	{ "id": "duna", "name": "Duna Suave (Tabaco Rubio 20)", "brand": "Duna", "type": "Suave", "col": 3, "row": 1, "fx": 629, "fy": 181, "fw": 124, "fh": 150, "sx": 764, "sy": 181, "sw": 36, "sh": 150 },
+	{ "id": "boreal", "name": "Boreal Mentol (Tabaco Rubio 20)", "brand": "Boreal", "type": "Mentol", "col": 4, "row": 1, "fx": 836, "fy": 181, "fw": 122, "fh": 149, "sx": 970, "sy": 181, "sw": 36, "sh": 149 },
+
+	# Fila 2:
+	{ "id": "zafiro", "name": "Zafiro Original (Tabaco Rubio 20)", "brand": "Zafiro", "type": "Original", "col": 0, "row": 2, "fx": 19, "fy": 347, "fw": 122, "fh": 151, "sx": 153, "sy": 347, "sw": 36, "sh": 152 },
+	{ "id": "lider", "name": "Líder Fuerte (Tabaco Rubio 20)", "brand": "Líder", "type": "Fuerte", "col": 1, "row": 2, "fx": 221, "fy": 347, "fw": 122, "fh": 150, "sx": 355, "sy": 347, "sw": 36, "sh": 151 },
+	{ "id": "solsticio", "name": "Solsticio Amarillo (Tabaco Rubio 20)", "brand": "Solsticio", "type": "Amarillo", "col": 2, "row": 2, "fx": 425, "fy": 347, "fw": 123, "fh": 151, "sx": 559, "sy": 347, "sw": 36, "sh": 151 },
+	{ "id": "eclipse", "name": "Eclipse Negro (Tabaco Negro 20)", "brand": "Eclipse", "type": "Negro", "col": 3, "row": 2, "fx": 630, "fy": 348, "fw": 121, "fh": 150, "sx": 765, "sy": 349, "sw": 35, "sh": 149 },
+	{ "id": "trento", "name": "Trento Original (Tabaco Rubio 20)", "brand": "Trento", "type": "Original", "col": 4, "row": 2, "fx": 836, "fy": 349, "fw": 122, "fh": 149, "sx": 969, "sy": 347, "sw": 38, "sh": 152 },
+
+	# Fila 3:
+	{ "id": "alba", "name": "Alba Suave (Tabaco Rubio 20)", "brand": "Alba", "type": "Suave", "col": 0, "row": 3, "fx": 20, "fy": 516, "fw": 120, "fh": 150, "sx": 153, "sy": 516, "sw": 36, "sh": 150 },
+	{ "id": "vertice", "name": "Vértice Mentol (Tabaco Rubio 20)", "brand": "Vértice", "type": "Mentol", "col": 1, "row": 3, "fx": 222, "fy": 516, "fw": 120, "fh": 150, "sx": 356, "sy": 516, "sw": 34, "sh": 149 },
+	{ "id": "caleo", "name": "Caleo Classic (Tabaco Rubio 20)", "brand": "Caleo", "type": "Classic", "col": 2, "row": 3, "fx": 425, "fy": 515, "fw": 122, "fh": 151, "sx": 558, "sy": 515, "sw": 37, "sh": 152 },
+	{ "id": "marfil", "name": "Marfil Original (Tabaco Rubio 20)", "brand": "Marfil", "type": "Original", "col": 3, "row": 3, "fx": 630, "fy": 516, "fw": 121, "fh": 150, "sx": 765, "sy": 516, "sw": 35, "sh": 150 },
+	{ "id": "lumen", "name": "Lumen Violeta (Tabaco Rubio 20)", "brand": "Lumen", "type": "Violeta", "col": 4, "row": 3, "fx": 836, "fy": 515, "fw": 122, "fh": 151, "sx": 970, "sy": 515, "sw": 36, "sh": 151 }
+]
+
+## Retorna los metadatos completos de una cajetilla de cigarros por ID o índice
+static func get_cigarette_pack_data(cigar_key_or_idx: Variant) -> Dictionary:
+	ensure_initialized()
+	if cigar_key_or_idx is int or cigar_key_or_idx is float:
+		var idx := clampi(int(cigar_key_or_idx), 0, CIGARETTE_PACK_DATA.size() - 1)
+		return CIGARETTE_PACK_DATA[idx]
+	var s := str(cigar_key_or_idx).strip_edges().to_lower()
+	if s.is_valid_int():
+		var idx := clampi(s.to_int(), 0, CIGARETTE_PACK_DATA.size() - 1)
+		return CIGARETTE_PACK_DATA[idx]
+	s = s.replace("cigar_", "").replace("cigarro_", "").replace("cajetilla_", "").replace("pack_", "")
+	for d in CIGARETTE_PACK_DATA:
+		if d["id"] == s:
+			return d
+	# Aliases semánticos y marcas
+	var aliases := {
+		"marlboro": "valor",
+		"camel": "duna",
+		"luckies": "ambar",
+		"lucky_strike": "ambar",
+		"pall_mall": "caleo",
+		"benson": "marfil",
+		"winston": "trento",
+		"chesterfield": "lider",
+		"kool": "rio",
+		"newport": "boreal",
+		"salem": "tormenta",
+		"dunhill": "sable",
+		"black_devil": "eclipse",
+		"sobranie": "lumen",
+		"davidoff": "alba",
+		"mentol": "rio",
+		"mentolado": "rio",
+		"lights": "cielo",
+		"suave": "nordico",
+		"fuerte": "fenix",
+		"rubio": "valor",
+		"negro": "sable",
+		"oro": "solsticio",
+		"azul": "zafiro"
+	}
+	if aliases.has(s):
+		var target_id: String = aliases[s]
+		for d in CIGARETTE_PACK_DATA:
+			if d["id"] == target_id:
+				return d
+	for d in CIGARETTE_PACK_DATA:
+		if s in d["id"] or d["id"] in s or s in d["name"].to_lower():
+			return d
+	return CIGARETTE_PACK_DATA[0]
+
+
+## Catálogo canónico de los 18 paquetes de Galletas Rizko (cookie_packs_atlas.png)
+const COOKIE_PACK_NAMES: Array[String] = [
+	# Fila 0:
+	"clasicas",
+	"chocolate",
+	"vainilla",
+	"fresa",
+	"crema",
+	"limon",
+	"arandano",
+	"naranja",
+	"frutos_rojos",
+	# Fila 1:
+	"platano",
+	"chispas",
+	"integrales",
+	"doble_choco",
+	"menta",
+	"canela",
+	"avena",
+	"festival",
+	"cookies_cream"
+]
+
+const COOKIE_PACK_DATA: Array[Dictionary] = [
+	# Fila 0: ys=35, ye=273
+	{ "id": "clasicas", "name": "Rizko Clásicas (120g)", "flavor": "Clásicas", "color": "0b4ea2", "fx": 11, "fe": 49, "bx": 55, "be": 83, "sx": 90, "se": 106, "ys": 35, "ye": 273 },
+	{ "id": "chocolate", "name": "Rizko Chocolate (120g)", "flavor": "Chocolate", "color": "391b10", "fx": 123, "fe": 162, "bx": 169, "be": 196, "sx": 203, "se": 217, "ys": 35, "ye": 273 },
+	{ "id": "vainilla", "name": "Rizko Vainilla (120g)", "flavor": "Vainilla", "color": "ded1b1", "fx": 235, "fe": 273, "bx": 278, "be": 306, "sx": 313, "se": 328, "ys": 35, "ye": 273 },
+	{ "id": "fresa", "name": "Rizko Fresa (120g)", "flavor": "Fresa", "color": "ba121c", "fx": 343, "fe": 383, "bx": 388, "be": 418, "sx": 426, "se": 442, "ys": 35, "ye": 273 },
+	{ "id": "crema", "name": "Rizko Crema (120g)", "flavor": "Crema", "color": "191817", "fx": 462, "fe": 498, "bx": 506, "be": 533, "sx": 541, "se": 555, "ys": 35, "ye": 273 },
+	{ "id": "limon", "name": "Rizko Limón (120g)", "flavor": "Limón", "color": "1f8e28", "fx": 573, "fe": 612, "bx": 618, "be": 644, "sx": 651, "se": 666, "ys": 35, "ye": 273 },
+	{ "id": "arandano", "name": "Rizko Arándano (120g)", "flavor": "Arándano", "color": "5a2777", "fx": 686, "fe": 725, "bx": 732, "be": 762, "sx": 768, "se": 784, "ys": 35, "ye": 273 },
+	{ "id": "naranja", "name": "Rizko Naranja (120g)", "flavor": "Naranja", "color": "d45e14", "fx": 803, "fe": 841, "bx": 846, "be": 875, "sx": 880, "se": 896, "ys": 35, "ye": 273 },
+	{ "id": "frutos_rojos", "name": "Rizko Frutos Rojos (120g)", "flavor": "Frutos Rojos", "color": "c11a56", "fx": 918, "fe": 957, "bx": 962, "be": 989, "sx": 994, "se": 1010, "ys": 35, "ye": 273 },
+
+	# Fila 1: ys=345, ye=588
+	{ "id": "platano", "name": "Rizko Plátano (120g)", "flavor": "Plátano", "color": "e19c11", "fx": 12, "fe": 50, "bx": 55, "be": 85, "sx": 90, "se": 106, "ys": 345, "ye": 588 },
+	{ "id": "chispas", "name": "Rizko Chispas (120g)", "flavor": "Chispas", "color": "0b8c9c", "fx": 127, "fe": 164, "bx": 169, "be": 197, "sx": 202, "se": 218, "ys": 345, "ye": 588 },
+	{ "id": "integrales", "name": "Rizko Integrales (120g)", "flavor": "Integrales", "color": "193d7c", "fx": 235, "fe": 272, "bx": 279, "be": 307, "sx": 314, "se": 328, "ys": 345, "ye": 588 },
+	{ "id": "doble_choco", "name": "Rizko Doble Chocolate (120g)", "flavor": "Doble Chocolate", "color": "dfd5cb", "fx": 346, "fe": 383, "bx": 388, "be": 419, "sx": 424, "se": 440, "ys": 345, "ye": 588 },
+	{ "id": "menta", "name": "Rizko Menta (120g)", "flavor": "Menta", "color": "399478", "fx": 459, "fe": 497, "bx": 502, "be": 531, "sx": 537, "se": 552, "ys": 345, "ye": 588 },
+	{ "id": "canela", "name": "Rizko Canela (120g)", "flavor": "Canela", "color": "b5221b", "fx": 572, "fe": 609, "bx": 615, "be": 644, "sx": 650, "se": 666, "ys": 345, "ye": 588 },
+	{ "id": "avena", "name": "Rizko Avena (120g)", "flavor": "Avena", "color": "82659e", "fx": 684, "fe": 723, "bx": 729, "be": 759, "sx": 765, "se": 781, "ys": 345, "ye": 588 },
+	{ "id": "festival", "name": "Rizko Festival (120g)", "flavor": "Festival", "color": "282627", "fx": 802, "fe": 838, "bx": 845, "be": 873, "sx": 880, "se": 894, "ys": 345, "ye": 588 },
+	{ "id": "cookies_cream", "name": "Rizko Cookies & Cream (120g)", "flavor": "Cookies & Cream", "color": "379ad9", "fx": 915, "fe": 953, "bx": 959, "be": 987, "sx": 992, "se": 1008, "ys": 345, "ye": 588 }
+]
+
+## Retorna los metadatos completos de un paquete de galletas por ID o índice
+static func get_cookie_pack_data(cookie_key_or_idx: Variant) -> Dictionary:
+	ensure_initialized()
+	if cookie_key_or_idx is int or cookie_key_or_idx is float:
+		var idx := clampi(int(cookie_key_or_idx), 0, COOKIE_PACK_DATA.size() - 1)
+		return COOKIE_PACK_DATA[idx]
+	var s := str(cookie_key_or_idx).strip_edges().to_lower()
+	if s.is_valid_int():
+		var idx := clampi(s.to_int(), 0, COOKIE_PACK_DATA.size() - 1)
+		return COOKIE_PACK_DATA[idx]
+	s = s.replace("cookie_", "").replace("galleta_", "").replace("rizko_", "").replace("pack_", "")
+	for d in COOKIE_PACK_DATA:
+		if d["id"] == s:
+			return d
+	# Aliases semánticos de sabores
+	var aliases := {
+		"clasica": "clasicas",
+		"classic": "clasicas",
+		"choco": "chocolate",
+		"vanilla": "vainilla",
+		"strawberry": "fresa",
+		"cream": "crema",
+		"sandwich": "crema",
+		"lemon": "limon",
+		"lime": "limon",
+		"blueberry": "arandano",
+		"moras": "arandano",
+		"mora": "arandano",
+		"orange": "naranja",
+		"citrico": "naranja",
+		"berries": "frutos_rojos",
+		"frambuesa": "frutos_rojos",
+		"banana": "platano",
+		"chips": "chispas",
+		"chocochips": "chispas",
+		"wheat": "integrales",
+		"integral": "integrales",
+		"doble": "doble_choco",
+		"double_chocolate": "doble_choco",
+		"mint": "menta",
+		"cinnamon": "canela",
+		"oat": "avena",
+		"oatmeal": "avena",
+		"confetti": "festival",
+		"chispitas": "festival",
+		"cookies_and_cream": "cookies_cream",
+		"oreo": "cookies_cream"
+	}
+	if aliases.has(s):
+		var target_id: String = aliases[s]
+		for d in COOKIE_PACK_DATA:
+			if d["id"] == target_id:
+				return d
+	for d in COOKIE_PACK_DATA:
+		if s in d["id"] or d["id"] in s or s in d["name"].to_lower():
+			return d
+	return COOKIE_PACK_DATA[0]
+
+
+## Catálogo canónico de las 20 Bolsas de Papitas / Sabritas (snack_bags_atlas.png)
+const SNACK_BAG_NAMES: Array[String] = [
+	# Fila 0:
+	"tostiks",
+	"crujitos",
+	"rizitas",
+	"chispas",
+	"puffys",
+	# Fila 1:
+	"krachitos",
+	"fuegorix",
+	"maizmax",
+	"bolitas",
+	"ondulin",
+	# Fila 2:
+	"crokis",
+	"papasol",
+	"rinrin",
+	"crujix",
+	"megapik",
+	# Fila 3:
+	"saladitas",
+	"paprizas",
+	"chipan",
+	"gomitas",
+	"verdix"
+]
+
+const SNACK_BAG_DATA: Array[Dictionary] = [
+	# Fila 0: ys=12, ye=173
+	{ "id": "tostiks",   "name": "Tostik's Original (60g)", "type": "Totopos", "color": "c6131c", "fx": 19, "fe": 168, "sx": 169, "se": 200, "ys": 12, "ye": 173 },
+	{ "id": "crujitos",  "name": "Crujitos Queso (60g)", "type": "Queso", "color": "ebaa11", "fx": 224, "fe": 369, "sx": 370, "se": 397, "ys": 12, "ye": 173 },
+	{ "id": "rizitas",   "name": "Rizitas Crema y Cebolla (60g)", "type": "Papas", "color": "259247", "fx": 424, "fe": 569, "sx": 570, "se": 598, "ys": 12, "ye": 173 },
+	{ "id": "chispas",   "name": "Chispas Picante (60g)", "type": "Picante", "color": "d44c15", "fx": 625, "fe": 768, "sx": 769, "se": 800, "ys": 12, "ye": 173 },
+	{ "id": "puffys",    "name": "Puffys BBQ (60g)", "type": "Aros", "color": "60238e", "fx": 825, "fe": 972, "sx": 973, "se": 1004, "ys": 12, "ye": 173 },
+
+	# Fila 1: ys=183, ye=338
+	{ "id": "krachitos", "name": "Krachitos Sal Marina (60g)", "type": "Papas", "color": "105eb0", "fx": 19, "fe": 168, "sx": 169, "se": 199, "ys": 183, "ye": 338 },
+	{ "id": "fuegorix",  "name": "FuegoRix Extra Picante (60g)", "type": "Rollitos", "color": "1c191a", "fx": 225, "fe": 370, "sx": 371, "se": 397, "ys": 183, "ye": 338 },
+	{ "id": "maizmax",   "name": "MaízMax Natural (60g)", "type": "Totopos", "color": "ded5b8", "fx": 425, "fe": 568, "sx": 569, "se": 597, "ys": 183, "ye": 338 },
+	{ "id": "bolitas",   "name": "Bolitas Queso (60g)", "type": "Queso", "color": "ba1f22", "fx": 625, "fe": 768, "sx": 769, "se": 800, "ys": 183, "ye": 338 },
+	{ "id": "ondulin",   "name": "Ondulín Vinagreta (60g)", "type": "Papas", "color": "17949a", "fx": 825, "fe": 971, "sx": 972, "se": 1004, "ys": 183, "ye": 338 },
+
+	# Fila 2: ys=347, ye=504
+	{ "id": "crokis",    "name": "Crokis Barbacoa (60g)", "type": "Aros", "color": "d44b15", "fx": 19, "fe": 167, "sx": 168, "se": 200, "ys": 347, "ye": 504 },
+	{ "id": "papasol",   "name": "Papasol Limón y Sal (60g)", "type": "Papas", "color": "449c2a", "fx": 225, "fe": 368, "sx": 369, "se": 398, "ys": 347, "ye": 504 },
+	{ "id": "rinrin",    "name": "RinRin Jamón (60g)", "type": "Jamón", "color": "652485", "fx": 425, "fe": 569, "sx": 570, "se": 599, "ys": 347, "ye": 504 },
+	{ "id": "crujix",    "name": "Crujix Carnitas (60g)", "type": "Carnitas", "color": "177bba", "fx": 625, "fe": 768, "sx": 769, "se": 800, "ys": 347, "ye": 504 },
+	{ "id": "megapik",   "name": "MegaPik Queso Intenso (60g)", "type": "Totopos", "color": "242223", "fx": 826, "fe": 971, "sx": 972, "se": 1003, "ys": 347, "ye": 504 },
+
+	# Fila 3: ys=515, ye=668
+	{ "id": "saladitas", "name": "Saladitas Clásicas (60g)", "type": "Galletas", "color": "0d54a2", "fx": 19, "fe": 168, "sx": 169, "se": 199, "ys": 515, "ye": 668 },
+	{ "id": "paprizas",  "name": "Paprizas Jalapeño (60g)", "type": "Totopos", "color": "b91f24", "fx": 224, "fe": 368, "sx": 369, "se": 398, "ys": 515, "ye": 668 },
+	{ "id": "chipan",    "name": "Chipán Tocino (60g)", "type": "Tocino", "color": "ccb18f", "fx": 426, "fe": 568, "sx": 569, "se": 599, "ys": 515, "ye": 668 },
+	{ "id": "gomitas",   "name": "Gomitas Frutas (60g)", "type": "Gomitas", "color": "c8307b", "fx": 626, "fe": 768, "sx": 769, "se": 800, "ys": 515, "ye": 668 },
+	{ "id": "verdix",    "name": "Verdix Vegetales (60g)", "type": "Vegetales", "color": "276b39", "fx": 826, "fe": 970, "sx": 971, "se": 1001, "ys": 515, "ye": 668 }
+]
+
+## Retorna los metadatos completos de una bolsa de papitas / botanas por ID o índice
+static func get_snack_bag_data(snack_key_or_idx: Variant) -> Dictionary:
+	ensure_initialized()
+	if snack_key_or_idx is int or snack_key_or_idx is float:
+		var idx := clampi(int(snack_key_or_idx), 0, SNACK_BAG_DATA.size() - 1)
+		return SNACK_BAG_DATA[idx]
+	var s := str(snack_key_or_idx).strip_edges().to_lower()
+	if s.is_valid_int():
+		var idx := clampi(s.to_int(), 0, SNACK_BAG_DATA.size() - 1)
+		return SNACK_BAG_DATA[idx]
+	s = s.replace("snack_", "").replace("sabrita_", "").replace("papa_", "").replace("papita_", "").replace("botana_", "").replace("bolsa_", "")
+	for d in SNACK_BAG_DATA:
+		if d["id"] == s:
+			return d
+	# Aliases semánticos y de marcas equivalentes
+	var aliases := {
+		"doritos": "tostiks",
+		"tostitos": "tostiks",
+		"cheetos": "crujitos",
+		"ruffles": "rizitas",
+		"crema_cebolla": "rizitas",
+		"sabritones": "chispas",
+		"takis": "fuegorix",
+		"fuego": "fuegorix",
+		"lay": "krachitos",
+		"lays": "krachitos",
+		"chips": "papasol",
+		"rancheritos": "crokis",
+		"chicharron": "crujix",
+		"chicharrones": "crujix",
+		"carnitas": "crujix",
+		"panditas": "gomitas",
+		"gummy": "gomitas",
+		"crackers": "saladitas",
+		"galletitas": "saladitas",
+		"veggie": "verdix",
+		"bacon": "chipan",
+		"tocino": "chipan",
+		"jalapeno": "paprizas"
+	}
+	if aliases.has(s):
+		var target_id: String = aliases[s]
+		for d in SNACK_BAG_DATA:
+			if d["id"] == target_id:
+				return d
+	for d in SNACK_BAG_DATA:
+		if s in d["id"] or d["id"] in s or s in d["name"].to_lower():
+			return d
+	return SNACK_BAG_DATA[0]
+
+## Retorna la sub-región UV exacta para una de las 16 telas de sofá (por ID 0..15 o por nombre)
+static func get_sofa_fabric_region(fabric_key_or_id: Variant) -> Rect2:
+	if fabric_key_or_id is int or fabric_key_or_id is float:
+		var idx := clampi(int(fabric_key_or_id), 0, 15)
+		var col := idx % 4
+		var row := idx / 4
+		return Rect2(float(col) * 0.25, float(row) * 0.25, 0.25, 0.25)
+	var s := str(fabric_key_or_id).to_lower()
+	var found_idx := SOFA_FABRIC_NAMES.find(s)
+	if found_idx >= 0:
+		var col := found_idx % 4
+		var row := found_idx / 4
+		return Rect2(float(col) * 0.25, float(row) * 0.25, 0.25, 0.25)
+	if has_region("sofa_fabrics_atlas", s):
+		return get_region("sofa_fabrics_atlas", s)
+	return Rect2(0.0, 0.0, 0.25, 0.25)
 
 
 ## Retorna la lista de nombres de regiones disponibles para una textura

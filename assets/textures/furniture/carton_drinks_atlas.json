@@ -1,0 +1,992 @@
+{
+	"agua_coco": {
+		"desc": "Vida - Agua de Coco 1L (Celda completa)",
+		"metallic": 0.02,
+		"rect": [
+			0.5,
+			0.333333333333333,
+			0.166666666666667,
+			0.333333333333333
+		],
+		"roughness": 0.45
+	},
+	"agua_coco_front": {
+		"desc": "Vida - Agua de Coco 1L (Frente)",
+		"metallic": 0.02,
+		"rect": [
+			0.5,
+			0.333333333333333,
+			0.114583333333333,
+			0.333333333333333
+		],
+		"roughness": 0.45
+	},
+	"agua_coco_left": {
+		"desc": "Vida - Agua de Coco 1L (Lateral color)",
+		"metallic": 0.02,
+		"rect": [
+			0.5,
+			0.333333333333333,
+			0.0325520833333333,
+			0.333333333333333
+		],
+		"roughness": 0.45
+	},
+	"agua_coco_side": {
+		"desc": "Vida - Agua de Coco 1L (Información Nutricional)",
+		"metallic": 0.02,
+		"rect": [
+			0.614583333333333,
+			0.333333333333333,
+			0.0520833333333333,
+			0.333333333333333
+		],
+		"roughness": 0.45
+	},
+	"agua_coco_top": {
+		"desc": "Vida - Agua de Coco 1L (Tapa superior)",
+		"metallic": 0.02,
+		"rect": [
+			0.5,
+			0.333333333333333,
+			0.114583333333333,
+			0.05
+		],
+		"roughness": 0.45
+	},
+	"aquapura_agua": {
+		"desc": "AquaPura - Agua Purificada 1L (Celda completa)",
+		"metallic": 0.02,
+		"rect": [
+			0.833333333333333,
+			0.666666666666667,
+			0.166666666666667,
+			0.333333333333333
+		],
+		"roughness": 0.45
+	},
+	"aquapura_agua_front": {
+		"desc": "AquaPura - Agua Purificada 1L (Frente)",
+		"metallic": 0.02,
+		"rect": [
+			0.833333333333333,
+			0.666666666666667,
+			0.114583333333333,
+			0.333333333333333
+		],
+		"roughness": 0.45
+	},
+	"aquapura_agua_left": {
+		"desc": "AquaPura - Agua Purificada 1L (Lateral color)",
+		"metallic": 0.02,
+		"rect": [
+			0.833333333333333,
+			0.666666666666667,
+			0.0325520833333333,
+			0.333333333333333
+		],
+		"roughness": 0.45
+	},
+	"aquapura_agua_side": {
+		"desc": "AquaPura - Agua Purificada 1L (Información Nutricional)",
+		"metallic": 0.02,
+		"rect": [
+			0.947916666666667,
+			0.666666666666667,
+			0.0520833333333333,
+			0.333333333333333
+		],
+		"roughness": 0.45
+	},
+	"aquapura_agua_top": {
+		"desc": "AquaPura - Agua Purificada 1L (Tapa superior)",
+		"metallic": 0.02,
+		"rect": [
+			0.833333333333333,
+			0.666666666666667,
+			0.114583333333333,
+			0.05
+		],
+		"roughness": 0.45
+	},
+	"bebida_platano": {
+		"desc": "Plátano Fresco - Bebida de Plátano 1L (Celda completa)",
+		"metallic": 0.02,
+		"rect": [
+			0.666666666666667,
+			0.333333333333333,
+			0.166666666666667,
+			0.333333333333333
+		],
+		"roughness": 0.45
+	},
+	"bebida_platano_front": {
+		"desc": "Plátano Fresco - Bebida de Plátano 1L (Frente)",
+		"metallic": 0.02,
+		"rect": [
+			0.666666666666667,
+			0.333333333333333,
+			0.114583333333333,
+			0.333333333333333
+		],
+		"roughness": 0.45
+	},
+	"bebida_platano_left": {
+		"desc": "Plátano Fresco - Bebida de Plátano 1L (Lateral color)",
+		"metallic": 0.02,
+		"rect": [
+			0.666666666666667,
+			0.333333333333333,
+			0.0325520833333333,
+			0.333333333333333
+		],
+		"roughness": 0.45
+	},
+	"bebida_platano_side": {
+		"desc": "Plátano Fresco - Bebida de Plátano 1L (Información Nutricional)",
+		"metallic": 0.02,
+		"rect": [
+			0.78125,
+			0.333333333333333,
+			0.0520833333333333,
+			0.333333333333333
+		],
+		"roughness": 0.45
+	},
+	"bebida_platano_top": {
+		"desc": "Plátano Fresco - Bebida de Plátano 1L (Tapa superior)",
+		"metallic": 0.02,
+		"rect": [
+			0.666666666666667,
+			0.333333333333333,
+			0.114583333333333,
+			0.05
+		],
+		"roughness": 0.45
+	},
+	"cafe_con_leche": {
+		"desc": "Café del Valle - Café con Leche 1L (Celda completa)",
+		"metallic": 0.02,
+		"rect": [
+			0.833333333333333,
+			0.333333333333333,
+			0.166666666666667,
+			0.333333333333333
+		],
+		"roughness": 0.45
+	},
+	"cafe_con_leche_front": {
+		"desc": "Café del Valle - Café con Leche 1L (Frente)",
+		"metallic": 0.02,
+		"rect": [
+			0.833333333333333,
+			0.333333333333333,
+			0.114583333333333,
+			0.333333333333333
+		],
+		"roughness": 0.45
+	},
+	"cafe_con_leche_left": {
+		"desc": "Café del Valle - Café con Leche 1L (Lateral color)",
+		"metallic": 0.02,
+		"rect": [
+			0.833333333333333,
+			0.333333333333333,
+			0.0325520833333333,
+			0.333333333333333
+		],
+		"roughness": 0.45
+	},
+	"cafe_con_leche_side": {
+		"desc": "Café del Valle - Café con Leche 1L (Información Nutricional)",
+		"metallic": 0.02,
+		"rect": [
+			0.947916666666667,
+			0.333333333333333,
+			0.0520833333333333,
+			0.333333333333333
+		],
+		"roughness": 0.45
+	},
+	"cafe_con_leche_top": {
+		"desc": "Café del Valle - Café con Leche 1L (Tapa superior)",
+		"metallic": 0.02,
+		"rect": [
+			0.833333333333333,
+			0.333333333333333,
+			0.114583333333333,
+			0.05
+		],
+		"roughness": 0.45
+	},
+	"jugo_mango": {
+		"desc": "SolVida - Jugo de Mango 1L (Celda completa)",
+		"metallic": 0.02,
+		"rect": [
+			0.833333333333333,
+			0.0,
+			0.166666666666667,
+			0.333333333333333
+		],
+		"roughness": 0.45
+	},
+	"jugo_mango_front": {
+		"desc": "SolVida - Jugo de Mango 1L (Frente)",
+		"metallic": 0.02,
+		"rect": [
+			0.833333333333333,
+			0.0,
+			0.114583333333333,
+			0.333333333333333
+		],
+		"roughness": 0.45
+	},
+	"jugo_mango_left": {
+		"desc": "SolVida - Jugo de Mango 1L (Lateral color)",
+		"metallic": 0.02,
+		"rect": [
+			0.833333333333333,
+			0.0,
+			0.0325520833333333,
+			0.333333333333333
+		],
+		"roughness": 0.45
+	},
+	"jugo_mango_side": {
+		"desc": "SolVida - Jugo de Mango 1L (Información Nutricional)",
+		"metallic": 0.02,
+		"rect": [
+			0.947916666666667,
+			0.0,
+			0.0520833333333333,
+			0.333333333333333
+		],
+		"roughness": 0.45
+	},
+	"jugo_mango_top": {
+		"desc": "SolVida - Jugo de Mango 1L (Tapa superior)",
+		"metallic": 0.02,
+		"rect": [
+			0.833333333333333,
+			0.0,
+			0.114583333333333,
+			0.05
+		],
+		"roughness": 0.45
+	},
+	"jugo_manzana": {
+		"desc": "SolVida - Jugo de Manzana 1L (Celda completa)",
+		"metallic": 0.02,
+		"rect": [
+			0.666666666666667,
+			0.0,
+			0.166666666666667,
+			0.333333333333333
+		],
+		"roughness": 0.45
+	},
+	"jugo_manzana_front": {
+		"desc": "SolVida - Jugo de Manzana 1L (Frente)",
+		"metallic": 0.02,
+		"rect": [
+			0.666666666666667,
+			0.0,
+			0.114583333333333,
+			0.333333333333333
+		],
+		"roughness": 0.45
+	},
+	"jugo_manzana_left": {
+		"desc": "SolVida - Jugo de Manzana 1L (Lateral color)",
+		"metallic": 0.02,
+		"rect": [
+			0.666666666666667,
+			0.0,
+			0.0325520833333333,
+			0.333333333333333
+		],
+		"roughness": 0.45
+	},
+	"jugo_manzana_side": {
+		"desc": "SolVida - Jugo de Manzana 1L (Información Nutricional)",
+		"metallic": 0.02,
+		"rect": [
+			0.78125,
+			0.0,
+			0.0520833333333333,
+			0.333333333333333
+		],
+		"roughness": 0.45
+	},
+	"jugo_manzana_top": {
+		"desc": "SolVida - Jugo de Manzana 1L (Tapa superior)",
+		"metallic": 0.02,
+		"rect": [
+			0.666666666666667,
+			0.0,
+			0.114583333333333,
+			0.05
+		],
+		"roughness": 0.45
+	},
+	"jugo_naranja": {
+		"desc": "SolVida - Jugo de Naranja 1L (Celda completa)",
+		"metallic": 0.02,
+		"rect": [
+			0.5,
+			0.0,
+			0.166666666666667,
+			0.333333333333333
+		],
+		"roughness": 0.45
+	},
+	"jugo_naranja_front": {
+		"desc": "SolVida - Jugo de Naranja 1L (Frente)",
+		"metallic": 0.02,
+		"rect": [
+			0.5,
+			0.0,
+			0.114583333333333,
+			0.333333333333333
+		],
+		"roughness": 0.45
+	},
+	"jugo_naranja_left": {
+		"desc": "SolVida - Jugo de Naranja 1L (Lateral color)",
+		"metallic": 0.02,
+		"rect": [
+			0.5,
+			0.0,
+			0.0325520833333333,
+			0.333333333333333
+		],
+		"roughness": 0.45
+	},
+	"jugo_naranja_side": {
+		"desc": "SolVida - Jugo de Naranja 1L (Información Nutricional)",
+		"metallic": 0.02,
+		"rect": [
+			0.614583333333333,
+			0.0,
+			0.0520833333333333,
+			0.333333333333333
+		],
+		"roughness": 0.45
+	},
+	"jugo_naranja_top": {
+		"desc": "SolVida - Jugo de Naranja 1L (Tapa superior)",
+		"metallic": 0.02,
+		"rect": [
+			0.5,
+			0.0,
+			0.114583333333333,
+			0.05
+		],
+		"roughness": 0.45
+	},
+	"jumexito_mango": {
+		"desc": "Jumexito - Néctar de Mango 1L (Celda completa)",
+		"metallic": 0.02,
+		"rect": [
+			0.5,
+			0.666666666666667,
+			0.166666666666667,
+			0.333333333333333
+		],
+		"roughness": 0.45
+	},
+	"jumexito_mango_front": {
+		"desc": "Jumexito - Néctar de Mango 1L (Frente)",
+		"metallic": 0.02,
+		"rect": [
+			0.5,
+			0.666666666666667,
+			0.114583333333333,
+			0.333333333333333
+		],
+		"roughness": 0.45
+	},
+	"jumexito_mango_left": {
+		"desc": "Jumexito - Néctar de Mango 1L (Lateral color)",
+		"metallic": 0.02,
+		"rect": [
+			0.5,
+			0.666666666666667,
+			0.0325520833333333,
+			0.333333333333333
+		],
+		"roughness": 0.45
+	},
+	"jumexito_mango_side": {
+		"desc": "Jumexito - Néctar de Mango 1L (Información Nutricional)",
+		"metallic": 0.02,
+		"rect": [
+			0.614583333333333,
+			0.666666666666667,
+			0.0520833333333333,
+			0.333333333333333
+		],
+		"roughness": 0.45
+	},
+	"jumexito_mango_top": {
+		"desc": "Jumexito - Néctar de Mango 1L (Tapa superior)",
+		"metallic": 0.02,
+		"rect": [
+			0.5,
+			0.666666666666667,
+			0.114583333333333,
+			0.05
+		],
+		"roughness": 0.45
+	},
+	"koka_plus": {
+		"desc": "Koka Plus - Sabor Original 1L (Celda completa)",
+		"metallic": 0.02,
+		"rect": [
+			0.166666666666667,
+			0.666666666666667,
+			0.166666666666667,
+			0.333333333333333
+		],
+		"roughness": 0.45
+	},
+	"koka_plus_front": {
+		"desc": "Koka Plus - Sabor Original 1L (Frente)",
+		"metallic": 0.02,
+		"rect": [
+			0.166666666666667,
+			0.666666666666667,
+			0.114583333333333,
+			0.333333333333333
+		],
+		"roughness": 0.45
+	},
+	"koka_plus_left": {
+		"desc": "Koka Plus - Sabor Original 1L (Lateral color)",
+		"metallic": 0.02,
+		"rect": [
+			0.166666666666667,
+			0.666666666666667,
+			0.0325520833333333,
+			0.333333333333333
+		],
+		"roughness": 0.45
+	},
+	"koka_plus_side": {
+		"desc": "Koka Plus - Sabor Original 1L (Información Nutricional)",
+		"metallic": 0.02,
+		"rect": [
+			0.28125,
+			0.666666666666667,
+			0.0520833333333333,
+			0.333333333333333
+		],
+		"roughness": 0.45
+	},
+	"koka_plus_top": {
+		"desc": "Koka Plus - Sabor Original 1L (Tapa superior)",
+		"metallic": 0.02,
+		"rect": [
+			0.166666666666667,
+			0.666666666666667,
+			0.114583333333333,
+			0.05
+		],
+		"roughness": 0.45
+	},
+	"leche_chocolate": {
+		"desc": "ChocoVida - Leche Chocolate 1L (Celda completa)",
+		"metallic": 0.02,
+		"rect": [
+			0.333333333333333,
+			0.0,
+			0.166666666666667,
+			0.333333333333333
+		],
+		"roughness": 0.45
+	},
+	"leche_chocolate_front": {
+		"desc": "ChocoVida - Leche Chocolate 1L (Frente)",
+		"metallic": 0.02,
+		"rect": [
+			0.333333333333333,
+			0.0,
+			0.114583333333333,
+			0.333333333333333
+		],
+		"roughness": 0.45
+	},
+	"leche_chocolate_left": {
+		"desc": "ChocoVida - Leche Chocolate 1L (Lateral color)",
+		"metallic": 0.02,
+		"rect": [
+			0.333333333333333,
+			0.0,
+			0.0325520833333333,
+			0.333333333333333
+		],
+		"roughness": 0.45
+	},
+	"leche_chocolate_side": {
+		"desc": "ChocoVida - Leche Chocolate 1L (Información Nutricional)",
+		"metallic": 0.02,
+		"rect": [
+			0.447916666666667,
+			0.0,
+			0.0520833333333333,
+			0.333333333333333
+		],
+		"roughness": 0.45
+	},
+	"leche_chocolate_top": {
+		"desc": "ChocoVida - Leche Chocolate 1L (Tapa superior)",
+		"metallic": 0.02,
+		"rect": [
+			0.333333333333333,
+			0.0,
+			0.114583333333333,
+			0.05
+		],
+		"roughness": 0.45
+	},
+	"leche_descremada": {
+		"desc": "Lácteos del Valle - Leche Descremada 1L (Celda completa)",
+		"metallic": 0.02,
+		"rect": [
+			0.166666666666667,
+			0.0,
+			0.166666666666667,
+			0.333333333333333
+		],
+		"roughness": 0.45
+	},
+	"leche_descremada_front": {
+		"desc": "Lácteos del Valle - Leche Descremada 1L (Frente)",
+		"metallic": 0.02,
+		"rect": [
+			0.166666666666667,
+			0.0,
+			0.114583333333333,
+			0.333333333333333
+		],
+		"roughness": 0.45
+	},
+	"leche_descremada_left": {
+		"desc": "Lácteos del Valle - Leche Descremada 1L (Lateral color)",
+		"metallic": 0.02,
+		"rect": [
+			0.166666666666667,
+			0.0,
+			0.0325520833333333,
+			0.333333333333333
+		],
+		"roughness": 0.45
+	},
+	"leche_descremada_side": {
+		"desc": "Lácteos del Valle - Leche Descremada 1L (Información Nutricional)",
+		"metallic": 0.02,
+		"rect": [
+			0.28125,
+			0.0,
+			0.0520833333333333,
+			0.333333333333333
+		],
+		"roughness": 0.45
+	},
+	"leche_descremada_top": {
+		"desc": "Lácteos del Valle - Leche Descremada 1L (Tapa superior)",
+		"metallic": 0.02,
+		"rect": [
+			0.166666666666667,
+			0.0,
+			0.114583333333333,
+			0.05
+		],
+		"roughness": 0.45
+	},
+	"leche_entera": {
+		"desc": "Lácteos del Valle - Leche Entera 1L (Celda completa)",
+		"metallic": 0.02,
+		"rect": [
+			0.0,
+			0.0,
+			0.166666666666667,
+			0.333333333333333
+		],
+		"roughness": 0.45
+	},
+	"leche_entera_front": {
+		"desc": "Lácteos del Valle - Leche Entera 1L (Frente)",
+		"metallic": 0.02,
+		"rect": [
+			0.0,
+			0.0,
+			0.114583333333333,
+			0.333333333333333
+		],
+		"roughness": 0.45
+	},
+	"leche_entera_left": {
+		"desc": "Lácteos del Valle - Leche Entera 1L (Lateral color)",
+		"metallic": 0.02,
+		"rect": [
+			0.0,
+			0.0,
+			0.0325520833333333,
+			0.333333333333333
+		],
+		"roughness": 0.45
+	},
+	"leche_entera_side": {
+		"desc": "Lácteos del Valle - Leche Entera 1L (Información Nutricional)",
+		"metallic": 0.02,
+		"rect": [
+			0.114583333333333,
+			0.0,
+			0.0520833333333333,
+			0.333333333333333
+		],
+		"roughness": 0.45
+	},
+	"leche_entera_top": {
+		"desc": "Lácteos del Valle - Leche Entera 1L (Tapa superior)",
+		"metallic": 0.02,
+		"rect": [
+			0.0,
+			0.0,
+			0.114583333333333,
+			0.05
+		],
+		"roughness": 0.45
+	},
+	"narizona_durazno": {
+		"desc": "NariZona - Té Helado Durazno 1L (Celda completa)",
+		"metallic": 0.02,
+		"rect": [
+			0.666666666666667,
+			0.666666666666667,
+			0.166666666666667,
+			0.333333333333333
+		],
+		"roughness": 0.45
+	},
+	"narizona_durazno_front": {
+		"desc": "NariZona - Té Helado Durazno 1L (Frente)",
+		"metallic": 0.02,
+		"rect": [
+			0.666666666666667,
+			0.666666666666667,
+			0.114583333333333,
+			0.333333333333333
+		],
+		"roughness": 0.45
+	},
+	"narizona_durazno_left": {
+		"desc": "NariZona - Té Helado Durazno 1L (Lateral color)",
+		"metallic": 0.02,
+		"rect": [
+			0.666666666666667,
+			0.666666666666667,
+			0.0325520833333333,
+			0.333333333333333
+		],
+		"roughness": 0.45
+	},
+	"narizona_durazno_side": {
+		"desc": "NariZona - Té Helado Durazno 1L (Información Nutricional)",
+		"metallic": 0.02,
+		"rect": [
+			0.78125,
+			0.666666666666667,
+			0.0520833333333333,
+			0.333333333333333
+		],
+		"roughness": 0.45
+	},
+	"narizona_durazno_top": {
+		"desc": "NariZona - Té Helado Durazno 1L (Tapa superior)",
+		"metallic": 0.02,
+		"rect": [
+			0.666666666666667,
+			0.666666666666667,
+			0.114583333333333,
+			0.05
+		],
+		"roughness": 0.45
+	},
+	"nectar_fresa": {
+		"desc": "Valle Frutal - Néctar de Fresa 1L (Celda completa)",
+		"metallic": 0.02,
+		"rect": [
+			0.0,
+			0.333333333333333,
+			0.166666666666667,
+			0.333333333333333
+		],
+		"roughness": 0.45
+	},
+	"nectar_fresa_front": {
+		"desc": "Valle Frutal - Néctar de Fresa 1L (Frente)",
+		"metallic": 0.02,
+		"rect": [
+			0.0,
+			0.333333333333333,
+			0.114583333333333,
+			0.333333333333333
+		],
+		"roughness": 0.45
+	},
+	"nectar_fresa_left": {
+		"desc": "Valle Frutal - Néctar de Fresa 1L (Lateral color)",
+		"metallic": 0.02,
+		"rect": [
+			0.0,
+			0.333333333333333,
+			0.0325520833333333,
+			0.333333333333333
+		],
+		"roughness": 0.45
+	},
+	"nectar_fresa_side": {
+		"desc": "Valle Frutal - Néctar de Fresa 1L (Información Nutricional)",
+		"metallic": 0.02,
+		"rect": [
+			0.114583333333333,
+			0.333333333333333,
+			0.0520833333333333,
+			0.333333333333333
+		],
+		"roughness": 0.45
+	},
+	"nectar_fresa_top": {
+		"desc": "Valle Frutal - Néctar de Fresa 1L (Tapa superior)",
+		"metallic": 0.02,
+		"rect": [
+			0.0,
+			0.333333333333333,
+			0.114583333333333,
+			0.05
+		],
+		"roughness": 0.45
+	},
+	"nectar_naranja": {
+		"desc": "Valle Frutal - Néctar de Naranja 1L (Celda completa)",
+		"metallic": 0.02,
+		"rect": [
+			0.166666666666667,
+			0.333333333333333,
+			0.166666666666667,
+			0.333333333333333
+		],
+		"roughness": 0.45
+	},
+	"nectar_naranja_front": {
+		"desc": "Valle Frutal - Néctar de Naranja 1L (Frente)",
+		"metallic": 0.02,
+		"rect": [
+			0.166666666666667,
+			0.333333333333333,
+			0.114583333333333,
+			0.333333333333333
+		],
+		"roughness": 0.45
+	},
+	"nectar_naranja_left": {
+		"desc": "Valle Frutal - Néctar de Naranja 1L (Lateral color)",
+		"metallic": 0.02,
+		"rect": [
+			0.166666666666667,
+			0.333333333333333,
+			0.0325520833333333,
+			0.333333333333333
+		],
+		"roughness": 0.45
+	},
+	"nectar_naranja_side": {
+		"desc": "Valle Frutal - Néctar de Naranja 1L (Información Nutricional)",
+		"metallic": 0.02,
+		"rect": [
+			0.28125,
+			0.333333333333333,
+			0.0520833333333333,
+			0.333333333333333
+		],
+		"roughness": 0.45
+	},
+	"nectar_naranja_top": {
+		"desc": "Valle Frutal - Néctar de Naranja 1L (Tapa superior)",
+		"metallic": 0.02,
+		"rect": [
+			0.166666666666667,
+			0.333333333333333,
+			0.114583333333333,
+			0.05
+		],
+		"roughness": 0.45
+	},
+	"rayo_energy": {
+		"desc": "Rayo - Energy Drink 1L (Celda completa)",
+		"metallic": 0.02,
+		"rect": [
+			0.0,
+			0.666666666666667,
+			0.166666666666667,
+			0.333333333333333
+		],
+		"roughness": 0.45
+	},
+	"rayo_energy_front": {
+		"desc": "Rayo - Energy Drink 1L (Frente)",
+		"metallic": 0.02,
+		"rect": [
+			0.0,
+			0.666666666666667,
+			0.114583333333333,
+			0.333333333333333
+		],
+		"roughness": 0.45
+	},
+	"rayo_energy_left": {
+		"desc": "Rayo - Energy Drink 1L (Lateral color)",
+		"metallic": 0.02,
+		"rect": [
+			0.0,
+			0.666666666666667,
+			0.0325520833333333,
+			0.333333333333333
+		],
+		"roughness": 0.45
+	},
+	"rayo_energy_side": {
+		"desc": "Rayo - Energy Drink 1L (Información Nutricional)",
+		"metallic": 0.02,
+		"rect": [
+			0.114583333333333,
+			0.666666666666667,
+			0.0520833333333333,
+			0.333333333333333
+		],
+		"roughness": 0.45
+	},
+	"rayo_energy_top": {
+		"desc": "Rayo - Energy Drink 1L (Tapa superior)",
+		"metallic": 0.02,
+		"rect": [
+			0.0,
+			0.666666666666667,
+			0.114583333333333,
+			0.05
+		],
+		"roughness": 0.45
+	},
+	"spritea": {
+		"desc": "Spritea - Sabor Lima-Limón 1L (Celda completa)",
+		"metallic": 0.02,
+		"rect": [
+			0.333333333333333,
+			0.666666666666667,
+			0.166666666666667,
+			0.333333333333333
+		],
+		"roughness": 0.45
+	},
+	"spritea_front": {
+		"desc": "Spritea - Sabor Lima-Limón 1L (Frente)",
+		"metallic": 0.02,
+		"rect": [
+			0.333333333333333,
+			0.666666666666667,
+			0.114583333333333,
+			0.333333333333333
+		],
+		"roughness": 0.45
+	},
+	"spritea_left": {
+		"desc": "Spritea - Sabor Lima-Limón 1L (Lateral color)",
+		"metallic": 0.02,
+		"rect": [
+			0.333333333333333,
+			0.666666666666667,
+			0.0325520833333333,
+			0.333333333333333
+		],
+		"roughness": 0.45
+	},
+	"spritea_side": {
+		"desc": "Spritea - Sabor Lima-Limón 1L (Información Nutricional)",
+		"metallic": 0.02,
+		"rect": [
+			0.447916666666667,
+			0.666666666666667,
+			0.0520833333333333,
+			0.333333333333333
+		],
+		"roughness": 0.45
+	},
+	"spritea_top": {
+		"desc": "Spritea - Sabor Lima-Limón 1L (Tapa superior)",
+		"metallic": 0.02,
+		"rect": [
+			0.333333333333333,
+			0.666666666666667,
+			0.114583333333333,
+			0.05
+		],
+		"roughness": 0.45
+	},
+	"te_limon": {
+		"desc": "Tezá - Té Helado Limón 1L (Celda completa)",
+		"metallic": 0.02,
+		"rect": [
+			0.333333333333333,
+			0.333333333333333,
+			0.166666666666667,
+			0.333333333333333
+		],
+		"roughness": 0.45
+	},
+	"te_limon_front": {
+		"desc": "Tezá - Té Helado Limón 1L (Frente)",
+		"metallic": 0.02,
+		"rect": [
+			0.333333333333333,
+			0.333333333333333,
+			0.114583333333333,
+			0.333333333333333
+		],
+		"roughness": 0.45
+	},
+	"te_limon_left": {
+		"desc": "Tezá - Té Helado Limón 1L (Lateral color)",
+		"metallic": 0.02,
+		"rect": [
+			0.333333333333333,
+			0.333333333333333,
+			0.0325520833333333,
+			0.333333333333333
+		],
+		"roughness": 0.45
+	},
+	"te_limon_side": {
+		"desc": "Tezá - Té Helado Limón 1L (Información Nutricional)",
+		"metallic": 0.02,
+		"rect": [
+			0.447916666666667,
+			0.333333333333333,
+			0.0520833333333333,
+			0.333333333333333
+		],
+		"roughness": 0.45
+	},
+	"te_limon_top": {
+		"desc": "Tezá - Té Helado Limón 1L (Tapa superior)",
+		"metallic": 0.02,
+		"rect": [
+			0.333333333333333,
+			0.333333333333333,
+			0.114583333333333,
+			0.05
+		],
+		"roughness": 0.45
+	}
+}

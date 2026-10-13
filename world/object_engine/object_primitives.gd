@@ -36,6 +36,8 @@ static func get_mesh(primitive_type: String) -> ArrayMesh:
 			mesh = _create_unit_chamfer()
 		"quad", "panel", "plane", "decal":
 			mesh = _create_unit_quad()
+		"rounded_box", "squircle", "pillow", "rounded_cube", "cushion":
+			mesh = _create_unit_rounded_box()
 		_:
 			push_warning("ObjectPrimitives: Primitiva desconocida '%s'. Usando 'cube' por defecto." % primitive_type)
 			mesh = _create_unit_cube()
@@ -54,7 +56,7 @@ static func register_custom_primitive(primitive_name: String, mesh: ArrayMesh) -
 
 ## Retorna la lista de todas las primitivas actualmente disponibles
 static func get_available_primitive_names() -> Array[String]:
-	return ["cube", "cylinder", "wedge", "sphere", "capsule", "chamfer", "quad"]
+	return ["cube", "cylinder", "wedge", "sphere", "capsule", "quad", "rounded_box"]
 
 
 # =========================================================================
@@ -112,8 +114,9 @@ static func _create_unit_cylinder(segments: int = DEFAULT_CYLINDER_SEGMENTS) -> 
 		var x1 := cos(a1) * r
 		var z1 := sin(a1) * r
 
-		var u0 := float(i) / float(segments)
-		var u1 := float(i + 1) / float(segments)
+		# Orientación de UV exterior estándar (de izquierda a derecha para envoltorios/etiquetas)
+		var u0 := 1.0 - float(i) / float(segments)
+		var u1 := 1.0 - float(i + 1) / float(segments)
 
 		var n0 := Vector3(cos(a0), 0.0, sin(a0))
 		var n1 := Vector3(cos(a1), 0.0, sin(a1))
@@ -383,6 +386,153 @@ static func _create_unit_quad() -> ArrayMesh:
 	var v3 := Vector3(-hx,  hy, 0.0)
 
 	_add_quad(st, v0, v1, v2, v3, Vector3.FORWARD, Vector2(0.0, 0.0), Vector2(1.0, 1.0))
+
+	st.generate_tangents()
+	return st.commit()
+
+
+## 8. Caja con Esquinas Redondeadas Unitarias (Rounded Box / Squircle 1x1x1)
+## Esquinas circulares low-poly en el plano horizontal XZ con altura Y.
+## Ideal para cojines de sofá, respaldos, almohadas, colchones y mesas de esquinas redondeadas.
+static func _create_unit_rounded_box(segments_per_corner: int = 2, corner_radius: float = 0.18) -> ArrayMesh:
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+
+	var r: float = clampf(corner_radius, 0.05, 0.45)
+	var half_w := 0.5
+	var half_h := 0.5
+	var half_d := 0.5
+
+	# Centros de las 4 esquinas circulares en XZ:
+	# C0: Posterior-Derecha (+X, -Z)
+	# C1: Frontal-Derecha (+X, +Z)
+	# C2: Frontal-Izquierda (-X, +Z)
+	# C3: Posterior-Izquierda (-X, -Z)
+	var centers: Array[Vector2] = [
+		Vector2(half_w - r, -half_d + r),
+		Vector2(half_w - r,  half_d - r),
+		Vector2(-half_w + r,  half_d - r),
+		Vector2(-half_w + r, -half_d + r)
+	]
+	var start_angles: Array[float] = [-PI * 0.5, 0.0, PI * 0.5, PI]
+
+	var pts: Array[Vector2] = []
+	var normals_2d: Array[Vector2] = []
+
+	for c_idx in range(4):
+		var center := centers[c_idx]
+		var a_start := start_angles[c_idx]
+		for s in range(segments_per_corner + 1):
+			var frac := float(s) / float(segments_per_corner)
+			var angle := a_start + frac * (PI * 0.5)
+			var dir := Vector2(cos(angle), sin(angle))
+			var pt := center + dir * r
+			pts.append(pt)
+			normals_2d.append(dir)
+
+	var n_pts := pts.size()
+	var y_top := half_h
+	var y_bot := -half_h
+
+	# 1. Tapa Superior (+Y)
+	for i in range(n_pts):
+		var i_next := (i + 1) % n_pts
+		var pA: Vector2 = pts[i]
+		var pB: Vector2 = pts[i_next]
+
+		var vA := Vector3(pA.x, y_top, pA.y)
+		var vB := Vector3(pB.x, y_top, pB.y)
+		var v_center := Vector3(0.0, y_top, 0.0)
+
+		var uvA := Vector2(pA.x + 0.5, pA.y + 0.5)
+		var uvB := Vector2(pB.x + 0.5, pB.y + 0.5)
+		var uv_center := Vector2(0.5, 0.5)
+
+		st.set_normal(Vector3.UP)
+		st.set_uv(uv_center); st.add_vertex(v_center)
+		st.set_uv(uvA); st.add_vertex(vA)
+		st.set_uv(uvB); st.add_vertex(vB)
+
+	# 2. Tapa Inferior (-Y)
+	for i in range(n_pts):
+		var i_next := (i + 1) % n_pts
+		var pA: Vector2 = pts[i]
+		var pB: Vector2 = pts[i_next]
+
+		var vA := Vector3(pA.x, y_bot, pA.y)
+		var vB := Vector3(pB.x, y_bot, pB.y)
+		var v_center := Vector3(0.0, y_bot, 0.0)
+
+		var uvA := Vector2(pA.x + 0.5, pA.y + 0.5)
+		var uvB := Vector2(pB.x + 0.5, pB.y + 0.5)
+		var uv_center := Vector2(0.5, 0.5)
+
+		st.set_normal(Vector3.DOWN)
+		st.set_uv(uv_center); st.add_vertex(v_center)
+		st.set_uv(uvB); st.add_vertex(vB)
+		st.set_uv(uvA); st.add_vertex(vA)
+
+	# 3. Paredes Perimetrales Laterales con Box-Projection (sin distorsión ni estiramiento)
+	for i in range(n_pts):
+		var i_next := (i + 1) % n_pts
+		var pA: Vector2 = pts[i]
+		var pB: Vector2 = pts[i_next]
+		var nA: Vector2 = normals_2d[i]
+		var nB: Vector2 = normals_2d[i_next]
+
+		var normA := Vector3(nA.x, 0.0, nA.y)
+		var normB := Vector3(nB.x, 0.0, nB.y)
+
+		var mid_norm := (nA + nB) * 0.5
+		var uA: float = 0.0
+		var uB: float = 0.0
+		var v_top: float = 1.0
+		var v_bot: float = 0.75
+
+		if absf(mid_norm.y) >= absf(mid_norm.x):
+			# Cara Frontal (+Z) o Trasera (-Z)
+			if mid_norm.y > 0.0:
+				# Frontal (+Z): U fluye con X (-0.5 a +0.5 -> 0.0 a 1.0) congruente con la tapa superior
+				uA = pA.x + 0.5
+				uB = pB.x + 0.5
+				v_top = 1.0
+				v_bot = 0.75
+			else:
+				# Trasera (-Z): U fluye con -X para mantener orientación de texturas
+				uA = 0.5 - pA.x
+				uB = 0.5 - pB.x
+				v_top = 0.0
+				v_bot = 0.25
+		else:
+			# Cara Derecha (+X) o Izquierda (-X)
+			if mid_norm.x > 0.0:
+				# Derecha (+X): U fluye con -Z
+				uA = 0.5 - pA.y
+				uB = 0.5 - pB.y
+				v_top = 1.0
+				v_bot = 0.75
+			else:
+				# Izquierda (-X): U fluye con +Z
+				uA = pA.y + 0.5
+				uB = pB.y + 0.5
+				v_top = 1.0
+				v_bot = 0.75
+
+		uA = clampf(uA, 0.0, 1.0)
+		uB = clampf(uB, 0.0, 1.0)
+
+		var vA_bot := Vector3(pA.x, y_bot, pA.y)
+		var vB_bot := Vector3(pB.x, y_bot, pB.y)
+		var vB_top := Vector3(pB.x, y_top, pB.y)
+		var vA_top := Vector3(pA.x, y_top, pA.y)
+
+		st.set_normal(normA); st.set_uv(Vector2(uA, v_bot)); st.add_vertex(vA_bot)
+		st.set_normal(normB); st.set_uv(Vector2(uB, v_bot)); st.add_vertex(vB_bot)
+		st.set_normal(normB); st.set_uv(Vector2(uB, v_top)); st.add_vertex(vB_top)
+
+		st.set_normal(normA); st.set_uv(Vector2(uA, v_bot)); st.add_vertex(vA_bot)
+		st.set_normal(normB); st.set_uv(Vector2(uB, v_top)); st.add_vertex(vB_top)
+		st.set_normal(normA); st.set_uv(Vector2(uA, v_top)); st.add_vertex(vA_top)
 
 	st.generate_tangents()
 	return st.commit()

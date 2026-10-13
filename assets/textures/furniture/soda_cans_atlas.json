@@ -1,0 +1,1300 @@
+{
+	"aluminum_rim": {
+		"desc": "Bisel y aro de aluminio pulido",
+		"metallic": 0.9,
+		"rect": [
+			0.810546875,
+			0.756862745098039,
+			0.17578125,
+			0.0352941176470588
+		],
+		"roughness": 0.18
+	},
+	"aw_root_beer": {
+		"desc": "A&W Root Beer 355ml (Envoltorio completo 360°)",
+		"metallic": 0.65,
+		"rect": [
+			0.400390625,
+			0.745098039215686,
+			0.19921875,
+			0.237908496732026
+		],
+		"roughness": 0.3
+	},
+	"aw_root_beer_barcode": {
+		"desc": "A&W Root Beer 355ml (Código de barras)",
+		"metallic": 0.5,
+		"rect": [
+			0.400390625,
+			0.745098039215686,
+			0.031875,
+			0.237908496732026
+		],
+		"roughness": 0.35
+	},
+	"aw_root_beer_front": {
+		"desc": "A&W Root Beer 355ml (Logotipo frontal)",
+		"metallic": 0.65,
+		"rect": [
+			0.432265625,
+			0.745098039215686,
+			0.123515625,
+			0.237908496732026
+		],
+		"roughness": 0.3
+	},
+	"aw_root_beer_nutrition": {
+		"desc": "A&W Root Beer 355ml (Información Nutricional)",
+		"metallic": 0.5,
+		"rect": [
+			0.55578125,
+			0.745098039215686,
+			0.043828125,
+			0.237908496732026
+		],
+		"roughness": 0.35
+	},
+	"can_aw_root_beer": {
+		"desc": "A&W Root Beer 355ml (Envoltorio completo 360°)",
+		"metallic": 0.65,
+		"rect": [
+			0.400390625,
+			0.745098039215686,
+			0.19921875,
+			0.237908496732026
+		],
+		"roughness": 0.3
+	},
+	"can_canada_dry": {
+		"desc": "Canada Dry Ginger Ale 355ml (Envoltorio completo 360°)",
+		"metallic": 0.65,
+		"rect": [
+			0.80078125,
+			0.50718954248366,
+			0.19921875,
+			0.232679738562092
+		],
+		"roughness": 0.3
+	},
+	"can_crushy": {
+		"desc": "Crushy Naranja 355ml (Envoltorio completo 360°)",
+		"metallic": 0.65,
+		"rect": [
+			0.400390625,
+			0.262745098039216,
+			0.19921875,
+			0.237908496732026
+		],
+		"roughness": 0.3
+	},
+	"can_dr_pepperon": {
+		"desc": "Dr Pepperón 355ml (Envoltorio completo 360°)",
+		"metallic": 0.65,
+		"rect": [
+			0.0,
+			0.262745098039216,
+			0.19921875,
+			0.237908496732026
+		],
+		"roughness": 0.3
+	},
+	"can_fantatx": {
+		"desc": "Fantatx Naranja 355ml (Envoltorio completo 360°)",
+		"metallic": 0.65,
+		"rect": [
+			0.6005859375,
+			0.00915032679738562,
+			0.19921875,
+			0.245751633986928
+		],
+		"roughness": 0.3
+	},
+	"can_freskita": {
+		"desc": "Freskita Agua Mineral 355ml (Envoltorio completo 360°)",
+		"metallic": 0.65,
+		"rect": [
+			0.400390625,
+			0.50718954248366,
+			0.19921875,
+			0.232679738562092
+		],
+		"roughness": 0.3
+	},
+	"can_inka_schweppz": {
+		"desc": "Inka Cola-Real / Schweppz Tonic 355ml (Envoltorio completo 360°)",
+		"metallic": 0.65,
+		"rect": [
+			0.6005859375,
+			0.50718954248366,
+			0.19921875,
+			0.232679738562092
+		],
+		"roughness": 0.3
+	},
+	"can_jarriton": {
+		"desc": "Jarriton Tutti Frutti 355ml (Envoltorio completo 360°)",
+		"metallic": 0.65,
+		"rect": [
+			0.0,
+			0.50718954248366,
+			0.19921875,
+			0.232679738562092
+		],
+		"roughness": 0.3
+	},
+	"can_kola_plus": {
+		"desc": "Kola Plus 355ml (Envoltorio completo 360°)",
+		"metallic": 0.65,
+		"rect": [
+			0.0,
+			0.00915032679738562,
+			0.19921875,
+			0.245751633986928
+		],
+		"roughness": 0.3
+	},
+	"can_lid": {
+		"desc": "Tapa superior circular de aluminio con anilla abre-fácil (Pull-Tab)",
+		"metallic": 0.88,
+		"rect": [
+			0.810546875,
+			0.756862745098039,
+			0.17578125,
+			0.235294117647059
+		],
+		"roughness": 0.22
+	},
+	"can_manzanita_solis": {
+		"desc": "Manzanita Solís 355ml (Envoltorio completo 360°)",
+		"metallic": 0.65,
+		"rect": [
+			0.2001953125,
+			0.50718954248366,
+			0.19921875,
+			0.232679738562092
+		],
+		"roughness": 0.3
+	},
+	"can_mirindaz": {
+		"desc": "Mirindaz Naranja 355ml (Envoltorio completo 360°)",
+		"metallic": 0.65,
+		"rect": [
+			0.80078125,
+			0.262745098039216,
+			0.19921875,
+			0.237908496732026
+		],
+		"roughness": 0.3
+	},
+	"can_mont_dew": {
+		"desc": "Mont Dew 355ml (Envoltorio completo 360°)",
+		"metallic": 0.65,
+		"rect": [
+			0.2001953125,
+			0.262745098039216,
+			0.19921875,
+			0.237908496732026
+		],
+		"roughness": 0.3
+	},
+	"can_mounstro_energy": {
+		"desc": "Mounstro Energy 355ml (Envoltorio completo 360°)",
+		"metallic": 0.65,
+		"rect": [
+			0.2001953125,
+			0.745098039215686,
+			0.19921875,
+			0.237908496732026
+		],
+		"roughness": 0.3
+	},
+	"can_muggy_float": {
+		"desc": "Muggy Float Chocolate 355ml (Envoltorio completo 360°)",
+		"metallic": 0.65,
+		"rect": [
+			0.6005859375,
+			0.745098039215686,
+			0.19921875,
+			0.237908496732026
+		],
+		"roughness": 0.3
+	},
+	"can_pepzi_maxx": {
+		"desc": "Pepzi Maxx 355ml (Envoltorio completo 360°)",
+		"metallic": 0.65,
+		"rect": [
+			0.2001953125,
+			0.00915032679738562,
+			0.19921875,
+			0.245751633986928
+		],
+		"roughness": 0.3
+	},
+	"can_red_buller": {
+		"desc": "Red Buller Energy Drink 355ml (Envoltorio completo 360°)",
+		"metallic": 0.65,
+		"rect": [
+			0.0,
+			0.745098039215686,
+			0.19921875,
+			0.237908496732026
+		],
+		"roughness": 0.3
+	},
+	"can_seven_spark": {
+		"desc": "Seven Spark 355ml (Envoltorio completo 360°)",
+		"metallic": 0.65,
+		"rect": [
+			0.80078125,
+			0.00915032679738562,
+			0.19921875,
+			0.245751633986928
+		],
+		"roughness": 0.3
+	},
+	"can_spritz_up": {
+		"desc": "Spritz Up 355ml (Envoltorio completo 360°)",
+		"metallic": 0.65,
+		"rect": [
+			0.400390625,
+			0.00915032679738562,
+			0.19921875,
+			0.245751633986928
+		],
+		"roughness": 0.3
+	},
+	"can_squirtle_citrus": {
+		"desc": "Squirtle Citrus 355ml (Envoltorio completo 360°)",
+		"metallic": 0.65,
+		"rect": [
+			0.6005859375,
+			0.262745098039216,
+			0.19921875,
+			0.237908496732026
+		],
+		"roughness": 0.3
+	},
+	"canada_dry": {
+		"desc": "Canada Dry Ginger Ale 355ml (Envoltorio completo 360°)",
+		"metallic": 0.65,
+		"rect": [
+			0.80078125,
+			0.50718954248366,
+			0.19921875,
+			0.232679738562092
+		],
+		"roughness": 0.3
+	},
+	"canada_dry_barcode": {
+		"desc": "Canada Dry Ginger Ale 355ml (Código de barras)",
+		"metallic": 0.5,
+		"rect": [
+			0.80078125,
+			0.50718954248366,
+			0.031875,
+			0.232679738562092
+		],
+		"roughness": 0.35
+	},
+	"canada_dry_front": {
+		"desc": "Canada Dry Ginger Ale 355ml (Logotipo frontal)",
+		"metallic": 0.65,
+		"rect": [
+			0.83265625,
+			0.50718954248366,
+			0.123515625,
+			0.232679738562092
+		],
+		"roughness": 0.3
+	},
+	"canada_dry_nutrition": {
+		"desc": "Canada Dry Ginger Ale 355ml (Información Nutricional)",
+		"metallic": 0.5,
+		"rect": [
+			0.956171875,
+			0.50718954248366,
+			0.043828125,
+			0.232679738562092
+		],
+		"roughness": 0.35
+	},
+	"crushy": {
+		"desc": "Crushy Naranja 355ml (Envoltorio completo 360°)",
+		"metallic": 0.65,
+		"rect": [
+			0.400390625,
+			0.262745098039216,
+			0.19921875,
+			0.237908496732026
+		],
+		"roughness": 0.3
+	},
+	"crushy_barcode": {
+		"desc": "Crushy Naranja 355ml (Código de barras)",
+		"metallic": 0.5,
+		"rect": [
+			0.400390625,
+			0.262745098039216,
+			0.031875,
+			0.237908496732026
+		],
+		"roughness": 0.35
+	},
+	"crushy_front": {
+		"desc": "Crushy Naranja 355ml (Logotipo frontal)",
+		"metallic": 0.65,
+		"rect": [
+			0.432265625,
+			0.262745098039216,
+			0.123515625,
+			0.237908496732026
+		],
+		"roughness": 0.3
+	},
+	"crushy_nutrition": {
+		"desc": "Crushy Naranja 355ml (Información Nutricional)",
+		"metallic": 0.5,
+		"rect": [
+			0.55578125,
+			0.262745098039216,
+			0.043828125,
+			0.237908496732026
+		],
+		"roughness": 0.35
+	},
+	"dr_pepperon": {
+		"desc": "Dr Pepperón 355ml (Envoltorio completo 360°)",
+		"metallic": 0.65,
+		"rect": [
+			0.0,
+			0.262745098039216,
+			0.19921875,
+			0.237908496732026
+		],
+		"roughness": 0.3
+	},
+	"dr_pepperon_barcode": {
+		"desc": "Dr Pepperón 355ml (Código de barras)",
+		"metallic": 0.5,
+		"rect": [
+			0.0,
+			0.262745098039216,
+			0.031875,
+			0.237908496732026
+		],
+		"roughness": 0.35
+	},
+	"dr_pepperon_front": {
+		"desc": "Dr Pepperón 355ml (Logotipo frontal)",
+		"metallic": 0.65,
+		"rect": [
+			0.031875,
+			0.262745098039216,
+			0.123515625,
+			0.237908496732026
+		],
+		"roughness": 0.3
+	},
+	"dr_pepperon_nutrition": {
+		"desc": "Dr Pepperón 355ml (Información Nutricional)",
+		"metallic": 0.5,
+		"rect": [
+			0.155390625,
+			0.262745098039216,
+			0.043828125,
+			0.237908496732026
+		],
+		"roughness": 0.35
+	},
+	"fantatx": {
+		"desc": "Fantatx Naranja 355ml (Envoltorio completo 360°)",
+		"metallic": 0.65,
+		"rect": [
+			0.6005859375,
+			0.00915032679738562,
+			0.19921875,
+			0.245751633986928
+		],
+		"roughness": 0.3
+	},
+	"fantatx_barcode": {
+		"desc": "Fantatx Naranja 355ml (Código de barras)",
+		"metallic": 0.5,
+		"rect": [
+			0.6005859375,
+			0.00915032679738562,
+			0.031875,
+			0.245751633986928
+		],
+		"roughness": 0.35
+	},
+	"fantatx_front": {
+		"desc": "Fantatx Naranja 355ml (Logotipo frontal)",
+		"metallic": 0.65,
+		"rect": [
+			0.6324609375,
+			0.00915032679738562,
+			0.123515625,
+			0.245751633986928
+		],
+		"roughness": 0.3
+	},
+	"fantatx_nutrition": {
+		"desc": "Fantatx Naranja 355ml (Información Nutricional)",
+		"metallic": 0.5,
+		"rect": [
+			0.7559765625,
+			0.00915032679738562,
+			0.043828125,
+			0.245751633986928
+		],
+		"roughness": 0.35
+	},
+	"freskita": {
+		"desc": "Freskita Agua Mineral 355ml (Envoltorio completo 360°)",
+		"metallic": 0.65,
+		"rect": [
+			0.400390625,
+			0.50718954248366,
+			0.19921875,
+			0.232679738562092
+		],
+		"roughness": 0.3
+	},
+	"freskita_barcode": {
+		"desc": "Freskita Agua Mineral 355ml (Código de barras)",
+		"metallic": 0.5,
+		"rect": [
+			0.400390625,
+			0.50718954248366,
+			0.031875,
+			0.232679738562092
+		],
+		"roughness": 0.35
+	},
+	"freskita_front": {
+		"desc": "Freskita Agua Mineral 355ml (Logotipo frontal)",
+		"metallic": 0.65,
+		"rect": [
+			0.432265625,
+			0.50718954248366,
+			0.123515625,
+			0.232679738562092
+		],
+		"roughness": 0.3
+	},
+	"freskita_nutrition": {
+		"desc": "Freskita Agua Mineral 355ml (Información Nutricional)",
+		"metallic": 0.5,
+		"rect": [
+			0.55578125,
+			0.50718954248366,
+			0.043828125,
+			0.232679738562092
+		],
+		"roughness": 0.35
+	},
+	"inka_schweppz": {
+		"desc": "Inka Cola-Real / Schweppz Tonic 355ml (Envoltorio completo 360°)",
+		"metallic": 0.65,
+		"rect": [
+			0.6005859375,
+			0.50718954248366,
+			0.19921875,
+			0.232679738562092
+		],
+		"roughness": 0.3
+	},
+	"inka_schweppz_barcode": {
+		"desc": "Inka Cola-Real / Schweppz Tonic 355ml (Código de barras)",
+		"metallic": 0.5,
+		"rect": [
+			0.6005859375,
+			0.50718954248366,
+			0.031875,
+			0.232679738562092
+		],
+		"roughness": 0.35
+	},
+	"inka_schweppz_front": {
+		"desc": "Inka Cola-Real / Schweppz Tonic 355ml (Logotipo frontal)",
+		"metallic": 0.65,
+		"rect": [
+			0.6324609375,
+			0.50718954248366,
+			0.123515625,
+			0.232679738562092
+		],
+		"roughness": 0.3
+	},
+	"inka_schweppz_nutrition": {
+		"desc": "Inka Cola-Real / Schweppz Tonic 355ml (Información Nutricional)",
+		"metallic": 0.5,
+		"rect": [
+			0.7559765625,
+			0.50718954248366,
+			0.043828125,
+			0.232679738562092
+		],
+		"roughness": 0.35
+	},
+	"jarriton": {
+		"desc": "Jarriton Tutti Frutti 355ml (Envoltorio completo 360°)",
+		"metallic": 0.65,
+		"rect": [
+			0.0,
+			0.50718954248366,
+			0.19921875,
+			0.232679738562092
+		],
+		"roughness": 0.3
+	},
+	"jarriton_barcode": {
+		"desc": "Jarriton Tutti Frutti 355ml (Código de barras)",
+		"metallic": 0.5,
+		"rect": [
+			0.0,
+			0.50718954248366,
+			0.031875,
+			0.232679738562092
+		],
+		"roughness": 0.35
+	},
+	"jarriton_front": {
+		"desc": "Jarriton Tutti Frutti 355ml (Logotipo frontal)",
+		"metallic": 0.65,
+		"rect": [
+			0.031875,
+			0.50718954248366,
+			0.123515625,
+			0.232679738562092
+		],
+		"roughness": 0.3
+	},
+	"jarriton_nutrition": {
+		"desc": "Jarriton Tutti Frutti 355ml (Información Nutricional)",
+		"metallic": 0.5,
+		"rect": [
+			0.155390625,
+			0.50718954248366,
+			0.043828125,
+			0.232679738562092
+		],
+		"roughness": 0.35
+	},
+	"kola_plus": {
+		"desc": "Kola Plus 355ml (Envoltorio completo 360°)",
+		"metallic": 0.65,
+		"rect": [
+			0.0,
+			0.00915032679738562,
+			0.19921875,
+			0.245751633986928
+		],
+		"roughness": 0.3
+	},
+	"kola_plus_barcode": {
+		"desc": "Kola Plus 355ml (Código de barras)",
+		"metallic": 0.5,
+		"rect": [
+			0.0,
+			0.00915032679738562,
+			0.031875,
+			0.245751633986928
+		],
+		"roughness": 0.35
+	},
+	"kola_plus_front": {
+		"desc": "Kola Plus 355ml (Logotipo frontal)",
+		"metallic": 0.65,
+		"rect": [
+			0.031875,
+			0.00915032679738562,
+			0.123515625,
+			0.245751633986928
+		],
+		"roughness": 0.3
+	},
+	"kola_plus_nutrition": {
+		"desc": "Kola Plus 355ml (Información Nutricional)",
+		"metallic": 0.5,
+		"rect": [
+			0.155390625,
+			0.00915032679738562,
+			0.043828125,
+			0.245751633986928
+		],
+		"roughness": 0.35
+	},
+	"lid": {
+		"desc": "Tapa superior circular de aluminio con anilla abre-fácil (Pull-Tab)",
+		"metallic": 0.88,
+		"rect": [
+			0.810546875,
+			0.756862745098039,
+			0.17578125,
+			0.235294117647059
+		],
+		"roughness": 0.22
+	},
+	"manzanita_solis": {
+		"desc": "Manzanita Solís 355ml (Envoltorio completo 360°)",
+		"metallic": 0.65,
+		"rect": [
+			0.2001953125,
+			0.50718954248366,
+			0.19921875,
+			0.232679738562092
+		],
+		"roughness": 0.3
+	},
+	"manzanita_solis_barcode": {
+		"desc": "Manzanita Solís 355ml (Código de barras)",
+		"metallic": 0.5,
+		"rect": [
+			0.2001953125,
+			0.50718954248366,
+			0.031875,
+			0.232679738562092
+		],
+		"roughness": 0.35
+	},
+	"manzanita_solis_front": {
+		"desc": "Manzanita Solís 355ml (Logotipo frontal)",
+		"metallic": 0.65,
+		"rect": [
+			0.2320703125,
+			0.50718954248366,
+			0.123515625,
+			0.232679738562092
+		],
+		"roughness": 0.3
+	},
+	"manzanita_solis_nutrition": {
+		"desc": "Manzanita Solís 355ml (Información Nutricional)",
+		"metallic": 0.5,
+		"rect": [
+			0.3555859375,
+			0.50718954248366,
+			0.043828125,
+			0.232679738562092
+		],
+		"roughness": 0.35
+	},
+	"mirindaz": {
+		"desc": "Mirindaz Naranja 355ml (Envoltorio completo 360°)",
+		"metallic": 0.65,
+		"rect": [
+			0.80078125,
+			0.262745098039216,
+			0.19921875,
+			0.237908496732026
+		],
+		"roughness": 0.3
+	},
+	"mirindaz_barcode": {
+		"desc": "Mirindaz Naranja 355ml (Código de barras)",
+		"metallic": 0.5,
+		"rect": [
+			0.80078125,
+			0.262745098039216,
+			0.031875,
+			0.237908496732026
+		],
+		"roughness": 0.35
+	},
+	"mirindaz_front": {
+		"desc": "Mirindaz Naranja 355ml (Logotipo frontal)",
+		"metallic": 0.65,
+		"rect": [
+			0.83265625,
+			0.262745098039216,
+			0.123515625,
+			0.237908496732026
+		],
+		"roughness": 0.3
+	},
+	"mirindaz_nutrition": {
+		"desc": "Mirindaz Naranja 355ml (Información Nutricional)",
+		"metallic": 0.5,
+		"rect": [
+			0.956171875,
+			0.262745098039216,
+			0.043828125,
+			0.237908496732026
+		],
+		"roughness": 0.35
+	},
+	"mont_dew": {
+		"desc": "Mont Dew 355ml (Envoltorio completo 360°)",
+		"metallic": 0.65,
+		"rect": [
+			0.2001953125,
+			0.262745098039216,
+			0.19921875,
+			0.237908496732026
+		],
+		"roughness": 0.3
+	},
+	"mont_dew_barcode": {
+		"desc": "Mont Dew 355ml (Código de barras)",
+		"metallic": 0.5,
+		"rect": [
+			0.2001953125,
+			0.262745098039216,
+			0.031875,
+			0.237908496732026
+		],
+		"roughness": 0.35
+	},
+	"mont_dew_front": {
+		"desc": "Mont Dew 355ml (Logotipo frontal)",
+		"metallic": 0.65,
+		"rect": [
+			0.2320703125,
+			0.262745098039216,
+			0.123515625,
+			0.237908496732026
+		],
+		"roughness": 0.3
+	},
+	"mont_dew_nutrition": {
+		"desc": "Mont Dew 355ml (Información Nutricional)",
+		"metallic": 0.5,
+		"rect": [
+			0.3555859375,
+			0.262745098039216,
+			0.043828125,
+			0.237908496732026
+		],
+		"roughness": 0.35
+	},
+	"mounstro_energy": {
+		"desc": "Mounstro Energy 355ml (Envoltorio completo 360°)",
+		"metallic": 0.65,
+		"rect": [
+			0.2001953125,
+			0.745098039215686,
+			0.19921875,
+			0.237908496732026
+		],
+		"roughness": 0.3
+	},
+	"mounstro_energy_barcode": {
+		"desc": "Mounstro Energy 355ml (Código de barras)",
+		"metallic": 0.5,
+		"rect": [
+			0.2001953125,
+			0.745098039215686,
+			0.031875,
+			0.237908496732026
+		],
+		"roughness": 0.35
+	},
+	"mounstro_energy_front": {
+		"desc": "Mounstro Energy 355ml (Logotipo frontal)",
+		"metallic": 0.65,
+		"rect": [
+			0.2320703125,
+			0.745098039215686,
+			0.123515625,
+			0.237908496732026
+		],
+		"roughness": 0.3
+	},
+	"mounstro_energy_nutrition": {
+		"desc": "Mounstro Energy 355ml (Información Nutricional)",
+		"metallic": 0.5,
+		"rect": [
+			0.3555859375,
+			0.745098039215686,
+			0.043828125,
+			0.237908496732026
+		],
+		"roughness": 0.35
+	},
+	"muggy_float": {
+		"desc": "Muggy Float Chocolate 355ml (Envoltorio completo 360°)",
+		"metallic": 0.65,
+		"rect": [
+			0.6005859375,
+			0.745098039215686,
+			0.19921875,
+			0.237908496732026
+		],
+		"roughness": 0.3
+	},
+	"muggy_float_barcode": {
+		"desc": "Muggy Float Chocolate 355ml (Código de barras)",
+		"metallic": 0.5,
+		"rect": [
+			0.6005859375,
+			0.745098039215686,
+			0.031875,
+			0.237908496732026
+		],
+		"roughness": 0.35
+	},
+	"muggy_float_front": {
+		"desc": "Muggy Float Chocolate 355ml (Logotipo frontal)",
+		"metallic": 0.65,
+		"rect": [
+			0.6324609375,
+			0.745098039215686,
+			0.123515625,
+			0.237908496732026
+		],
+		"roughness": 0.3
+	},
+	"muggy_float_nutrition": {
+		"desc": "Muggy Float Chocolate 355ml (Información Nutricional)",
+		"metallic": 0.5,
+		"rect": [
+			0.7559765625,
+			0.745098039215686,
+			0.043828125,
+			0.237908496732026
+		],
+		"roughness": 0.35
+	},
+	"pepzi_maxx": {
+		"desc": "Pepzi Maxx 355ml (Envoltorio completo 360°)",
+		"metallic": 0.65,
+		"rect": [
+			0.2001953125,
+			0.00915032679738562,
+			0.19921875,
+			0.245751633986928
+		],
+		"roughness": 0.3
+	},
+	"pepzi_maxx_barcode": {
+		"desc": "Pepzi Maxx 355ml (Código de barras)",
+		"metallic": 0.5,
+		"rect": [
+			0.2001953125,
+			0.00915032679738562,
+			0.031875,
+			0.245751633986928
+		],
+		"roughness": 0.35
+	},
+	"pepzi_maxx_front": {
+		"desc": "Pepzi Maxx 355ml (Logotipo frontal)",
+		"metallic": 0.65,
+		"rect": [
+			0.2320703125,
+			0.00915032679738562,
+			0.123515625,
+			0.245751633986928
+		],
+		"roughness": 0.3
+	},
+	"pepzi_maxx_nutrition": {
+		"desc": "Pepzi Maxx 355ml (Información Nutricional)",
+		"metallic": 0.5,
+		"rect": [
+			0.3555859375,
+			0.00915032679738562,
+			0.043828125,
+			0.245751633986928
+		],
+		"roughness": 0.35
+	},
+	"pull_tab": {
+		"desc": "Tapa superior circular de aluminio con anilla abre-fácil (Pull-Tab)",
+		"metallic": 0.88,
+		"rect": [
+			0.810546875,
+			0.756862745098039,
+			0.17578125,
+			0.235294117647059
+		],
+		"roughness": 0.22
+	},
+	"red_buller": {
+		"desc": "Red Buller Energy Drink 355ml (Envoltorio completo 360°)",
+		"metallic": 0.65,
+		"rect": [
+			0.0,
+			0.745098039215686,
+			0.19921875,
+			0.237908496732026
+		],
+		"roughness": 0.3
+	},
+	"red_buller_barcode": {
+		"desc": "Red Buller Energy Drink 355ml (Código de barras)",
+		"metallic": 0.5,
+		"rect": [
+			0.0,
+			0.745098039215686,
+			0.031875,
+			0.237908496732026
+		],
+		"roughness": 0.35
+	},
+	"red_buller_front": {
+		"desc": "Red Buller Energy Drink 355ml (Logotipo frontal)",
+		"metallic": 0.65,
+		"rect": [
+			0.031875,
+			0.745098039215686,
+			0.123515625,
+			0.237908496732026
+		],
+		"roughness": 0.3
+	},
+	"red_buller_nutrition": {
+		"desc": "Red Buller Energy Drink 355ml (Información Nutricional)",
+		"metallic": 0.5,
+		"rect": [
+			0.155390625,
+			0.745098039215686,
+			0.043828125,
+			0.237908496732026
+		],
+		"roughness": 0.35
+	},
+	"seven_spark": {
+		"desc": "Seven Spark 355ml (Envoltorio completo 360°)",
+		"metallic": 0.65,
+		"rect": [
+			0.80078125,
+			0.00915032679738562,
+			0.19921875,
+			0.245751633986928
+		],
+		"roughness": 0.3
+	},
+	"seven_spark_barcode": {
+		"desc": "Seven Spark 355ml (Código de barras)",
+		"metallic": 0.5,
+		"rect": [
+			0.80078125,
+			0.00915032679738562,
+			0.031875,
+			0.245751633986928
+		],
+		"roughness": 0.35
+	},
+	"seven_spark_front": {
+		"desc": "Seven Spark 355ml (Logotipo frontal)",
+		"metallic": 0.65,
+		"rect": [
+			0.83265625,
+			0.00915032679738562,
+			0.123515625,
+			0.245751633986928
+		],
+		"roughness": 0.3
+	},
+	"seven_spark_nutrition": {
+		"desc": "Seven Spark 355ml (Información Nutricional)",
+		"metallic": 0.5,
+		"rect": [
+			0.956171875,
+			0.00915032679738562,
+			0.043828125,
+			0.245751633986928
+		],
+		"roughness": 0.35
+	},
+	"soda_aw_root_beer": {
+		"desc": "A&W Root Beer 355ml (Envoltorio completo 360°)",
+		"metallic": 0.65,
+		"rect": [
+			0.400390625,
+			0.745098039215686,
+			0.19921875,
+			0.237908496732026
+		],
+		"roughness": 0.3
+	},
+	"soda_canada_dry": {
+		"desc": "Canada Dry Ginger Ale 355ml (Envoltorio completo 360°)",
+		"metallic": 0.65,
+		"rect": [
+			0.80078125,
+			0.50718954248366,
+			0.19921875,
+			0.232679738562092
+		],
+		"roughness": 0.3
+	},
+	"soda_crushy": {
+		"desc": "Crushy Naranja 355ml (Envoltorio completo 360°)",
+		"metallic": 0.65,
+		"rect": [
+			0.400390625,
+			0.262745098039216,
+			0.19921875,
+			0.237908496732026
+		],
+		"roughness": 0.3
+	},
+	"soda_dr_pepperon": {
+		"desc": "Dr Pepperón 355ml (Envoltorio completo 360°)",
+		"metallic": 0.65,
+		"rect": [
+			0.0,
+			0.262745098039216,
+			0.19921875,
+			0.237908496732026
+		],
+		"roughness": 0.3
+	},
+	"soda_fantatx": {
+		"desc": "Fantatx Naranja 355ml (Envoltorio completo 360°)",
+		"metallic": 0.65,
+		"rect": [
+			0.6005859375,
+			0.00915032679738562,
+			0.19921875,
+			0.245751633986928
+		],
+		"roughness": 0.3
+	},
+	"soda_freskita": {
+		"desc": "Freskita Agua Mineral 355ml (Envoltorio completo 360°)",
+		"metallic": 0.65,
+		"rect": [
+			0.400390625,
+			0.50718954248366,
+			0.19921875,
+			0.232679738562092
+		],
+		"roughness": 0.3
+	},
+	"soda_inka_schweppz": {
+		"desc": "Inka Cola-Real / Schweppz Tonic 355ml (Envoltorio completo 360°)",
+		"metallic": 0.65,
+		"rect": [
+			0.6005859375,
+			0.50718954248366,
+			0.19921875,
+			0.232679738562092
+		],
+		"roughness": 0.3
+	},
+	"soda_jarriton": {
+		"desc": "Jarriton Tutti Frutti 355ml (Envoltorio completo 360°)",
+		"metallic": 0.65,
+		"rect": [
+			0.0,
+			0.50718954248366,
+			0.19921875,
+			0.232679738562092
+		],
+		"roughness": 0.3
+	},
+	"soda_kola_plus": {
+		"desc": "Kola Plus 355ml (Envoltorio completo 360°)",
+		"metallic": 0.65,
+		"rect": [
+			0.0,
+			0.00915032679738562,
+			0.19921875,
+			0.245751633986928
+		],
+		"roughness": 0.3
+	},
+	"soda_manzanita_solis": {
+		"desc": "Manzanita Solís 355ml (Envoltorio completo 360°)",
+		"metallic": 0.65,
+		"rect": [
+			0.2001953125,
+			0.50718954248366,
+			0.19921875,
+			0.232679738562092
+		],
+		"roughness": 0.3
+	},
+	"soda_mirindaz": {
+		"desc": "Mirindaz Naranja 355ml (Envoltorio completo 360°)",
+		"metallic": 0.65,
+		"rect": [
+			0.80078125,
+			0.262745098039216,
+			0.19921875,
+			0.237908496732026
+		],
+		"roughness": 0.3
+	},
+	"soda_mont_dew": {
+		"desc": "Mont Dew 355ml (Envoltorio completo 360°)",
+		"metallic": 0.65,
+		"rect": [
+			0.2001953125,
+			0.262745098039216,
+			0.19921875,
+			0.237908496732026
+		],
+		"roughness": 0.3
+	},
+	"soda_mounstro_energy": {
+		"desc": "Mounstro Energy 355ml (Envoltorio completo 360°)",
+		"metallic": 0.65,
+		"rect": [
+			0.2001953125,
+			0.745098039215686,
+			0.19921875,
+			0.237908496732026
+		],
+		"roughness": 0.3
+	},
+	"soda_muggy_float": {
+		"desc": "Muggy Float Chocolate 355ml (Envoltorio completo 360°)",
+		"metallic": 0.65,
+		"rect": [
+			0.6005859375,
+			0.745098039215686,
+			0.19921875,
+			0.237908496732026
+		],
+		"roughness": 0.3
+	},
+	"soda_pepzi_maxx": {
+		"desc": "Pepzi Maxx 355ml (Envoltorio completo 360°)",
+		"metallic": 0.65,
+		"rect": [
+			0.2001953125,
+			0.00915032679738562,
+			0.19921875,
+			0.245751633986928
+		],
+		"roughness": 0.3
+	},
+	"soda_red_buller": {
+		"desc": "Red Buller Energy Drink 355ml (Envoltorio completo 360°)",
+		"metallic": 0.65,
+		"rect": [
+			0.0,
+			0.745098039215686,
+			0.19921875,
+			0.237908496732026
+		],
+		"roughness": 0.3
+	},
+	"soda_seven_spark": {
+		"desc": "Seven Spark 355ml (Envoltorio completo 360°)",
+		"metallic": 0.65,
+		"rect": [
+			0.80078125,
+			0.00915032679738562,
+			0.19921875,
+			0.245751633986928
+		],
+		"roughness": 0.3
+	},
+	"soda_spritz_up": {
+		"desc": "Spritz Up 355ml (Envoltorio completo 360°)",
+		"metallic": 0.65,
+		"rect": [
+			0.400390625,
+			0.00915032679738562,
+			0.19921875,
+			0.245751633986928
+		],
+		"roughness": 0.3
+	},
+	"soda_squirtle_citrus": {
+		"desc": "Squirtle Citrus 355ml (Envoltorio completo 360°)",
+		"metallic": 0.65,
+		"rect": [
+			0.6005859375,
+			0.262745098039216,
+			0.19921875,
+			0.237908496732026
+		],
+		"roughness": 0.3
+	},
+	"spritz_up": {
+		"desc": "Spritz Up 355ml (Envoltorio completo 360°)",
+		"metallic": 0.65,
+		"rect": [
+			0.400390625,
+			0.00915032679738562,
+			0.19921875,
+			0.245751633986928
+		],
+		"roughness": 0.3
+	},
+	"spritz_up_barcode": {
+		"desc": "Spritz Up 355ml (Código de barras)",
+		"metallic": 0.5,
+		"rect": [
+			0.400390625,
+			0.00915032679738562,
+			0.031875,
+			0.245751633986928
+		],
+		"roughness": 0.35
+	},
+	"spritz_up_front": {
+		"desc": "Spritz Up 355ml (Logotipo frontal)",
+		"metallic": 0.65,
+		"rect": [
+			0.432265625,
+			0.00915032679738562,
+			0.123515625,
+			0.245751633986928
+		],
+		"roughness": 0.3
+	},
+	"spritz_up_nutrition": {
+		"desc": "Spritz Up 355ml (Información Nutricional)",
+		"metallic": 0.5,
+		"rect": [
+			0.55578125,
+			0.00915032679738562,
+			0.043828125,
+			0.245751633986928
+		],
+		"roughness": 0.35
+	},
+	"squirtle_citrus": {
+		"desc": "Squirtle Citrus 355ml (Envoltorio completo 360°)",
+		"metallic": 0.65,
+		"rect": [
+			0.6005859375,
+			0.262745098039216,
+			0.19921875,
+			0.237908496732026
+		],
+		"roughness": 0.3
+	},
+	"squirtle_citrus_barcode": {
+		"desc": "Squirtle Citrus 355ml (Código de barras)",
+		"metallic": 0.5,
+		"rect": [
+			0.6005859375,
+			0.262745098039216,
+			0.031875,
+			0.237908496732026
+		],
+		"roughness": 0.35
+	},
+	"squirtle_citrus_front": {
+		"desc": "Squirtle Citrus 355ml (Logotipo frontal)",
+		"metallic": 0.65,
+		"rect": [
+			0.6324609375,
+			0.262745098039216,
+			0.123515625,
+			0.237908496732026
+		],
+		"roughness": 0.3
+	},
+	"squirtle_citrus_nutrition": {
+		"desc": "Squirtle Citrus 355ml (Información Nutricional)",
+		"metallic": 0.5,
+		"rect": [
+			0.7559765625,
+			0.262745098039216,
+			0.043828125,
+			0.237908496732026
+		],
+		"roughness": 0.35
+	}
+}

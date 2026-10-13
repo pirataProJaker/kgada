@@ -31,7 +31,15 @@ const DEFAULT_APPLIANCE_TEXTURES: Dictionary = {
 	"bed_linens_atlas": "res://assets/textures/furniture/bed_linens_master_atlas.png",
 	"commercial_shelf": "res://assets/textures/furniture/commercial_shelf.png",
 	"commercial_cooler": "res://assets/textures/furniture/commercial_cooler.png",
-	"medidor_cfe": "res://assets/textures/house/medidor_cfe.png"
+	"medidor_cfe": "res://assets/textures/house/medidor_cfe.png",
+	"sofa_fabrics_atlas": "res://assets/textures/furniture/sofa_fabrics_atlas.png",
+	"carton_drinks_atlas": "res://assets/textures/furniture/carton_drinks_atlas.png",
+	"soda_cans_atlas": "res://assets/textures/furniture/soda_cans_atlas.png",
+	"cereal_boxes_atlas": "res://assets/textures/furniture/cereal_boxes_atlas.png",
+	"candy_bags_atlas": "res://assets/textures/furniture/candy_bags_atlas.png",
+	"cigarette_packs_atlas": "res://assets/textures/furniture/cigarette_packs_atlas.png",
+	"cookie_packs_atlas": "res://assets/textures/furniture/cookie_packs_atlas.png",
+	"snack_bags_atlas": "res://assets/textures/furniture/snack_bags_atlas.png"
 }
 
 const DEFAULT_OFFICE_TEXTURES: Dictionary = {
@@ -196,6 +204,30 @@ static func get_texture_layer(key: String) -> int:
 		var sub := key.trim_prefix("office_")
 		if _layer_map.has(sub):
 			return _layer_map[sub]
+	if key.begins_with("sofa_vintage_") or key.begins_with("sofa_modern_") or key.begins_with("vintage_") or key.begins_with("modern_"):
+		if _layer_map.has("sofa_fabrics_atlas"):
+			return _layer_map["sofa_fabrics_atlas"]
+	if key.begins_with("drink_") or key.begins_with("carton_") or key == "carton_drinks_atlas":
+		if _layer_map.has("carton_drinks_atlas"):
+			return _layer_map["carton_drinks_atlas"]
+	if key.begins_with("can_") or key.begins_with("soda_") or key == "soda_cans_atlas":
+		if _layer_map.has("soda_cans_atlas"):
+			return _layer_map["soda_cans_atlas"]
+	if key.begins_with("cereal_") or key == "cereal_boxes_atlas":
+		if _layer_map.has("cereal_boxes_atlas"):
+			return _layer_map["cereal_boxes_atlas"]
+	if key.begins_with("candy_") or key == "candy_bags_atlas" or key.begins_with("dulce_"):
+		if _layer_map.has("candy_bags_atlas"):
+			return _layer_map["candy_bags_atlas"]
+	if key.begins_with("cigar") or key.begins_with("cajetilla") or key == "cigarette_packs_atlas":
+		if _layer_map.has("cigarette_packs_atlas"):
+			return _layer_map["cigarette_packs_atlas"]
+	if key.begins_with("cookie") or key.begins_with("galleta") or key.begins_with("rizko") or key == "cookie_packs_atlas":
+		if _layer_map.has("cookie_packs_atlas"):
+			return _layer_map["cookie_packs_atlas"]
+	if key.begins_with("snack") or key.begins_with("sabrita") or key.begins_with("papa") or key.begins_with("botana") or key == "snack_bags_atlas":
+		if _layer_map.has("snack_bags_atlas"):
+			return _layer_map["snack_bags_atlas"]
 	return 0
 
 
