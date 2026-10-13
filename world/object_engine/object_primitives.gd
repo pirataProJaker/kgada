@@ -28,7 +28,7 @@ static func get_mesh(primitive_type: String) -> ArrayMesh:
 			mesh = _create_unit_cylinder(16)
 		"wedge", "prism", "ramp":
 			mesh = _create_unit_wedge()
-		"sphere", "dome":
+		"sphere", "dome", "sphere_lowpoly", "lowpoly_sphere", "ball", "ellipsoid":
 			mesh = _create_unit_sphere()
 		"capsule":
 			mesh = _create_unit_capsule()
@@ -56,7 +56,7 @@ static func register_custom_primitive(primitive_name: String, mesh: ArrayMesh) -
 
 ## Retorna la lista de todas las primitivas actualmente disponibles
 static func get_available_primitive_names() -> Array[String]:
-	return ["cube", "cylinder", "wedge", "sphere", "capsule", "quad", "rounded_box"]
+	return ["cube", "cylinder", "wedge", "sphere", "capsule", "chamfer", "quad", "rounded_box"]
 
 
 # =========================================================================

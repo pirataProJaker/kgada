@@ -19,6 +19,7 @@ const Furniture2BedsRecipesScript = preload("res://world/object_engine/recipes/f
 const Furniture2StorageRecipesScript = preload("res://world/object_engine/recipes/furniture2_storage_recipes.gd")
 const Furniture2KitchenRecipesScript = preload("res://world/object_engine/recipes/furniture2_kitchen_recipes.gd")
 const Furniture2PropsRecipesScript = preload("res://world/object_engine/recipes/furniture2_props_recipes.gd")
+const EggRecipeScript = preload("res://world/object_engine/recipes/egg_recipe.gd")
 
 const BedSingleOakScript = preload("res://world/furniture/bed_single_oak.gd")
 const NightstandOakScript = preload("res://world/furniture/nightstand_oak.gd")
@@ -565,6 +566,64 @@ func add_sphere(
 	add_primitive("sphere", scaled_t, texture_key, uv_rect, roughness, metallic, collision, col_data)
 
 
+## Agrega una Esfera Moldeable escalada elípticamente con size = Vector3(ancho_x, alto_y, prof_z)
+## Permite estirar la esfera hacia arriba o hacia los lados (óvalos, huevos, bombillas, perillas alargadas) manteniendo +0 Draw Calls
+func add_sphere_scaled(
+	t: Transform3D,
+	size: Vector3,
+	texture_key: String = "commercial_cooler",
+	uv_rect: Rect2 = Rect2(0.0, 0.0, 1.0, 1.0),
+	roughness: float = 0.40,
+	metallic: float = 0.10,
+	collision: bool = true
+) -> void:
+	var scaled_t := t.scaled_local(size)
+	var col_data := {}
+	if collision:
+		col_data = {
+			"type": "box",
+			"transform": t,
+			"size": size
+		}
+	add_primitive("sphere", scaled_t, texture_key, uv_rect, roughness, metallic, collision, col_data)
+
+
+## Esfera moldeable inteligente que consulta región de material en ObjectAtlas
+func add_smart_sphere_scaled(
+	t: Transform3D,
+	size: Vector3,
+	texture_key: String,
+	region_name: String = "",
+	roughness: float = -1.0,
+	metallic: float = -1.0,
+	collision: bool = true
+) -> void:
+	var resolved := ObjectAtlasScript.resolve_semantic_texture(texture_key, region_name)
+	var final_tex: String = resolved["texture_key"]
+	var uv_rect: Rect2 = resolved["uv_rect"]
+	var r: float = roughness if roughness >= 0.0 else resolved["roughness"]
+	var m: float = metallic if metallic >= 0.0 else resolved["metallic"]
+	add_sphere_scaled(t, size, final_tex, uv_rect, r, m, collision)
+
+
+## Esfera uniforme inteligente con radio especificado que consulta región de material en ObjectAtlas
+func add_smart_sphere(
+	t: Transform3D,
+	radius: float,
+	texture_key: String,
+	region_name: String = "",
+	roughness: float = -1.0,
+	metallic: float = -1.0,
+	collision: bool = true
+) -> void:
+	var resolved := ObjectAtlasScript.resolve_semantic_texture(texture_key, region_name)
+	var final_tex: String = resolved["texture_key"]
+	var uv_rect: Rect2 = resolved["uv_rect"]
+	var r: float = roughness if roughness >= 0.0 else resolved["roughness"]
+	var m: float = metallic if metallic >= 0.0 else resolved["metallic"]
+	add_sphere(t, radius, final_tex, uv_rect, r, m, collision)
+
+
 ## 5. Agrega una Cápsula (tanque, píldora, extintor)
 func add_capsule(
 	t: Transform3D,
@@ -1086,6 +1145,9 @@ func add_furniture_by_script(scr: Variant, t: Transform3D, extra_params: Diction
 			return
 		elif s_key == "drink_can" or s_key == "soda_can":
 			Furniture2PropsRecipesScript.DrinkCanRecipe.build(self, t, extra_params)
+			return
+		elif s_key == "egg" or s_key == "huevo" or s_key == "egg_chicken":
+			EggRecipeScript.build(self, t, extra_params)
 			return
 
 	if scr == BedSingleOakScript:
