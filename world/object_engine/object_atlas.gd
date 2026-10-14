@@ -1553,6 +1553,9 @@ static func ensure_initialized() -> void:
 	_register_cigarette_packs_kit()
 	_register_cookie_packs_kit()
 	_register_snack_bags_kit()
+	_register_carton_drinks_237ml_kit()
+	_register_sandbags_kit()
+	_register_barrier_gate_kit()
 	_scan_folders_for_json_regions("res://assets/textures/furniture/")
 	_scan_folders_for_json_regions("res://assets/textures/house/")
 	_scan_folders_for_json_regions("res://assets/textures/office pack/")
@@ -1929,6 +1932,125 @@ static func _register_snack_bags_kit() -> void:
 		_REGIONS["snack_bags_atlas"] = {}
 	for k in kit_dict:
 		_REGIONS["snack_bags_atlas"][k] = kit_dict[k]
+
+
+## Registra semánticamente el catálogo oficial de las 50 Bebidas en Cartón 237ml (carton_drinks_237ml_atlas.png)
+static func _register_carton_drinks_237ml_kit() -> void:
+	var kit_dict := {}
+	for idx in range(CARTON_237ML_DATA.size()):
+		var data: Dictionary = CARTON_237ML_DATA[idx]
+		var key_name: String = data["id"]
+		var front_rect: Rect2 = data["front"]
+		var side_rect: Rect2 = data["side"]
+		var top_rect: Rect2 = data["top"]
+		var color_rect: Rect2 = data["color_swatch"]
+		var full_rect := Rect2(front_rect.position.x, front_rect.position.y, front_rect.size.x + side_rect.size.x, front_rect.size.y)
+
+		var item_dict := {
+			"front": { "rect": front_rect, "roughness": 0.45, "metallic": 0.02, "desc": data["display_name"] + " (Frente: Marca, sabor y 237ml)" },
+			"side": { "rect": side_rect, "roughness": 0.45, "metallic": 0.02, "desc": data["display_name"] + " (Lateral: Nutricional y código de barras)" },
+			"left": { "rect": side_rect, "roughness": 0.45, "metallic": 0.02, "desc": data["display_name"] + " (Lateral izquierdo corporativo)" },
+			"top": { "rect": top_rect, "roughness": 0.45, "metallic": 0.02, "desc": data["display_name"] + " (Tapa superior con pliegue)" },
+			"color": { "rect": color_rect, "roughness": 0.48, "metallic": 0.02, "desc": data["display_name"] + " (Color sólido corporativo)" },
+			"full": { "rect": full_rect, "roughness": 0.45, "metallic": 0.02, "desc": data["display_name"] + " (Cartón desplegado)" }
+		}
+
+		kit_dict[key_name] = item_dict["front"]
+		kit_dict[key_name + "_front"] = item_dict["front"]
+		kit_dict[key_name + "_side"] = item_dict["side"]
+		kit_dict[key_name + "_left"] = item_dict["left"]
+		kit_dict[key_name + "_top"] = item_dict["top"]
+		kit_dict[key_name + "_color"] = item_dict["color"]
+		kit_dict[key_name + "_full"] = item_dict["full"]
+
+		_REGIONS[key_name] = item_dict
+		_REGIONS["carton_237ml_" + key_name] = item_dict
+		_REGIONS["mini_carton_" + key_name] = item_dict
+		_REGIONS["jugo_237ml_" + key_name] = item_dict
+		_REGIONS["leche_237ml_" + key_name] = item_dict
+
+	if not _REGIONS.has("carton_drinks_237ml_atlas"):
+		_REGIONS["carton_drinks_237ml_atlas"] = {}
+	for k in kit_dict:
+		_REGIONS["carton_drinks_237ml_atlas"][k] = kit_dict[k]
+
+
+## Registra semánticamente el catálogo oficial de los 20 Costales / Sacos de Arena (sandbags_atlas.png)
+static func _register_sandbags_kit() -> void:
+	if not _REGIONS.has("sandbags_atlas"):
+		_REGIONS["sandbags_atlas"] = {}
+
+	var kit_dict := {}
+	# 5 columnas x 4 filas en 1024x1024
+	for idx in range(20):
+		var col := idx % 5
+		var row := idx / 5
+		var u := float(col * 204) / 1024.0
+		var v := float(row * 256) / 1024.0
+		var uw := 204.0 / 1024.0
+		var vh := 256.0 / 1024.0
+		var rect := Rect2(u, v, uw, vh)
+		var desc := "Costal de arena de arpillera militar #%02d" % idx
+
+		var item_dict := {
+			"rect": rect,
+			"roughness": 0.88,
+			"metallic": 0.02,
+			"desc": desc
+		}
+
+		var id_num := "sandbag_%d" % idx
+		var id_tile := "sandbag_tile_%02d" % idx
+		kit_dict[id_num] = item_dict
+		kit_dict[id_tile] = item_dict
+		kit_dict["saco_%d" % idx] = item_dict
+		kit_dict["costal_%d" % idx] = item_dict
+
+		_REGIONS[id_num] = { "default": item_dict }
+		_REGIONS[id_tile] = { "default": item_dict }
+
+	kit_dict["default"] = kit_dict["sandbag_0"]
+	kit_dict["clean"] = kit_dict["sandbag_0"]
+	kit_dict["clean_alt"] = kit_dict["sandbag_1"]
+	kit_dict["worn"] = kit_dict["sandbag_5"]
+	kit_dict["torn"] = kit_dict["sandbag_10"]
+	kit_dict["patched"] = kit_dict["sandbag_17"]
+
+	for k in kit_dict:
+		_REGIONS["sandbags_atlas"][k] = kit_dict[k]
+
+
+## Registra semánticamente el kit de la Pluma de Acceso Vehicular (barrier_gate_atlas.png)
+static func _register_barrier_gate_kit() -> void:
+	if not _REGIONS.has("barrier_gate_atlas"):
+		_REGIONS["barrier_gate_atlas"] = {}
+
+	var kit_dict := {
+		"housing_orange": { "rect": Rect2(0.00, 0.00, 0.25, 0.25), "roughness": 0.35, "metallic": 0.15, "desc": "Gabinete naranja brillante de seguridad vial" },
+		"housing_yellow": { "rect": Rect2(0.25, 0.00, 0.25, 0.25), "roughness": 0.35, "metallic": 0.15, "desc": "Gabinete amarillo vial de advertencia" },
+		"housing_white":  { "rect": Rect2(0.00, 0.25, 0.25, 0.25), "roughness": 0.30, "metallic": 0.10, "desc": "Gabinete blanco esmaltado clásico" },
+		"housing_gray":   { "rect": Rect2(0.25, 0.25, 0.25, 0.25), "roughness": 0.40, "metallic": 0.50, "desc": "Gabinete gris industrial oscuro" },
+		"pivot_metal":    { "rect": Rect2(0.25, 0.25, 0.25, 0.25), "roughness": 0.35, "metallic": 0.70, "desc": "Eje y tambor pivotante metálico oscuro" },
+		"arm_stripes_red_white": { "rect": Rect2(0.50, 0.00, 0.50, 0.50), "roughness": 0.25, "metallic": 0.08, "desc": "Franjas reflectivas diagonales rojo y blanco" },
+		"arm_stripes_yellow_black": { "rect": Rect2(0.00, 0.50, 0.50, 0.50), "roughness": 0.25, "metallic": 0.08, "desc": "Franjas diagonales hazard amarillo y negro" },
+		"aluminum":       { "rect": Rect2(0.50, 0.50, 0.25, 0.50), "roughness": 0.35, "metallic": 0.80, "desc": "Aluminio / acero cepillado para herrajes y pernos" },
+		"led_red":        { "rect": Rect2(0.75, 0.50, 0.25, 0.25), "roughness": 0.10, "metallic": 0.05, "desc": "Luz LED roja de alto / cerrado" },
+		"led_green":      { "rect": Rect2(0.75, 0.75, 0.25, 0.25), "roughness": 0.10, "metallic": 0.05, "desc": "Luz LED verde de pase autorizado" }
+	}
+
+	# Aliases
+	kit_dict["orange"] = kit_dict["housing_orange"]
+	kit_dict["yellow"] = kit_dict["housing_yellow"]
+	kit_dict["white"] = kit_dict["housing_white"]
+	kit_dict["gray"] = kit_dict["housing_gray"]
+	kit_dict["arm"] = kit_dict["arm_stripes_red_white"]
+	kit_dict["arm_red"] = kit_dict["arm_stripes_red_white"]
+	kit_dict["arm_yellow"] = kit_dict["arm_stripes_yellow_black"]
+	kit_dict["metal"] = kit_dict["pivot_metal"]
+	kit_dict["post"] = kit_dict["aluminum"]
+
+	for k in kit_dict:
+		_REGIONS["barrier_gate_atlas"][k] = kit_dict[k]
 
 
 
@@ -2955,6 +3077,757 @@ static func get_snack_bag_data(snack_key_or_idx: Variant) -> Dictionary:
 		if s in d["id"] or d["id"] in s or s in d["name"].to_lower():
 			return d
 	return SNACK_BAG_DATA[0]
+
+
+# =========================================================================
+# REGISTRO DE 50 BEBIDAS EN CARTÓN 237ml (JUGOS, LECHES, YOGURT, VEGETAL)
+# =========================================================================
+
+const CARTON_237ML_NAMES: Array[String] = [
+	"frutalia_manzana",	# 01: Frutalia Jugo de Manzana (237ml)
+	"solviva_naranja",	# 02: SolViva Jugo de Naranja (237ml)
+	"tropicalin_mango",	# 03: Tropicalin Jugo de Mango (237ml)
+	"pinaluz_pina",	# 04: PiñaLuz Jugo de Piña (237ml)
+	"chocorio_chocolate",	# 05: ChocoRío Leche Chocolate (237ml)
+	"freski_fresa",	# 06: Freski Leche Fresa (237ml)
+	"vanigo_vainilla",	# 07: VaniGo Leche Vainilla (237ml)
+	"lacteareal_entera",	# 08: LácteaReal Leche Entera (237ml)
+	"lacteareal_deslactosada",	# 09: LácteaReal Leche Deslactosada (237ml)
+	"almavi_almendra",	# 10: Almavi Bebida de Almendra (237ml)
+	"sojamix_soya",	# 11: SojaMix Bebida de Soya (237ml)
+	"cocovida_coco",	# 12: CocoVida Bebida de Coco (237ml)
+	"arrozzen_arroz",	# 13: ArrozZen Bebida de Arroz (237ml)
+	"avenago_avena",	# 14: AvenaGo Bebida de Avena (237ml)
+	"yogui_fresa",	# 15: Yogui Yogurt Bebible Fresa (237ml)
+	"yogui_arandano",	# 16: Yogui Yogurt Bebible Arándano (237ml)
+	"yogui_durazno",	# 17: Yogui Yogurt Bebible Durazno (237ml)
+	"yogui_mora",	# 18: Yogui Yogurt Bebible Mora (237ml)
+	"yogui_coco",	# 19: Yogui Yogurt Bebible Coco (237ml)
+	"yogui_frambuesa",	# 20: Yogui Yogurt Bebible Frambuesa (237ml)
+	"biolact_vainilla",	# 21: Biolact Leche Cultivada Vainilla (237ml)
+	"biolact_fresa",	# 22: Biolact Leche Cultivada Fresa (237ml)
+	"biolact_durazno",	# 23: Biolact Leche Cultivada Durazno (237ml)
+	"cacaonix_cacao",	# 24: CacaoNix Bebida de Cacao (237ml)
+	"cafenatura_cafe",	# 25: CaféNatura Bebida de Café (237ml)
+	"tezen_verde",	# 26: TéZen Té Verde (237ml)
+	"tezen_negro",	# 27: TéZen Té Negro (237ml)
+	"voltik_energetica",	# 28: Voltik Bebida Energética (237ml)
+	"hidrafit_isotonica",	# 29: HidraFit Bebida Isotónica (237ml)
+	"equiplus_electrolitos",	# 30: EquiPlus Bebida Electrolitos Limón (237ml)
+	"cocomax_agua_coco",	# 31: CocoMax Agua de Coco (237ml)
+	"tomatix_tomate",	# 32: Tomatix Jugo de Tomate (237ml)
+	"verdeplus_vegetal",	# 33: VerdePlus Jugo Vegetal (237ml)
+	"aloevita_sabila",	# 34: AloeVita Bebida de Sábila (237ml)
+	"frutiluz_ponche",	# 35: FrutiLuz Ponche de Frutas (237ml)
+	"nube_malvavisco",	# 36: Nube Bebida de Malvavisco (237ml)
+	"delimoo_cookies_cream",	# 37: DeliMoo Leche Cookies & Cream (237ml)
+	"canelalac_canela",	# 38: CanelaLac Leche Canela (237ml)
+	"bananik_platano",	# 39: Bananik Jugo de Plátano (237ml)
+	"berrimix_frutos_rojos",	# 40: BerriMix Jugo de Frutos Rojos (237ml)
+	"limonfit_limon",	# 41: LimónFit Jugo de Limón (237ml)
+	"duraznosol_durazno",	# 42: DuraznoSol Jugo de Durazno (237ml)
+	"tefrio_negro",	# 43: TéFrío Té Negro con Limón (237ml)
+	"jamaika_jamaica",	# 44: Jamaika Té de Jamaica (237ml)
+	"limonada_limon",	# 45: Limonada Limonada (237ml)
+	"chocolite_chocolate",	# 46: ChocoLite Leche Chocolate Light (237ml)
+	"fresbanana_yogurt",	# 47: Fresbanana Yogurt Bebible Fresa-Plátano (237ml)
+	"bosquedulce_yogurt",	# 48: BosqueDulce Yogurt Bebible Frutos del Bosque (237ml)
+	"promax_proteina",	# 49: ProMax Bebida Proteína 20g (237ml)
+	"curcuma_curcuma",	# 50: Cúrcuma+ Bebida de Cúrcuma (237ml)
+]
+
+const CARTON_237ML_DATA: Array[Dictionary] = [
+	{
+		"index": 0,
+		"id": "frutalia_manzana",
+		"display_name": "Frutalia Jugo de Manzana (237ml)",
+		"brand": "Frutalia",
+		"category": "Jugo",
+		"color": Color(0.847, 0.275, 0.286),
+		"front": Rect2(0.01074, 0.03079, 0.05469, 0.19501),
+		"side": Rect2(0.06641, 0.03079, 0.02637, 0.19501),
+		"top": Rect2(0.01074, 0.03079, 0.05469, 0.03372),
+		"color_swatch": Rect2(0.01172, 0.00293, 0.01758, 0.02053)
+	},
+	{
+		"index": 1,
+		"id": "solviva_naranja",
+		"display_name": "SolViva Jugo de Naranja (237ml)",
+		"brand": "SolViva",
+		"category": "Jugo",
+		"color": Color(0.863, 0.576, 0.306),
+		"front": Rect2(0.11133, 0.03079, 0.05566, 0.19501),
+		"side": Rect2(0.16797, 0.03079, 0.02734, 0.19501),
+		"top": Rect2(0.11133, 0.03079, 0.05566, 0.03372),
+		"color_swatch": Rect2(0.03125, 0.00293, 0.01758, 0.02053)
+	},
+	{
+		"index": 2,
+		"id": "tropicalin_mango",
+		"display_name": "Tropicalin Jugo de Mango (237ml)",
+		"brand": "Tropicalin",
+		"category": "Jugo",
+		"color": Color(0.843, 0.718, 0.141),
+		"front": Rect2(0.21289, 0.03079, 0.05762, 0.19501),
+		"side": Rect2(0.27246, 0.03079, 0.02637, 0.19501),
+		"top": Rect2(0.21289, 0.03079, 0.05762, 0.03372),
+		"color_swatch": Rect2(0.05078, 0.00293, 0.01758, 0.02053)
+	},
+	{
+		"index": 3,
+		"id": "pinaluz_pina",
+		"display_name": "PiñaLuz Jugo de Piña (237ml)",
+		"brand": "PiñaLuz",
+		"category": "Jugo",
+		"color": Color(0.706, 0.631, 0.090),
+		"front": Rect2(0.31641, 0.03079, 0.05859, 0.19501),
+		"side": Rect2(0.37695, 0.03079, 0.02441, 0.19501),
+		"top": Rect2(0.31641, 0.03079, 0.05859, 0.03372),
+		"color_swatch": Rect2(0.07031, 0.00293, 0.01758, 0.02053)
+	},
+	{
+		"index": 4,
+		"id": "chocorio_chocolate",
+		"display_name": "ChocoRío Leche Chocolate (237ml)",
+		"brand": "ChocoRío",
+		"category": "Leche",
+		"color": Color(0.388, 0.227, 0.157),
+		"front": Rect2(0.41797, 0.03079, 0.05566, 0.19501),
+		"side": Rect2(0.47559, 0.03079, 0.02441, 0.19501),
+		"top": Rect2(0.41797, 0.03079, 0.05566, 0.03372),
+		"color_swatch": Rect2(0.08984, 0.00293, 0.01758, 0.02053)
+	},
+	{
+		"index": 5,
+		"id": "freski_fresa",
+		"display_name": "Freski Leche Fresa (237ml)",
+		"brand": "Freski",
+		"category": "Leche",
+		"color": Color(0.992, 0.569, 0.694),
+		"front": Rect2(0.51563, 0.03079, 0.05273, 0.19501),
+		"side": Rect2(0.56934, 0.03079, 0.02344, 0.19501),
+		"top": Rect2(0.51563, 0.03079, 0.05273, 0.03372),
+		"color_swatch": Rect2(0.10938, 0.00293, 0.01758, 0.02053)
+	},
+	{
+		"index": 6,
+		"id": "vanigo_vainilla",
+		"display_name": "VaniGo Leche Vainilla (237ml)",
+		"brand": "VaniGo",
+		"category": "Leche",
+		"color": Color(0.820, 0.710, 0.565),
+		"front": Rect2(0.60938, 0.03079, 0.05566, 0.19501),
+		"side": Rect2(0.66602, 0.03079, 0.02441, 0.19501),
+		"top": Rect2(0.60938, 0.03079, 0.05566, 0.03372),
+		"color_swatch": Rect2(0.12891, 0.00293, 0.01758, 0.02053)
+	},
+	{
+		"index": 7,
+		"id": "lacteareal_entera",
+		"display_name": "LácteaReal Leche Entera (237ml)",
+		"brand": "LácteaReal",
+		"category": "Leche",
+		"color": Color(0.125, 0.455, 0.792),
+		"front": Rect2(0.70605, 0.03079, 0.05566, 0.19501),
+		"side": Rect2(0.76270, 0.03079, 0.02539, 0.19501),
+		"top": Rect2(0.70605, 0.03079, 0.05566, 0.03372),
+		"color_swatch": Rect2(0.14844, 0.00293, 0.01758, 0.02053)
+	},
+	{
+		"index": 8,
+		"id": "lacteareal_deslactosada",
+		"display_name": "LácteaReal Leche Deslactosada (237ml)",
+		"brand": "LácteaReal",
+		"category": "Leche",
+		"color": Color(0.459, 0.808, 0.980),
+		"front": Rect2(0.80371, 0.03079, 0.05566, 0.19501),
+		"side": Rect2(0.86035, 0.03079, 0.02539, 0.19501),
+		"top": Rect2(0.80371, 0.03079, 0.05566, 0.03372),
+		"color_swatch": Rect2(0.16797, 0.00293, 0.01758, 0.02053)
+	},
+	{
+		"index": 9,
+		"id": "almavi_almendra",
+		"display_name": "Almavi Bebida de Almendra (237ml)",
+		"brand": "Almavi",
+		"category": "Vegetal",
+		"color": Color(0.776, 0.612, 0.455),
+		"front": Rect2(0.90137, 0.03079, 0.05664, 0.19501),
+		"side": Rect2(0.95898, 0.03079, 0.02734, 0.19501),
+		"top": Rect2(0.90137, 0.03079, 0.05664, 0.03372),
+		"color_swatch": Rect2(0.18750, 0.00293, 0.01758, 0.02053)
+	},
+	{
+		"index": 10,
+		"id": "sojamix_soya",
+		"display_name": "SojaMix Bebida de Soya (237ml)",
+		"brand": "SojaMix",
+		"category": "Vegetal",
+		"color": Color(0.431, 0.647, 0.282),
+		"front": Rect2(0.01074, 0.25367, 0.05469, 0.18182),
+		"side": Rect2(0.06641, 0.25367, 0.02637, 0.18182),
+		"top": Rect2(0.01074, 0.25367, 0.05469, 0.03226),
+		"color_swatch": Rect2(0.20703, 0.00293, 0.01758, 0.02053)
+	},
+	{
+		"index": 11,
+		"id": "cocovida_coco",
+		"display_name": "CocoVida Bebida de Coco (237ml)",
+		"brand": "CocoVida",
+		"category": "Vegetal",
+		"color": Color(0.486, 0.886, 0.976),
+		"front": Rect2(0.11133, 0.25367, 0.05566, 0.18182),
+		"side": Rect2(0.16797, 0.25367, 0.02734, 0.18182),
+		"top": Rect2(0.11133, 0.25367, 0.05566, 0.03226),
+		"color_swatch": Rect2(0.22656, 0.00293, 0.01758, 0.02053)
+	},
+	{
+		"index": 12,
+		"id": "arrozzen_arroz",
+		"display_name": "ArrozZen Bebida de Arroz (237ml)",
+		"brand": "ArrozZen",
+		"category": "Vegetal",
+		"color": Color(0.145, 0.525, 0.694),
+		"front": Rect2(0.21289, 0.25367, 0.05762, 0.18182),
+		"side": Rect2(0.27246, 0.25367, 0.02637, 0.18182),
+		"top": Rect2(0.21289, 0.25367, 0.05762, 0.03226),
+		"color_swatch": Rect2(0.24609, 0.00293, 0.01758, 0.02053)
+	},
+	{
+		"index": 13,
+		"id": "avenago_avena",
+		"display_name": "AvenaGo Bebida de Avena (237ml)",
+		"brand": "AvenaGo",
+		"category": "Vegetal",
+		"color": Color(0.761, 0.635, 0.486),
+		"front": Rect2(0.31641, 0.25367, 0.05859, 0.18182),
+		"side": Rect2(0.37695, 0.25367, 0.02441, 0.18182),
+		"top": Rect2(0.31641, 0.25367, 0.05859, 0.03226),
+		"color_swatch": Rect2(0.26563, 0.00293, 0.01758, 0.02053)
+	},
+	{
+		"index": 14,
+		"id": "yogui_fresa",
+		"display_name": "Yogui Yogurt Bebible Fresa (237ml)",
+		"brand": "Yogui",
+		"category": "Yogurt",
+		"color": Color(0.843, 0.416, 0.569),
+		"front": Rect2(0.41797, 0.25367, 0.05566, 0.18182),
+		"side": Rect2(0.47559, 0.25367, 0.02441, 0.18182),
+		"top": Rect2(0.41797, 0.25367, 0.05566, 0.03226),
+		"color_swatch": Rect2(0.28516, 0.00293, 0.01758, 0.02053)
+	},
+	{
+		"index": 15,
+		"id": "yogui_arandano",
+		"display_name": "Yogui Yogurt Bebible Arándano (237ml)",
+		"brand": "Yogui",
+		"category": "Yogurt",
+		"color": Color(0.502, 0.369, 0.737),
+		"front": Rect2(0.51563, 0.25367, 0.05273, 0.18182),
+		"side": Rect2(0.56934, 0.25367, 0.02344, 0.18182),
+		"top": Rect2(0.51563, 0.25367, 0.05273, 0.03226),
+		"color_swatch": Rect2(0.30469, 0.00293, 0.01758, 0.02053)
+	},
+	{
+		"index": 16,
+		"id": "yogui_durazno",
+		"display_name": "Yogui Yogurt Bebible Durazno (237ml)",
+		"brand": "Yogui",
+		"category": "Yogurt",
+		"color": Color(0.878, 0.529, 0.271),
+		"front": Rect2(0.60938, 0.25367, 0.05566, 0.18182),
+		"side": Rect2(0.66602, 0.25367, 0.02441, 0.18182),
+		"top": Rect2(0.60938, 0.25367, 0.05566, 0.03226),
+		"color_swatch": Rect2(0.32422, 0.00293, 0.01758, 0.02053)
+	},
+	{
+		"index": 17,
+		"id": "yogui_mora",
+		"display_name": "Yogui Yogurt Bebible Mora (237ml)",
+		"brand": "Yogui",
+		"category": "Yogurt",
+		"color": Color(0.596, 0.427, 0.776),
+		"front": Rect2(0.70605, 0.25367, 0.05566, 0.18182),
+		"side": Rect2(0.76270, 0.25367, 0.02539, 0.18182),
+		"top": Rect2(0.70605, 0.25367, 0.05566, 0.03226),
+		"color_swatch": Rect2(0.34375, 0.00293, 0.01758, 0.02053)
+	},
+	{
+		"index": 18,
+		"id": "yogui_coco",
+		"display_name": "Yogui Yogurt Bebible Coco (237ml)",
+		"brand": "Yogui",
+		"category": "Yogurt",
+		"color": Color(0.580, 0.957, 1.000),
+		"front": Rect2(0.80371, 0.25367, 0.05566, 0.18182),
+		"side": Rect2(0.86035, 0.25367, 0.02539, 0.18182),
+		"top": Rect2(0.80371, 0.25367, 0.05566, 0.03226),
+		"color_swatch": Rect2(0.36328, 0.00293, 0.01758, 0.02053)
+	},
+	{
+		"index": 19,
+		"id": "yogui_frambuesa",
+		"display_name": "Yogui Yogurt Bebible Frambuesa (237ml)",
+		"brand": "Yogui",
+		"category": "Yogurt",
+		"color": Color(0.898, 0.424, 0.553),
+		"front": Rect2(0.90137, 0.25367, 0.05664, 0.18182),
+		"side": Rect2(0.95898, 0.25367, 0.02734, 0.18182),
+		"top": Rect2(0.90137, 0.25367, 0.05664, 0.03226),
+		"color_swatch": Rect2(0.38281, 0.00293, 0.01758, 0.02053)
+	},
+	{
+		"index": 20,
+		"id": "biolact_vainilla",
+		"display_name": "Biolact Leche Cultivada Vainilla (237ml)",
+		"brand": "Biolact",
+		"category": "Leche",
+		"color": Color(0.655, 0.592, 0.490),
+		"front": Rect2(0.01074, 0.46334, 0.05469, 0.17595),
+		"side": Rect2(0.06641, 0.46334, 0.02637, 0.17595),
+		"top": Rect2(0.01074, 0.46334, 0.05469, 0.03079),
+		"color_swatch": Rect2(0.40234, 0.00293, 0.01758, 0.02053)
+	},
+	{
+		"index": 21,
+		"id": "biolact_fresa",
+		"display_name": "Biolact Leche Cultivada Fresa (237ml)",
+		"brand": "Biolact",
+		"category": "Leche",
+		"color": Color(0.875, 0.451, 0.576),
+		"front": Rect2(0.11133, 0.46334, 0.05566, 0.17595),
+		"side": Rect2(0.16797, 0.46334, 0.02734, 0.17595),
+		"top": Rect2(0.11133, 0.46334, 0.05566, 0.03079),
+		"color_swatch": Rect2(0.42188, 0.00293, 0.01758, 0.02053)
+	},
+	{
+		"index": 22,
+		"id": "biolact_durazno",
+		"display_name": "Biolact Leche Cultivada Durazno (237ml)",
+		"brand": "Biolact",
+		"category": "Leche",
+		"color": Color(0.929, 0.639, 0.361),
+		"front": Rect2(0.21289, 0.46334, 0.05762, 0.17595),
+		"side": Rect2(0.27246, 0.46334, 0.02637, 0.17595),
+		"top": Rect2(0.21289, 0.46334, 0.05762, 0.03079),
+		"color_swatch": Rect2(0.44141, 0.00293, 0.01758, 0.02053)
+	},
+	{
+		"index": 23,
+		"id": "cacaonix_cacao",
+		"display_name": "CacaoNix Bebida de Cacao (237ml)",
+		"brand": "CacaoNix",
+		"category": "Bebida",
+		"color": Color(0.773, 0.639, 0.600),
+		"front": Rect2(0.31641, 0.46334, 0.05859, 0.17595),
+		"side": Rect2(0.37695, 0.46334, 0.02441, 0.17595),
+		"top": Rect2(0.31641, 0.46334, 0.05859, 0.03079),
+		"color_swatch": Rect2(0.46094, 0.00293, 0.01758, 0.02053)
+	},
+	{
+		"index": 24,
+		"id": "cafenatura_cafe",
+		"display_name": "CaféNatura Bebida de Café (237ml)",
+		"brand": "CaféNatura",
+		"category": "Café",
+		"color": Color(0.612, 0.498, 0.365),
+		"front": Rect2(0.41797, 0.46334, 0.05566, 0.17595),
+		"side": Rect2(0.47559, 0.46334, 0.02441, 0.17595),
+		"top": Rect2(0.41797, 0.46334, 0.05566, 0.03079),
+		"color_swatch": Rect2(0.48047, 0.00293, 0.01758, 0.02053)
+	},
+	{
+		"index": 25,
+		"id": "tezen_verde",
+		"display_name": "TéZen Té Verde (237ml)",
+		"brand": "TéZen",
+		"category": "Té",
+		"color": Color(0.486, 0.745, 0.361),
+		"front": Rect2(0.51563, 0.46334, 0.05273, 0.17595),
+		"side": Rect2(0.56934, 0.46334, 0.02344, 0.17595),
+		"top": Rect2(0.51563, 0.46334, 0.05273, 0.03079),
+		"color_swatch": Rect2(0.50000, 0.00293, 0.01758, 0.02053)
+	},
+	{
+		"index": 26,
+		"id": "tezen_negro",
+		"display_name": "TéZen Té Negro (237ml)",
+		"brand": "TéZen",
+		"category": "Té",
+		"color": Color(0.478, 0.710, 1.000),
+		"front": Rect2(0.60938, 0.46334, 0.05566, 0.17595),
+		"side": Rect2(0.66602, 0.46334, 0.02441, 0.17595),
+		"top": Rect2(0.60938, 0.46334, 0.05566, 0.03079),
+		"color_swatch": Rect2(0.51953, 0.00293, 0.01758, 0.02053)
+	},
+	{
+		"index": 27,
+		"id": "voltik_energetica",
+		"display_name": "Voltik Bebida Energética (237ml)",
+		"brand": "Voltik",
+		"category": "Energética",
+		"color": Color(0.365, 0.369, 0.376),
+		"front": Rect2(0.70605, 0.46334, 0.05566, 0.17595),
+		"side": Rect2(0.76270, 0.46334, 0.02539, 0.17595),
+		"top": Rect2(0.70605, 0.46334, 0.05566, 0.03079),
+		"color_swatch": Rect2(0.53906, 0.00293, 0.01758, 0.02053)
+	},
+	{
+		"index": 28,
+		"id": "hidrafit_isotonica",
+		"display_name": "HidraFit Bebida Isotónica (237ml)",
+		"brand": "HidraFit",
+		"category": "Isotónica",
+		"color": Color(0.373, 0.714, 0.984),
+		"front": Rect2(0.80371, 0.46334, 0.05566, 0.17595),
+		"side": Rect2(0.86035, 0.46334, 0.02539, 0.17595),
+		"top": Rect2(0.80371, 0.46334, 0.05566, 0.03079),
+		"color_swatch": Rect2(0.55859, 0.00293, 0.01758, 0.02053)
+	},
+	{
+		"index": 29,
+		"id": "equiplus_electrolitos",
+		"display_name": "EquiPlus Bebida Electrolitos Limón (237ml)",
+		"brand": "EquiPlus",
+		"category": "Electrolitos",
+		"color": Color(0.482, 0.906, 0.953),
+		"front": Rect2(0.90137, 0.46334, 0.05664, 0.17595),
+		"side": Rect2(0.95898, 0.46334, 0.02734, 0.17595),
+		"top": Rect2(0.90137, 0.46334, 0.05664, 0.03079),
+		"color_swatch": Rect2(0.57813, 0.00293, 0.01758, 0.02053)
+	},
+	{
+		"index": 30,
+		"id": "cocomax_agua_coco",
+		"display_name": "CocoMax Agua de Coco (237ml)",
+		"brand": "CocoMax",
+		"category": "Agua",
+		"color": Color(0.220, 0.663, 0.733),
+		"front": Rect2(0.01074, 0.66569, 0.05469, 0.15836),
+		"side": Rect2(0.06641, 0.66569, 0.02637, 0.15836),
+		"top": Rect2(0.01074, 0.66569, 0.05469, 0.02786),
+		"color_swatch": Rect2(0.59766, 0.00293, 0.01758, 0.02053)
+	},
+	{
+		"index": 31,
+		"id": "tomatix_tomate",
+		"display_name": "Tomatix Jugo de Tomate (237ml)",
+		"brand": "Tomatix",
+		"category": "Jugo",
+		"color": Color(1.000, 0.553, 0.580),
+		"front": Rect2(0.11133, 0.66569, 0.05566, 0.15836),
+		"side": Rect2(0.16797, 0.66569, 0.02734, 0.15836),
+		"top": Rect2(0.11133, 0.66569, 0.05566, 0.02786),
+		"color_swatch": Rect2(0.61719, 0.00293, 0.01758, 0.02053)
+	},
+	{
+		"index": 32,
+		"id": "verdeplus_vegetal",
+		"display_name": "VerdePlus Jugo Vegetal (237ml)",
+		"brand": "VerdePlus",
+		"category": "Jugo",
+		"color": Color(0.451, 0.686, 0.333),
+		"front": Rect2(0.21289, 0.66569, 0.05762, 0.15836),
+		"side": Rect2(0.27246, 0.66569, 0.02637, 0.15836),
+		"top": Rect2(0.21289, 0.66569, 0.05762, 0.02786),
+		"color_swatch": Rect2(0.63672, 0.00293, 0.01758, 0.02053)
+	},
+	{
+		"index": 33,
+		"id": "aloevita_sabila",
+		"display_name": "AloeVita Bebida de Sábila (237ml)",
+		"brand": "AloeVita",
+		"category": "Vegetal",
+		"color": Color(0.510, 0.698, 0.306),
+		"front": Rect2(0.31641, 0.66569, 0.05859, 0.15836),
+		"side": Rect2(0.37695, 0.66569, 0.02441, 0.15836),
+		"top": Rect2(0.31641, 0.66569, 0.05859, 0.02786),
+		"color_swatch": Rect2(0.65625, 0.00293, 0.01758, 0.02053)
+	},
+	{
+		"index": 34,
+		"id": "frutiluz_ponche",
+		"display_name": "FrutiLuz Ponche de Frutas (237ml)",
+		"brand": "FrutiLuz",
+		"category": "Ponche",
+		"color": Color(0.906, 0.349, 0.545),
+		"front": Rect2(0.41797, 0.66569, 0.05566, 0.15836),
+		"side": Rect2(0.47559, 0.66569, 0.02441, 0.15836),
+		"top": Rect2(0.41797, 0.66569, 0.05566, 0.02786),
+		"color_swatch": Rect2(0.67578, 0.00293, 0.01758, 0.02053)
+	},
+	{
+		"index": 35,
+		"id": "nube_malvavisco",
+		"display_name": "Nube Bebida de Malvavisco (237ml)",
+		"brand": "Nube",
+		"category": "Bebida",
+		"color": Color(0.816, 0.290, 0.420),
+		"front": Rect2(0.51563, 0.66569, 0.05273, 0.15836),
+		"side": Rect2(0.56934, 0.66569, 0.02344, 0.15836),
+		"top": Rect2(0.51563, 0.66569, 0.05273, 0.02786),
+		"color_swatch": Rect2(0.69531, 0.00293, 0.01758, 0.02053)
+	},
+	{
+		"index": 36,
+		"id": "delimoo_cookies_cream",
+		"display_name": "DeliMoo Leche Cookies & Cream (237ml)",
+		"brand": "DeliMoo",
+		"category": "Leche",
+		"color": Color(0.584, 0.518, 0.478),
+		"front": Rect2(0.60938, 0.66569, 0.05566, 0.15836),
+		"side": Rect2(0.66602, 0.66569, 0.02441, 0.15836),
+		"top": Rect2(0.60938, 0.66569, 0.05566, 0.02786),
+		"color_swatch": Rect2(0.71484, 0.00293, 0.01758, 0.02053)
+	},
+	{
+		"index": 37,
+		"id": "canelalac_canela",
+		"display_name": "CanelaLac Leche Canela (237ml)",
+		"brand": "CanelaLac",
+		"category": "Leche",
+		"color": Color(0.741, 0.553, 0.467),
+		"front": Rect2(0.70605, 0.66569, 0.05566, 0.15836),
+		"side": Rect2(0.76270, 0.66569, 0.02539, 0.15836),
+		"top": Rect2(0.70605, 0.66569, 0.05566, 0.02786),
+		"color_swatch": Rect2(0.73438, 0.00293, 0.01758, 0.02053)
+	},
+	{
+		"index": 38,
+		"id": "bananik_platano",
+		"display_name": "Bananik Jugo de Plátano (237ml)",
+		"brand": "Bananik",
+		"category": "Jugo",
+		"color": Color(0.753, 0.694, 0.204),
+		"front": Rect2(0.80371, 0.66569, 0.05566, 0.15836),
+		"side": Rect2(0.86035, 0.66569, 0.02539, 0.15836),
+		"top": Rect2(0.80371, 0.66569, 0.05566, 0.02786),
+		"color_swatch": Rect2(0.75391, 0.00293, 0.01758, 0.02053)
+	},
+	{
+		"index": 39,
+		"id": "berrimix_frutos_rojos",
+		"display_name": "BerriMix Jugo de Frutos Rojos (237ml)",
+		"brand": "BerriMix",
+		"category": "Jugo",
+		"color": Color(1.000, 0.486, 0.757),
+		"front": Rect2(0.90137, 0.66569, 0.05664, 0.15836),
+		"side": Rect2(0.95898, 0.66569, 0.02734, 0.15836),
+		"top": Rect2(0.90137, 0.66569, 0.05664, 0.02786),
+		"color_swatch": Rect2(0.77344, 0.00293, 0.01758, 0.02053)
+	},
+	{
+		"index": 40,
+		"id": "limonfit_limon",
+		"display_name": "LimónFit Jugo de Limón (237ml)",
+		"brand": "LimónFit",
+		"category": "Jugo",
+		"color": Color(0.467, 0.690, 0.176),
+		"front": Rect2(0.01074, 0.84751, 0.05469, 0.13490),
+		"side": Rect2(0.06641, 0.84751, 0.02637, 0.13490),
+		"top": Rect2(0.01074, 0.84751, 0.05469, 0.02346),
+		"color_swatch": Rect2(0.79297, 0.00293, 0.01758, 0.02053)
+	},
+	{
+		"index": 41,
+		"id": "duraznosol_durazno",
+		"display_name": "DuraznoSol Jugo de Durazno (237ml)",
+		"brand": "DuraznoSol",
+		"category": "Jugo",
+		"color": Color(0.918, 0.541, 0.306),
+		"front": Rect2(0.11133, 0.84751, 0.05566, 0.13490),
+		"side": Rect2(0.16797, 0.84751, 0.02734, 0.13490),
+		"top": Rect2(0.11133, 0.84751, 0.05566, 0.02346),
+		"color_swatch": Rect2(0.81250, 0.00293, 0.01758, 0.02053)
+	},
+	{
+		"index": 42,
+		"id": "tefrio_negro",
+		"display_name": "TéFrío Té Negro con Limón (237ml)",
+		"brand": "TéFrío",
+		"category": "Té",
+		"color": Color(0.831, 0.576, 0.216),
+		"front": Rect2(0.21289, 0.84751, 0.05762, 0.13490),
+		"side": Rect2(0.27246, 0.84751, 0.02637, 0.13490),
+		"top": Rect2(0.21289, 0.84751, 0.05762, 0.02346),
+		"color_swatch": Rect2(0.83203, 0.00293, 0.01758, 0.02053)
+	},
+	{
+		"index": 43,
+		"id": "jamaika_jamaica",
+		"display_name": "Jamaika Té de Jamaica (237ml)",
+		"brand": "Jamaika",
+		"category": "Té",
+		"color": Color(0.922, 0.553, 0.557),
+		"front": Rect2(0.31641, 0.84751, 0.05859, 0.13490),
+		"side": Rect2(0.37695, 0.84751, 0.02441, 0.13490),
+		"top": Rect2(0.31641, 0.84751, 0.05859, 0.02346),
+		"color_swatch": Rect2(0.85156, 0.00293, 0.01758, 0.02053)
+	},
+	{
+		"index": 44,
+		"id": "limonada_limon",
+		"display_name": "Limonada Limonada (237ml)",
+		"brand": "Limonada",
+		"category": "Jugo",
+		"color": Color(0.584, 0.780, 0.259),
+		"front": Rect2(0.41797, 0.84751, 0.05566, 0.13490),
+		"side": Rect2(0.47559, 0.84751, 0.02441, 0.13490),
+		"top": Rect2(0.41797, 0.84751, 0.05566, 0.02346),
+		"color_swatch": Rect2(0.87109, 0.00293, 0.01758, 0.02053)
+	},
+	{
+		"index": 45,
+		"id": "chocolite_chocolate",
+		"display_name": "ChocoLite Leche Chocolate Light (237ml)",
+		"brand": "ChocoLite",
+		"category": "Leche",
+		"color": Color(0.788, 0.671, 0.561),
+		"front": Rect2(0.51563, 0.84751, 0.05273, 0.13490),
+		"side": Rect2(0.56934, 0.84751, 0.02344, 0.13490),
+		"top": Rect2(0.51563, 0.84751, 0.05273, 0.02346),
+		"color_swatch": Rect2(0.89063, 0.00293, 0.01758, 0.02053)
+	},
+	{
+		"index": 46,
+		"id": "fresbanana_yogurt",
+		"display_name": "Fresbanana Yogurt Bebible Fresa-Plátano (237ml)",
+		"brand": "Fresbanana",
+		"category": "Yogurt",
+		"color": Color(0.784, 0.314, 0.502),
+		"front": Rect2(0.60938, 0.84751, 0.05566, 0.13490),
+		"side": Rect2(0.66602, 0.84751, 0.02441, 0.13490),
+		"top": Rect2(0.60938, 0.84751, 0.05566, 0.02346),
+		"color_swatch": Rect2(0.91016, 0.00293, 0.01758, 0.02053)
+	},
+	{
+		"index": 47,
+		"id": "bosquedulce_yogurt",
+		"display_name": "BosqueDulce Yogurt Bebible Frutos del Bosque (237ml)",
+		"brand": "BosqueDulce",
+		"category": "Yogurt",
+		"color": Color(0.831, 0.639, 0.859),
+		"front": Rect2(0.70605, 0.84751, 0.05566, 0.13490),
+		"side": Rect2(0.76270, 0.84751, 0.02539, 0.13490),
+		"top": Rect2(0.70605, 0.84751, 0.05566, 0.02346),
+		"color_swatch": Rect2(0.92969, 0.00293, 0.01758, 0.02053)
+	},
+	{
+		"index": 48,
+		"id": "promax_proteina",
+		"display_name": "ProMax Bebida Proteína 20g (237ml)",
+		"brand": "ProMax",
+		"category": "Proteína",
+		"color": Color(0.431, 0.447, 0.459),
+		"front": Rect2(0.80371, 0.84751, 0.05566, 0.13490),
+		"side": Rect2(0.86035, 0.84751, 0.02539, 0.13490),
+		"top": Rect2(0.80371, 0.84751, 0.05566, 0.02346),
+		"color_swatch": Rect2(0.94922, 0.00293, 0.01758, 0.02053)
+	},
+	{
+		"index": 49,
+		"id": "curcuma_curcuma",
+		"display_name": "Cúrcuma+ Bebida de Cúrcuma (237ml)",
+		"brand": "Cúrcuma+",
+		"category": "Bebida",
+		"color": Color(0.906, 0.561, 0.278),
+		"front": Rect2(0.90137, 0.84751, 0.05664, 0.13490),
+		"side": Rect2(0.95898, 0.84751, 0.02734, 0.13490),
+		"top": Rect2(0.90137, 0.84751, 0.05664, 0.02346),
+		"color_swatch": Rect2(0.96875, 0.00293, 0.01758, 0.02053)
+	},
+]
+
+
+## Retorna los metadatos completos de una bebida en cartón 237ml por ID o índice
+static func get_carton_237ml_data(drink_key_or_idx: Variant) -> Dictionary:
+	ensure_initialized()
+	if drink_key_or_idx is int or drink_key_or_idx is float:
+		var idx := clampi(int(drink_key_or_idx), 0, CARTON_237ML_DATA.size() - 1)
+		return CARTON_237ML_DATA[idx]
+	var s := str(drink_key_or_idx).strip_edges().to_lower()
+	if s.is_valid_int():
+		var val := s.to_int()
+		var idx := clampi(val - 1 if val >= 1 and val <= 50 else val, 0, CARTON_237ML_DATA.size() - 1)
+		return CARTON_237ML_DATA[idx]
+	s = s.replace("carton_237ml_", "").replace("mini_carton_", "").replace("carton_", "").replace("jugo_237ml_", "").replace("leche_237ml_", "").replace("bebida_", "")
+	for d in CARTON_237ML_DATA:
+		if d["id"] == s:
+			return d
+	# Aliases semánticos comunes para conveniencia
+	var aliases := {
+		"manzana": "frutalia_manzana",
+		"naranja": "solviva_naranja",
+		"mango": "tropicalin_mango",
+		"pina": "pinaluz_pina",
+		"piña": "pinaluz_pina",
+		"chocolate": "chocorio_chocolate",
+		"fresa": "freski_fresa",
+		"vainilla": "vanigo_vainilla",
+		"entera": "lacteareal_entera",
+		"deslactosada": "lacteareal_deslactosada",
+		"almendra": "almavi_almendra",
+		"soya": "sojamix_soya",
+		"coco": "cocovida_coco",
+		"arroz": "arrozzen_arroz",
+		"avena": "avenago_avena",
+		"yogurt_fresa": "yogui_fresa",
+		"arandano": "yogui_arandano",
+		"arándano": "yogui_arandano",
+		"durazno": "yogui_durazno",
+		"mora": "yogui_mora",
+		"frambuesa": "yogui_frambuesa",
+		"cultivada_vainilla": "biolact_vainilla",
+		"cultivada_fresa": "biolact_fresa",
+		"cultivada_durazno": "biolact_durazno",
+		"cacao": "cacaonix_cacao",
+		"cafe": "cafenatura_cafe",
+		"café": "cafenatura_cafe",
+		"te_verde": "tezen_verde",
+		"te_negro": "tezen_negro",
+		"voltik": "voltik_energetica",
+		"energy": "voltik_energetica",
+		"isotonica": "hidrafit_isotonica",
+		"hidrafit": "hidrafit_isotonica",
+		"electrolitos": "equiplus_electrolitos",
+		"equiplus": "equiplus_electrolitos",
+		"agua_coco": "cocomax_agua_coco",
+		"tomate": "tomatix_tomate",
+		"vegetal": "verdeplus_vegetal",
+		"sabila": "aloevita_sabila",
+		"sábila": "aloevita_sabila",
+		"ponche": "frutiluz_ponche",
+		"malvavisco": "nube_malvavisco",
+		"nube": "nube_malvavisco",
+		"cookies_cream": "delimoo_cookies_cream",
+		"canela": "canelalac_canela",
+		"platano": "bananik_platano",
+		"plátano": "bananik_platano",
+		"frutos_rojos": "berrimix_frutos_rojos",
+		"limon": "limonfit_limon",
+		"limón": "limonfit_limon",
+		"te_frio": "tefrio_negro",
+		"jamaica": "jamaika_jamaica",
+		"limonada": "limonada_limon",
+		"choco_light": "chocolite_chocolate",
+		"fresbanana": "fresbanana_yogurt",
+		"bosque": "bosquedulce_yogurt",
+		"proteina": "promax_proteina",
+		"proteína": "promax_proteina",
+		"curcuma": "curcuma_curcuma",
+		"cúrcuma": "curcuma_curcuma"
+	}
+	if aliases.has(s):
+		var target_id: String = aliases[s]
+		for d in CARTON_237ML_DATA:
+			if d["id"] == target_id:
+				return d
+	for d in CARTON_237ML_DATA:
+		if s in d["id"] or d["id"] in s or s in d["display_name"].to_lower():
+			return d
+	return CARTON_237ML_DATA[0]
+
 
 ## Retorna la sub-región UV exacta para una de las 16 telas de sofá (por ID 0..15 o por nombre)
 static func get_sofa_fabric_region(fabric_key_or_id: Variant) -> Rect2:

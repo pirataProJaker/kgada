@@ -43,7 +43,7 @@ class SnackBagRecipe extends ObjectRecipeBase:
 		# Dimensiones proporcionales exactas de bolsa de botana de 60g
 		var w: float = params.get("width", 0.135)       # 13.5 cm de ancho frontal
 		var h: float = params.get("height", 0.190)      # 19.0 cm de altura
-		var d: float = params.get("depth", 0.024)       # 2.4 cm de grosor lateral (más plano y estilizado)
+		var d: float = params.get("depth", 0.038)       # 3.8 cm de grosor inflado en el ecuador central
 		var has_collision: bool = params.get("collision", true)
 		var show_crimps: bool = params.get("crimp_tabs", true)
 
@@ -62,78 +62,28 @@ class SnackBagRecipe extends ObjectRecipeBase:
 		var rot_basis := Basis.from_euler(Vector3(deg_to_rad(pitch_offset), deg_to_rad(yaw_offset), deg_to_rad(roll_offset)))
 		var bag_t := base_t * Transform3D(rot_basis, Vector3.ZERO)
 
-		var t_panel: float = 0.0012
 		var half_h: float = h * 0.5
-		var body_h: float = h * 0.86
+		var crimp_h: float = 0.012 if show_crimps else 0.0
+		var body_h: float = h - (crimp_h * 2.0)
 
-		# 1. NÚCLEO INFLADO DE LA BOLSA (Cuerpo central con color oficial)
+		# 1. CUERPO INFLADO DE LA BOLSA (Pillow Pouch Bipirámide Truncada)
+		# Malla paramétrica de almohada: plateau central al 76% y pendientes piramidales que
+		# convergen suavemente a los bordes sellados con normales infladas continuas (+0 Draw Calls).
 		var core_t := bag_t * Transform3D(Basis.IDENTITY, Vector3(0.0, half_h, 0.0))
-		builder.add_smart_box(
+		builder.add_smart_pillow(
 			core_t,
-			Vector3(w - t_panel * 2.0, body_h, d - t_panel * 2.0),
-			atlas_key,
-			pack_id + "_color",
-			0.40,
-			0.05,
-			has_collision
-		)
-
-		# 2. CARA FRONTAL (+Z): Logotipo oficial de botana, ilustración y 60g
-		var front_z: float = (d * 0.5) - (t_panel * 0.5)
-		var front_t := bag_t * Transform3D(Basis.IDENTITY, Vector3(0.0, half_h, front_z))
-		builder.add_smart_box(
-			front_t,
-			Vector3(w, body_h, t_panel),
+			Vector3(w, body_h, d),
 			atlas_key,
 			pack_id + "_front",
-			0.35,
-			0.08,
-			false
+			0.35, # Acabado satinado tipo envoltura plástica/metalizada BOPP
+			0.08, # Reflejo especular característico
+			has_collision,
+			true  # Normales suaves infladas
 		)
 
-		# 3. CARA POSTERIOR (-Z): Envoltura dorsal
-		var back_z: float = (-d * 0.5) + (t_panel * 0.5)
-		var back_t := bag_t * Transform3D(Basis.IDENTITY, Vector3(0.0, half_h, back_z))
-		builder.add_smart_box(
-			back_t,
-			Vector3(w, body_h, t_panel),
-			atlas_key,
-			pack_id + "_front",
-			0.35,
-			0.08,
-			false
-		)
-
-		# 4. CARA LATERAL DERECHA (+X): Franja lateral con icono característico y 60g
-		var side_r_x: float = (w * 0.5) - (t_panel * 0.5)
-		var side_r_t := bag_t * Transform3D(Basis.IDENTITY, Vector3(side_r_x, half_h, 0.0))
-		builder.add_smart_box(
-			side_r_t,
-			Vector3(t_panel, body_h, d),
-			atlas_key,
-			pack_id + "_side",
-			0.35,
-			0.08,
-			false
-		)
-
-		# 5. CARA LATERAL IZQUIERDA (-X): Franja lateral congruente
-		var side_l_x: float = (-w * 0.5) + (t_panel * 0.5)
-		var side_l_t := bag_t * Transform3D(Basis.IDENTITY, Vector3(side_l_x, half_h, 0.0))
-		builder.add_smart_box(
-			side_l_t,
-			Vector3(t_panel, body_h, d),
-			atlas_key,
-			pack_id + "_side",
-			0.35,
-			0.08,
-			false
-		)
-
-		# 6. SELLOS TERMOSELLADOS SUPERIOR E INFERIOR (Heat-Sealed Crimp Tabs)
+		# 2. SELLOS TERMOSELLADOS SUPERIOR E INFERIOR (Heat-Sealed Crimp Tabs)
 		if show_crimps:
-			var crimp_h: float = 0.012
-			var crimp_d: float = 0.003
+			var crimp_d: float = 0.0025 # Sello plano termosellado
 			var crimp_w: float = w * 0.98
 
 			# Sello superior (+Y)

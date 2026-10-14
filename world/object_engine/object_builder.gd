@@ -20,6 +20,8 @@ const Furniture2StorageRecipesScript = preload("res://world/object_engine/recipe
 const Furniture2KitchenRecipesScript = preload("res://world/object_engine/recipes/furniture2_kitchen_recipes.gd")
 const Furniture2PropsRecipesScript = preload("res://world/object_engine/recipes/furniture2_props_recipes.gd")
 const EggRecipeScript = preload("res://world/object_engine/recipes/egg_recipe.gd")
+const SandbagsRecipesScript = preload("res://world/object_engine/recipes/sandbags_recipes.gd")
+const BarrierGateRecipeScript = preload("res://world/object_engine/recipes/barrier_gate_recipe.gd")
 
 const BedSingleOakScript = preload("res://world/furniture/bed_single_oak.gd")
 const NightstandOakScript = preload("res://world/furniture/nightstand_oak.gd")
@@ -744,6 +746,82 @@ func add_smart_rounded_box(
 	add_rounded_box(t, size, final_tex, uv_rect, r, m, collision)
 
 
+## 9. Agrega un Cojín / Almohada / Saco / Bipirámide Truncada (Pillow / Cushion / Sack)
+## Centro abultado y 4 bordes piramidales con normales suaves (smooth=true) o facetadas (smooth=false).
+## Ideal para almohadas, cojines de sofá, sacos de cemento/harina, bolsas de botana y bolsas infladas (+0 Draw Calls).
+func add_pillow(
+	t: Transform3D,
+	size: Vector3,
+	texture_key: String = "sofa_leather",
+	uv_rect: Rect2 = Rect2(0.0, 0.0, 1.0, 1.0),
+	roughness: float = 0.65,
+	metallic: float = 0.05,
+	collision: bool = true,
+	smooth: bool = true
+) -> void:
+	var scaled_t := t.scaled_local(size)
+	var col_data := {}
+	if collision:
+		col_data = {
+			"type": "box",
+			"transform": t,
+			"size": size
+		}
+	var prim_name := "pillow" if smooth else "pillow_flat"
+	add_primitive(prim_name, scaled_t, texture_key, uv_rect, roughness, metallic, collision, col_data)
+
+
+## Shorthand posicional rápido para cojín / almohada / saco
+func add_pillow_simple(
+	pos: Vector3,
+	size: Vector3,
+	texture_key: String = "sofa_leather",
+	uv_rect: Rect2 = Rect2(0.0, 0.0, 1.0, 1.0),
+	rot_y_deg: float = 0.0,
+	roughness: float = 0.65,
+	metallic: float = 0.05,
+	collision: bool = true,
+	smooth: bool = true
+) -> void:
+	var basis := Basis(Vector3.UP, deg_to_rad(rot_y_deg))
+	var t := Transform3D(basis, pos)
+	add_pillow(t, size, texture_key, uv_rect, roughness, metallic, collision, smooth)
+
+
+## Cojín / almohada / saco inteligente que consulta región de material en ObjectAtlas
+func add_smart_pillow(
+	t: Transform3D,
+	size: Vector3,
+	texture_key: String,
+	region_name: String = "",
+	roughness: float = -1.0,
+	metallic: float = -1.0,
+	collision: bool = true,
+	smooth: bool = true
+) -> void:
+	var resolved := ObjectAtlasScript.resolve_semantic_texture(texture_key, region_name)
+	var final_tex: String = resolved["texture_key"]
+	var uv_rect: Rect2 = resolved["uv_rect"]
+	var r: float = roughness if roughness >= 0.0 else resolved["roughness"]
+	var m: float = metallic if metallic >= 0.0 else resolved["metallic"]
+	add_pillow(t, size, final_tex, uv_rect, r, m, collision, smooth)
+
+
+## Agrega un saco o costal de arena individual paramétrico
+func add_sandbag(t: Transform3D, params: Dictionary = {}) -> void:
+	SandbagsRecipesScript.SandbagRecipe.build(self, t, params)
+
+
+## Agrega una barricada / parapeto militar de sacos de arena apilados
+func add_sandbag_barricade(t: Transform3D, params: Dictionary = {}) -> void:
+	SandbagsRecipesScript.SandbagBarricadeRecipe.build(self, t, params)
+
+
+## Agrega una pluma de acceso vehicular / barrera de control
+func add_barrier_gate(t: Transform3D, params: Dictionary = {}) -> void:
+	BarrierGateRecipeScript.build(self, t, params)
+
+
 
 # =========================================================================
 # FUSIÓN DE BUILDERS Y EJECUCIÓN DE RECETAS
@@ -1148,6 +1226,15 @@ func add_furniture_by_script(scr: Variant, t: Transform3D, extra_params: Diction
 			return
 		elif s_key == "egg" or s_key == "huevo" or s_key == "egg_chicken":
 			EggRecipeScript.build(self, t, extra_params)
+			return
+		elif s_key == "sandbag" or s_key == "saco_arena" or s_key == "costal_arena":
+			SandbagsRecipesScript.SandbagRecipe.build(self, t, extra_params)
+			return
+		elif s_key == "sandbag_barricade" or s_key == "barricada_arena" or s_key == "trinchera":
+			SandbagsRecipesScript.SandbagBarricadeRecipe.build(self, t, extra_params)
+			return
+		elif s_key == "barrier_gate" or s_key == "pluma_acceso" or s_key == "pluma":
+			BarrierGateRecipeScript.build(self, t, extra_params)
 			return
 
 	if scr == BedSingleOakScript:

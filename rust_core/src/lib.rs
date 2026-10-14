@@ -7,6 +7,7 @@ pub mod botanical;
 pub mod roads;
 pub mod construction;
 pub mod houses;
+pub mod facility;
 
 struct RustCoreExtension;
 

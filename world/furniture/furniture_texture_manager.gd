@@ -39,7 +39,10 @@ const DEFAULT_APPLIANCE_TEXTURES: Dictionary = {
 	"candy_bags_atlas": "res://assets/textures/furniture/candy_bags_atlas.png",
 	"cigarette_packs_atlas": "res://assets/textures/furniture/cigarette_packs_atlas.png",
 	"cookie_packs_atlas": "res://assets/textures/furniture/cookie_packs_atlas.png",
-	"snack_bags_atlas": "res://assets/textures/furniture/snack_bags_atlas.png"
+	"snack_bags_atlas": "res://assets/textures/furniture/snack_bags_atlas.png",
+	"carton_drinks_237ml_atlas": "res://assets/textures/furniture/carton_drinks_237ml_atlas.png",
+	"sandbags_atlas": "res://assets/textures/military/sandbags_atlas.png",
+	"barrier_gate_atlas": "res://assets/textures/props/barrier_gate_atlas.png"
 }
 
 const DEFAULT_OFFICE_TEXTURES: Dictionary = {
@@ -228,6 +231,9 @@ static func get_texture_layer(key: String) -> int:
 	if key.begins_with("snack") or key.begins_with("sabrita") or key.begins_with("papa") or key.begins_with("botana") or key == "snack_bags_atlas":
 		if _layer_map.has("snack_bags_atlas"):
 			return _layer_map["snack_bags_atlas"]
+	if key.begins_with("carton_237ml") or key.begins_with("mini_carton") or key == "carton_drinks_237ml_atlas" or key == "small_cartons_atlas" or key.begins_with("jugo_237ml") or key.begins_with("leche_237ml"):
+		if _layer_map.has("carton_drinks_237ml_atlas"):
+			return _layer_map["carton_drinks_237ml_atlas"]
 	return 0
 
 

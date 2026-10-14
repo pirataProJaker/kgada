@@ -36,8 +36,12 @@ static func get_mesh(primitive_type: String) -> ArrayMesh:
 			mesh = _create_unit_chamfer()
 		"quad", "panel", "plane", "decal":
 			mesh = _create_unit_quad()
-		"rounded_box", "squircle", "pillow", "rounded_cube", "cushion":
+		"rounded_box", "squircle", "rounded_cube":
 			mesh = _create_unit_rounded_box()
+		"pillow", "cushion", "pillow_box", "sack", "pouch":
+			mesh = _create_unit_pillow(true)
+		"pillow_flat", "pillow_faceted", "pyramid_box", "bipyramid_box":
+			mesh = _create_unit_pillow(false)
 		_:
 			push_warning("ObjectPrimitives: Primitiva desconocida '%s'. Usando 'cube' por defecto." % primitive_type)
 			mesh = _create_unit_cube()
@@ -56,7 +60,7 @@ static func register_custom_primitive(primitive_name: String, mesh: ArrayMesh) -
 
 ## Retorna la lista de todas las primitivas actualmente disponibles
 static func get_available_primitive_names() -> Array[String]:
-	return ["cube", "cylinder", "wedge", "sphere", "capsule", "chamfer", "quad", "rounded_box"]
+	return ["cube", "cylinder", "wedge", "sphere", "capsule", "chamfer", "quad", "rounded_box", "pillow", "pillow_flat"]
 
 
 # =========================================================================
@@ -533,6 +537,91 @@ static func _create_unit_rounded_box(segments_per_corner: int = 2, corner_radius
 		st.set_normal(normA); st.set_uv(Vector2(uA, v_bot)); st.add_vertex(vA_bot)
 		st.set_normal(normB); st.set_uv(Vector2(uB, v_top)); st.add_vertex(vB_top)
 		st.set_normal(normA); st.set_uv(Vector2(uA, v_top)); st.add_vertex(vA_top)
+
+	st.generate_tangents()
+	return st.commit()
+
+
+## 9. Cojín / Almohada / Saco / Bipirámide Truncada (Unit Pillow / Cushion 1x1x1)
+## Núcleo central abultado en el ecuador con caras superior, inferior y laterales que convergen en pendientes piramidales.
+## Ideal para almohadas, cojines de sofá, sacos de cemento/harina, empaques inflados y bolsas de botana (+0 Draw Calls).
+static func _create_unit_pillow(smooth: bool = true) -> ArrayMesh:
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+
+	var px := 0.38
+	var py := 0.38
+	var pz := 0.50
+
+	# Vértices del Frente (+Z): Plateau central
+	var c_bl := Vector3(-px, -py,  pz)
+	var c_br := Vector3( px, -py,  pz)
+	var c_tr := Vector3( px,  py,  pz)
+	var c_tl := Vector3(-px,  py,  pz)
+
+	# Vértices del Perímetro en Z = 0
+	var p_bl := Vector3(-0.5, -0.5, 0.0)
+	var p_br := Vector3( 0.5, -0.5, 0.0)
+	var p_tr := Vector3( 0.5,  0.5, 0.0)
+	var p_tl := Vector3(-0.5,  0.5, 0.0)
+
+	# Vértices del Reverso (-Z): Plateau central trasero
+	var b_bl := Vector3(-px, -py, -pz)
+	var b_br := Vector3( px, -py, -pz)
+	var b_tr := Vector3( px,  py, -pz)
+	var b_tl := Vector3(-px,  py, -pz)
+
+	var get_vertex_normal := func(v: Vector3) -> Vector3:
+		if not smooth:
+			return Vector3.ZERO
+		return Vector3(v.x * 1.5, v.y * 1.5, v.z * 2.0).normalized()
+
+	var add_quad := func(v0: Vector3, v1: Vector3, v2: Vector3, v3: Vector3, is_front: bool):
+		var uv0: Vector2
+		var uv1: Vector2
+		var uv2: Vector2
+		var uv3: Vector2
+		if is_front:
+			uv0 = Vector2(v0.x + 0.5, 0.5 - v0.y)
+			uv1 = Vector2(v1.x + 0.5, 0.5 - v1.y)
+			uv2 = Vector2(v2.x + 0.5, 0.5 - v2.y)
+			uv3 = Vector2(v3.x + 0.5, 0.5 - v3.y)
+		else:
+			uv0 = Vector2(0.5 - v0.x, 0.5 - v0.y)
+			uv1 = Vector2(0.5 - v1.x, 0.5 - v1.y)
+			uv2 = Vector2(0.5 - v2.x, 0.5 - v2.y)
+			uv3 = Vector2(0.5 - v3.x, 0.5 - v3.y)
+
+		var fn: Vector3
+		if not smooth:
+			fn = (v1 - v0).cross(v2 - v0).normalized()
+
+		var n0: Vector3 = get_vertex_normal.call(v0) if smooth else fn
+		var n1: Vector3 = get_vertex_normal.call(v1) if smooth else fn
+		var n2: Vector3 = get_vertex_normal.call(v2) if smooth else fn
+		var n3: Vector3 = get_vertex_normal.call(v3) if smooth else fn
+
+		st.set_normal(n0); st.set_uv(uv0); st.add_vertex(v0)
+		st.set_normal(n1); st.set_uv(uv1); st.add_vertex(v1)
+		st.set_normal(n2); st.set_uv(uv2); st.add_vertex(v2)
+
+		st.set_normal(n0); st.set_uv(uv0); st.add_vertex(v0)
+		st.set_normal(n2); st.set_uv(uv2); st.add_vertex(v2)
+		st.set_normal(n3); st.set_uv(uv3); st.add_vertex(v3)
+
+	# --- CARAS FRONTALES (+Z) ---
+	add_quad.call(c_bl, c_br, c_tr, c_tl, true) # Centro frontal
+	add_quad.call(c_tl, c_tr, p_tr, p_tl, true) # Pendiente superior
+	add_quad.call(p_bl, p_br, c_br, c_bl, true) # Pendiente inferior
+	add_quad.call(c_br, p_br, p_tr, c_tr, true) # Pendiente derecha
+	add_quad.call(p_tl, p_bl, c_bl, c_tl, true) # Pendiente izquierda
+
+	# --- CARAS TRASERAS (-Z) ---
+	add_quad.call(b_br, b_bl, b_tl, b_tr, false) # Centro trasero
+	add_quad.call(b_tr, b_tl, p_tl, p_tr, false) # Pendiente superior trasera
+	add_quad.call(p_br, p_bl, b_bl, b_br, false) # Pendiente inferior trasera
+	add_quad.call(p_tr, p_br, b_br, b_tr, false) # Pendiente derecha trasera
+	add_quad.call(b_tl, b_bl, p_bl, p_tl, false) # Pendiente izquierda trasera
 
 	st.generate_tangents()
 	return st.commit()
